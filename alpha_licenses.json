@@ -10,5 +10,9 @@
   "1122334455": {
     "status": "BASIC",
     "klient": "Jan K - Testowy"
+  },
+  "1111111111": {
+    "status": "BLOKADA",
+    "klient": "Przyklad - Zablokowany (Totalne Odciecie)"
   }
 }
