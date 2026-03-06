@@ -1,1 +1,493 @@
+# =============================================================
+# ALPHA HEMS: CENTRALNY INTERFEJS UŻYTKOWNIKA (v1.08 - SOLAR ASSISTANT)
+# STATUS: PRODUKCYJNY / EKSPORTOWY (Universal Dashboard)
+#
+# HISTORIA WERSJI:
+# - v1.08: Fix matematyki przepływu baterii (dodano invert_power: true dla SA).
+# - v1.07: Usunięcie zbędnych przycisków diagnostycznych.
+# - v1.06: Wdrożenie znacznika ALPHA_PREFIX. Dashboard w 100% uniwersalny.
+# =============================================================
 
+title: ALPHA HEMS
+icon: mdi:solar-power
+views:
+  # =============================================================
+  # ZAKŁADKA 1: ⚡ DEYE (Infrastruktura i Energia)
+  # =============================================================
+  - type: sections
+    max_columns: 5
+    title: DEYE
+    path: deye-nev
+    dense_section_placement: false
+    top_margin: true
+    header:
+      layout: responsive
+      badges_position: bottom
+      badges_wrap: scroll
+    sections:
+      - type: grid
+        column_span: 2
+        cards:
+          - cardstyle: lite
+            wide: false
+            large_font: true
+            show_solar: true
+            show_battery: true
+            show_grid: true
+            center_no_grid: true
+            card_height: '750'
+            card_width: 100%
+            decimal_places: 2
+            decimal_places_energy: 1
+            dynamic_line_width: true
+            max_line_width: 4
+            min_line_width: 1
+            inverter:
+              three_phase: true
+              auto_scale: true
+              modern: true
+              colour: '#217cb5'
+              autarky: power
+            battery:
+              show_daily: true
+              auto_scale: true
+              show_absolute: true
+              invert_power: true
+              colour: '#c01b1b'
+              charge_colour: '#435bd0'
+              dynamic_colour: true
+              linear_gradient: true
+              show_remaining_energy: true
+              energy: 47616
+              shutdown_soc: 6
+            battery2:
+              energy: 0
+              shutdown_soc: 20
+              soc_end_of_charge: 100
+              invert_power: false
+              hide_soc: false
+              colour: '#ffc0cb'
+              show_remaining_energy: true
+              remaining_energy_to_shutdown: false
+              show_absolute: false
+              auto_scale: true
+              dynamic_colour: true
+              linear_gradient: true
+              animate: true
+              path_threshold: 100
+              navigate: ''
+              invert_flow: false
+            solar:
+              show_daily: true
+              mppts: 1
+              pv1_name: S_Edge
+              auto_scale: true
+              colour: '#c9cc05'
+              pv1_max_power: 7400
+              display_mode: 2
+            load:
+              show_daily: true
+              dynamic_icon: true
+              dynamic_colour: true
+              colour: '#2cce6a'
+              show_absolute_aux: true
+              auto_scale: true
+              additional_loads: 1
+              load1_name: Gwarantowane
+              load1_icon: mdi:calendar-text
+              load2_name: Pozostało PV
+              load2_icon: mdi:solar-power-variant
+              essential_name: UPS
+            grid:
+              show_daily_buy: true
+              show_daily_sell: true
+              show_nonessential: true
+              auto_scale: true
+              colour: '#2a95cb'
+              export_colour: '#e0c124'
+            type: custom:sunsynk-power-flow-card
+            grid_options:
+              columns: full
+              rows: 1
+            entities:
+              remaining_solar: sensor.pozostalo_pv_generator
+              energy_prognoza_106: sensor.solcast_pv_forecast_prognoza_na_dzisiaj
+              day_pv_energy_108: sensor.ALPHA_PREFIX_pv_energy
+              essential_load1: sensor.ALPHA_PREFIX_load_power_essential
+              essential_load1_extra: sensor.dobowe_zuzycie_ups
+              essential_load2: sensor.smart_plug_2_moc
+              essential_load3: sensor.smart_plug_3_moc
+              use_timer_248: switch.ALPHA_PREFIX_use_timer
+              priority_load_243: sensor.ALPHA_PREFIX_load_power
+              inverter_voltage_154: sensor.ALPHA_PREFIX_ac_output_voltage
+              load_frequency_192: sensor.ALPHA_PREFIX_ac_output_frequency
+              inverter_current_164: sensor.ALPHA_PREFIX_current
+              inverter_power_175: sensor.ALPHA_PREFIX_power
+              grid_connected_status_194: sensor.ALPHA_PREFIX_grid_voltage
+              inverter_status_59: sensor.ALPHA_PREFIX_device_mode
+              day_battery_discharge_71: sensor.ALPHA_PREFIX_battery_energy_out
+              battery_voltage_183: sensor.ALPHA_PREFIX_battery_voltage
+              battery_power_190: sensor.ALPHA_PREFIX_battery_power
+              battery_current_191: sensor.ALPHA_PREFIX_battery_current
+              grid_power_169: sensor.ALPHA_PREFIX_grid_power
+              day_grid_export_77: sensor.ALPHA_PREFIX_grid_energy_out
+              grid_ct_power_172: sensor.ALPHA_PREFIX_grid_power_ct
+              day_load_energy_84: sensor.ALPHA_PREFIX_load_energy
+              pv1_power_186: sensor.ALPHA_PREFIX_auxiliary_pv_power
+              pv2_power_187: sensor.ALPHA_PREFIX_pv_power_2
+              day_grid_import_76: sensor.ALPHA_PREFIX_grid_energy_in
+              grid_ct_power_total: sensor.ALPHA_PREFIX_grid_power_ct
+              battery_temp_182: sensor.ALPHA_PREFIX_battery_temperature
+              day_aux_energy: sensor.solcast_pv_forecast_prognoza_na_dzisiaj
+              essential_power: sensor.ALPHA_PREFIX_load_power
+              radiator_temp_91: sensor.ALPHA_PREFIX_temperature
+              dc_transformer_temp_90: sensor.magazyn_pomieszczenie_temperatura
+              solar_sell_247: switch.brak_encji
+              day_battery_charge_70: sensor.ALPHA_PREFIX_battery_energy_in
+              battery_soc_184: sensor.ALPHA_PREFIX_state_of_charge
+              battery_rated_capacity: sensor.ALPHA_PREFIX_capacity
+              battery_shutdown_soc: number.ALPHA_PREFIX_output_shutdown_capacity
+      - type: grid
+        cards:
+          - type: entities
+            entities:
+              - entity: number.ALPHA_PREFIX_capacity_point_1
+                name: 0:00 - 4:00
+              - entity: number.ALPHA_PREFIX_capacity_point_2
+                name: 4:00 - 5:55
+                secondary_info: none
+              - entity: number.ALPHA_PREFIX_capacity_point_3
+                name: 5:55 - 13:05
+              - entity: number.ALPHA_PREFIX_capacity_point_4
+                name: 13:05 - 14:55
+              - entity: number.ALPHA_PREFIX_capacity_point_5
+                name: 14:55 - 22:05
+              - entity: number.ALPHA_PREFIX_capacity_point_6
+                name: 22:05 - 0:00
+            state_color: true
+            show_header_toggle: false
+            title: Time of Use
+            grid_options:
+              columns: 12
+              rows: auto
+      - type: grid
+        cards:
+          - type: tile
+            entity: select.ALPHA_PREFIX_time_point_1
+            name: Czas Deye
+            vertical: false
+            features_position: bottom
+            grid_options:
+              columns: 12
+              rows: 1
+          - type: tile
+            entity: switch.ALPHA_PREFIX_grid_charge_point_1
+            name: Grid 1
+            vertical: false
+            features_position: bottom
+          - type: tile
+            entity: switch.ALPHA_PREFIX_gen_charge_point_1
+            name: Gen 1
+            vertical: false
+            features_position: bottom
+          - type: tile
+            entity: switch.ALPHA_PREFIX_grid_charge_point_2
+            name: Grid 2
+            vertical: false
+            features_position: bottom
+          - type: tile
+            entity: switch.ALPHA_PREFIX_gen_charge_point_2
+            name: Gen 2
+            vertical: false
+            features_position: bottom
+          - type: tile
+            entity: switch.ALPHA_PREFIX_grid_charge_point_3
+            name: Grid 3
+            vertical: false
+            features_position: bottom
+          - type: tile
+            entity: switch.ALPHA_PREFIX_gen_charge_point_3
+            name: Gen 3
+            vertical: false
+            features_position: bottom
+          - type: tile
+            entity: switch.ALPHA_PREFIX_grid_charge_point_4
+            name: Grid 4
+            vertical: false
+            features_position: bottom
+          - type: tile
+            entity: switch.ALPHA_PREFIX_gen_charge_point_4
+            name: Gen 4
+            vertical: false
+            features_position: bottom
+          - type: tile
+            entity: switch.ALPHA_PREFIX_grid_charge_point_5
+            name: Grid 5
+            vertical: false
+            features_position: bottom
+          - type: tile
+            entity: switch.ALPHA_PREFIX_gen_charge_point_5
+            name: Gen 5
+            vertical: false
+            features_position: bottom
+          - type: tile
+            entity: switch.ALPHA_PREFIX_grid_charge_point_6
+            name: Grid 6
+            vertical: false
+            features_position: bottom
+          - type: tile
+            entity: switch.ALPHA_PREFIX_gen_charge_point_6
+            name: Gen 6
+            vertical: false
+            features_position: bottom
+      - type: grid
+        cards:
+          - type: entities
+            entities:
+              - entity: number.ALPHA_PREFIX_max_grid_charge_current
+                name: Ład. Sieć
+              - entity: number.ALPHA_PREFIX_max_generator_charge_current
+                name: Ład Gen.
+              - entity: number.ALPHA_PREFIX_max_charge_current
+                name: Max. Ład.
+
+  # =============================================================
+  # ZAKŁADKA 2: 📈 GIEŁDA (RCE IntegraSoft)
+  # =============================================================
+  - type: sidebar
+    path: rce_integra
+    title: RCE_IntegraSoft
+    icon: mdi:chart-line
+    cards:
+      - type: horizontal-stack
+        cards:
+          - type: custom:apexcharts-card
+            graph_span: 24h
+            update_interval: 1min
+            header:
+              show: true
+              title: 'Alpha: Monitor Sprzedaży'
+              show_states: true
+              colorize_states: true
+            span:
+              start: day
+            now:
+              show: true
+              label: TERAZ
+              color: '#e74c3c'
+            series:
+              - entity: sensor.ALPHA_PREFIX_grid_power
+                name: Moc Sieci
+                unit: ' W'
+                color: '#9b59b6'
+                show:
+                  in_chart: false
+                  in_header: true
+              - entity: input_number.alpha_rce_param_01
+                name: Cena Teraz
+                unit: ' zł'
+                float_precision: 2
+                show:
+                  in_chart: false
+                  in_header: true
+              - entity: input_number.alpha_rce_param_03
+                name: Mój Próg
+                unit: ' zł'
+                color: '#e67e22'
+                float_precision: 2
+                show:
+                  in_chart: false
+                  in_header: true
+              - entity: sensor.alpha_pse_dzisiaj_2
+                name: Zarabiam
+                type: column
+                color: '#2ecc71'
+                opacity: 0.4
+                float_precision: 2
+                show:
+                  in_header: false
+                data_generator: >
+                  const data = entity.attributes.value || entity.attributes.prices;
+                  if (!data) return [];  const p = parseFloat(hass.states['input_number.alpha_rce_param_03'].state) || 0.7; return data.map((entry) => {
+                    const val = entry.rce_pln !== undefined ? entry.rce_pln : (entry.cen_cost !== undefined ? entry.cen_cost : (entry.price || 0));
+                    const c = parseFloat(val) / 1000;
+                    const tsStr = String(entry.dtime).replace(' ', 'T');
+                    return [new Date(tsStr).getTime(), c >= p ? c : 0];
+                  });
+              - entity: sensor.alpha_pse_dzisiaj_2
+                name: Ceny na dziś
+                type: line
+                curve: stepline
+                stroke_width: 2
+                color: '#3498db'
+                float_precision: 2
+                show:
+                  in_header: false
+                data_generator: >
+                  const data = entity.attributes.value || entity.attributes.prices;
+                  if (!data) return []; return data.map((entry) => {
+                    const val = entry.rce_pln !== undefined ? entry.rce_pln : (entry.cen_cost !== undefined ? entry.cen_cost : (entry.price || 0));
+                    const c = parseFloat(val) / 1000;
+                    const tsStr = String(entry.dtime).replace(' ', 'T');
+                    return [new Date(tsStr).getTime(), c];
+                  });
+          - type: entities
+            title: Monitor Systemu
+            show_header_toggle: false
+            entities:
+              - entity: input_text.alpha_rce_stan_01
+                name: DECYZJA MÓZGU
+                icon: mdi:brain
+                type: simple-entity
+              - entity: input_text.alpha_rce_stan_03
+                name: AKTUALNY STATUS
+                icon: mdi:robot-outline
+                type: simple-entity
+              - type: divider
+              - entity: input_number.alpha_rce_param_02
+                name: Koszt zakupu (+straty)
+                icon: mdi:cash-minus
+                type: simple-entity
+              - entity: input_number.alpha_rce_param_03
+                name: Próg sprzedaży (+marża)
+                icon: mdi:target
+                type: simple-entity
+              - type: divider
+              - entity: sensor.ALPHA_PREFIX_state_of_charge
+                name: Aktualny SOC Magazynu
+                icon: mdi:battery-high
+              - entity: input_number.alpha_rce_param_20
+                name: Docelowy SOC (Płotek)
+                icon: mdi:battery-clock
+                type: simple-entity
+              - entity: input_number.alpha_rce_param_04
+                name: Energia do Sprzedaży
+                icon: mdi:battery-arrow-up
+                type: simple-entity
+              - entity: input_number.alpha_rce_param_05
+                name: Szacowany Zysk (Dziś)
+                icon: mdi:piggy-bank
+                type: simple-entity
+      - type: custom:apexcharts-card
+        graph_span: 24h
+        update_interval: 1min
+        header:
+          show: true
+          title: 'Alpha: Plan Sprzedaży - JUTRO'
+          show_states: true
+          colorize_states: true
+        span:
+          start: day
+          offset: +1d
+        series:
+          - entity: sensor.alpha_pse_jutro_2
+            name: Min
+            unit: ' zł'
+            float_precision: 2
+            show:
+              in_chart: false
+              in_header: true
+            data_generator: >
+              const d = entity.attributes.value; if (!d) return []; const min = Math.min(...d.map(e => e.rce_pln / 1000)); return [[new Date(d[0].dtime.replace(/-/g, '/')).getTime(), min]];
+          - entity: sensor.alpha_pse_jutro_2
+            name: Max
+            unit: ' zł'
+            float_precision: 2
+            show:
+              in_chart: false
+              in_header: true
+            data_generator: >
+              const d = entity.attributes.value; if (!d) return []; const max = Math.max(...d.map(e => e.rce_pln / 1000)); return [[new Date(d[0].dtime.replace(/-/g, '/')).getTime(), max]];
+          - entity: sensor.alpha_pse_jutro_2
+            name: Zysk (Plan)
+            type: column
+            color: '#2ecc71'
+            opacity: 0.4
+            show:
+              in_header: false
+            data_generator: >
+              const data = entity.attributes.value; if (!data) return []; const p = parseFloat(hass.states['input_number.alpha_rce_param_03'].state) || 0.7; return data.map((entry) => {
+                const c = entry.rce_pln / 1000;
+                return [new Date(entry.dtime.replace(/-/g, '/')).getTime(), c >= p ? c : 0];
+              });
+          - entity: sensor.alpha_pse_jutro_2
+            name: Giełda Jutro
+            type: line
+            curve: stepline
+            color: '#3498db'
+            show:
+              in_header: false
+            data_generator: >
+              const data = entity.attributes.value; if (!data) return []; return data.map((entry) => {
+                return [new Date(entry.dtime.replace(/-/g, '/')).getTime(), entry.rce_pln / 1000];
+              });
+
+  # =============================================================
+  # ZAKŁADKA 3: 🏠 DOM (Centrum Dowodzenia i Szufladki)
+  # =============================================================
+  - type: panel
+    path: dom
+    title: DOM
+    icon: mdi:home
+    cards:
+      - type: vertical-stack
+        cards:
+          - type: markdown
+            content: >
+              ## 📊 ALPHA HEMS: Status & Cel
+
+              **Stan Systemu:** {{ states('input_text.alpha_rce_stan_03') }}
+
+              **Cel ładowania (Płotek):** {{ states('input_number.alpha_rce_param_20') }} %
+
+              **Bieżąca cena RCE:** {{ states('input_number.alpha_rce_param_01') }} zł/kWh
+
+          - type: markdown
+            title: 🌙 Sektor Nocny (22:00-06:00)
+            content: >
+              - **Poniedziałek:** {{ states('input_number.alpha_rce_param_11') }} kWh
+              - **Wtorek:** {{ states('input_number.alpha_rce_param_12') }} kWh
+              - **Środa:** {{ states('input_number.alpha_rce_param_13') }} kWh
+              - **Czwartek:** {{ states('input_number.alpha_rce_param_14') }} kWh
+              - **Piątek:** {{ states('input_number.alpha_rce_param_15') }} kWh
+              - **Sobota:** {{ states('input_number.alpha_rce_param_16') }} kWh
+              - **Niedziela:** {{ states('input_number.alpha_rce_param_17') }} kWh
+
+          - type: markdown
+            title: 🌅 Sektor Poranny (06:00-13:00)
+            content: >
+              - **Poniedziałek:** {{ states('input_number.alpha_rce_param_21') }} kWh
+              - **Wtorek:** {{ states('input_number.alpha_rce_param_22') }} kWh
+              - **Środa:** {{ states('input_number.alpha_rce_param_23') }} kWh
+              - **Czwartek:** {{ states('input_number.alpha_rce_param_24') }} kWh
+              - **Piątek:** {{ states('input_number.alpha_rce_param_25') }} kWh
+              - **Sobota:** {{ states('input_number.alpha_rce_param_26') }} kWh
+              - **Niedziela:** {{ states('input_number.alpha_rce_param_27') }} kWh
+
+          - type: markdown
+            title: 🌆 Sektor Wieczorny (13:00-22:00)
+            content: >
+              - **Poniedziałek:** {{ states('input_number.alpha_rce_param_31') }} kWh
+              - **Wtorek:** {{ states('input_number.alpha_rce_param_32') }} kWh
+              - **Środa:** {{ states('input_number.alpha_rce_param_33') }} kWh
+              - **Czwartek:** {{ states('input_number.alpha_rce_param_34') }} kWh
+              - **Piątek:** {{ states('input_number.alpha_rce_param_35') }} kWh
+              - **Sobota:** {{ states('input_number.alpha_rce_param_36') }} kWh
+              - **Niedziela:** {{ states('input_number.alpha_rce_param_37') }} kWh
+
+          - type: entities
+            title: ⚡ Monitoring Napięcia Fazy
+            entities:
+              - entity: sensor.ALPHA_PREFIX_grid_voltage_1
+                name: Faza L1
+              - entity: sensor.ALPHA_PREFIX_grid_voltage_2
+                name: Faza L2
+              - entity: sensor.ALPHA_PREFIX_grid_voltage_3
+                name: Faza L3
+              - type: section
+              - entity: input_boolean.alpha_rce_flaga_10
+                name: 🔄 WYMUŚ ALPHA SYNC / SETUP
+                icon: mdi:tools
+              - entity: input_boolean.alpha_rce_flaga_11
+                name: 🚀 NOWE OPOMIAROWANIE (ZASTRZYK DANYCH)
+                icon: mdi:database-refresh
