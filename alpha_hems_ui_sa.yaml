@@ -1,9 +1,11 @@
 # =============================================================
-# ALPHA HEMS: CENTRALNY INTERFEJS UŻYTKOWNIKA (v1.05 - SOLAR ASSISTANT)
-# STATUS: PRODUKCYJNY / EKSPORTOWY (Zatwierdzony Układ Własny)
+# ALPHA HEMS: CENTRALNY INTERFEJS UŻYTKOWNIKA (v1.06 - SOLAR ASSISTANT)
+# STATUS: PRODUKCYJNY / EKSPORTOWY (Universal Dashboard)
 #
 # HISTORIA WERSJI:
-# - WERSJA DEDYKOWANA DLA SOLAR ASSISTANT (Podmienione encje z ESP32 na SA)
+# - v1.06: Wdrożenie znacznika ALPHA_PREFIX. Dashboard w 100% uniwersalny, 
+#          generowany w locie przez komendę 'sed' na podstawie zmiennych z Pancerki v2.06.
+# - v1.05: WERSJA DEDYKOWANA DLA SOLAR ASSISTANT.
 # =============================================================
 
 title: ALPHA HEMS
@@ -109,57 +111,57 @@ views:
             entities:
               remaining_solar: sensor.pozostalo_pv_generator
               energy_prognoza_106: sensor.solcast_pv_forecast_prognoza_na_dzisiaj
-              day_pv_energy_108: sensor.not_connected_pv_energy
-              essential_load1: sensor.not_connected_load_power_essential
+              day_pv_energy_108: sensor.ALPHA_PREFIX_pv_energy
+              essential_load1: sensor.ALPHA_PREFIX_load_power_essential
               essential_load1_extra: sensor.dobowe_zuzycie_ups
               essential_load2: sensor.smart_plug_2_moc
               essential_load3: sensor.smart_plug_3_moc
-              use_timer_248: switch.not_connected_use_timer
-              priority_load_243: sensor.not_connected_load_power
-              inverter_voltage_154: sensor.not_connected_ac_output_voltage
-              load_frequency_192: sensor.not_connected_ac_output_frequency
-              inverter_current_164: sensor.not_connected_current
-              inverter_power_175: sensor.not_connected_power
-              grid_connected_status_194: sensor.not_connected_grid_voltage
-              inverter_status_59: sensor.not_connected_device_mode
-              day_battery_discharge_71: sensor.not_connected_battery_energy_out
-              battery_voltage_183: sensor.not_connected_battery_voltage
-              battery_power_190: sensor.not_connected_battery_power
-              battery_current_191: sensor.not_connected_battery_current
-              grid_power_169: sensor.not_connected_grid_power
-              day_grid_export_77: sensor.not_connected_grid_energy_out
-              grid_ct_power_172: sensor.not_connected_grid_power_ct
-              day_load_energy_84: sensor.not_connected_load_energy
-              pv1_power_186: sensor.not_connected_auxiliary_pv_power
-              pv2_power_187: sensor.not_connected_pv_power_2
-              day_grid_import_76: sensor.not_connected_grid_energy_in
-              grid_ct_power_total: sensor.not_connected_grid_power_ct
-              battery_temp_182: sensor.not_connected_battery_temperature
+              use_timer_248: switch.ALPHA_PREFIX_use_timer
+              priority_load_243: sensor.ALPHA_PREFIX_load_power
+              inverter_voltage_154: sensor.ALPHA_PREFIX_ac_output_voltage
+              load_frequency_192: sensor.ALPHA_PREFIX_ac_output_frequency
+              inverter_current_164: sensor.ALPHA_PREFIX_current
+              inverter_power_175: sensor.ALPHA_PREFIX_power
+              grid_connected_status_194: sensor.ALPHA_PREFIX_grid_voltage
+              inverter_status_59: sensor.ALPHA_PREFIX_device_mode
+              day_battery_discharge_71: sensor.ALPHA_PREFIX_battery_energy_out
+              battery_voltage_183: sensor.ALPHA_PREFIX_battery_voltage
+              battery_power_190: sensor.ALPHA_PREFIX_battery_power
+              battery_current_191: sensor.ALPHA_PREFIX_battery_current
+              grid_power_169: sensor.ALPHA_PREFIX_grid_power
+              day_grid_export_77: sensor.ALPHA_PREFIX_grid_energy_out
+              grid_ct_power_172: sensor.ALPHA_PREFIX_grid_power_ct
+              day_load_energy_84: sensor.ALPHA_PREFIX_load_energy
+              pv1_power_186: sensor.ALPHA_PREFIX_auxiliary_pv_power
+              pv2_power_187: sensor.ALPHA_PREFIX_pv_power_2
+              day_grid_import_76: sensor.ALPHA_PREFIX_grid_energy_in
+              grid_ct_power_total: sensor.ALPHA_PREFIX_grid_power_ct
+              battery_temp_182: sensor.ALPHA_PREFIX_battery_temperature
               day_aux_energy: sensor.solcast_pv_forecast_prognoza_na_dzisiaj
-              essential_power: sensor.not_connected_load_power
-              radiator_temp_91: sensor.not_connected_temperature
+              essential_power: sensor.ALPHA_PREFIX_load_power
+              radiator_temp_91: sensor.ALPHA_PREFIX_temperature
               dc_transformer_temp_90: sensor.magazyn_pomieszczenie_temperatura
               solar_sell_247: switch.brak_encji
-              day_battery_charge_70: sensor.not_connected_battery_energy_in
-              battery_soc_184: sensor.not_connected_state_of_charge
-              battery_rated_capacity: sensor.deye_sunsynk_sol_ark_3_phase_capacity
-              battery_shutdown_soc: number.not_connected_output_shutdown_capacity
+              day_battery_charge_70: sensor.ALPHA_PREFIX_battery_energy_in
+              battery_soc_184: sensor.ALPHA_PREFIX_state_of_charge
+              battery_rated_capacity: sensor.ALPHA_PREFIX_capacity
+              battery_shutdown_soc: number.ALPHA_PREFIX_output_shutdown_capacity
       - type: grid
         cards:
           - type: entities
             entities:
-              - entity: number.not_connected_capacity_point_1
+              - entity: number.ALPHA_PREFIX_capacity_point_1
                 name: 0:00 - 4:00
-              - entity: number.not_connected_capacity_point_2
+              - entity: number.ALPHA_PREFIX_capacity_point_2
                 name: 4:00 - 5:55
                 secondary_info: none
-              - entity: number.not_connected_capacity_point_3
+              - entity: number.ALPHA_PREFIX_capacity_point_3
                 name: 5:55 - 13:05
-              - entity: number.not_connected_capacity_point_4
+              - entity: number.ALPHA_PREFIX_capacity_point_4
                 name: 13:05 - 14:55
-              - entity: number.not_connected_capacity_point_5
+              - entity: number.ALPHA_PREFIX_capacity_point_5
                 name: 14:55 - 22:05
-              - entity: number.not_connected_capacity_point_6
+              - entity: number.ALPHA_PREFIX_capacity_point_6
                 name: 22:05 - 0:00
             state_color: true
             show_header_toggle: false
@@ -170,7 +172,7 @@ views:
           - show_name: true
             show_icon: true
             type: button
-            entity: switch.not_connected_use_timer
+            entity: switch.ALPHA_PREFIX_use_timer
             show_state: true
             grid_options:
               columns: 3
@@ -192,7 +194,7 @@ views:
       - type: grid
         cards:
           - type: tile
-            entity: select.deye_sunsynk_sol_ark_3_phase_time_point_1
+            entity: select.ALPHA_PREFIX_time_point_1
             name: Czas Deye
             vertical: false
             features_position: bottom
@@ -200,62 +202,62 @@ views:
               columns: 12
               rows: 1
           - type: tile
-            entity: switch.not_connected_grid_charge_point_1
+            entity: switch.ALPHA_PREFIX_grid_charge_point_1
             name: Grid 1
             vertical: false
             features_position: bottom
           - type: tile
-            entity: switch.not_connected_gen_charge_point_1
+            entity: switch.ALPHA_PREFIX_gen_charge_point_1
             name: Gen 1
             vertical: false
             features_position: bottom
           - type: tile
-            entity: switch.not_connected_grid_charge_point_2
+            entity: switch.ALPHA_PREFIX_grid_charge_point_2
             name: Grid 2
             vertical: false
             features_position: bottom
           - type: tile
-            entity: switch.not_connected_gen_charge_point_2
+            entity: switch.ALPHA_PREFIX_gen_charge_point_2
             name: Gen 2
             vertical: false
             features_position: bottom
           - type: tile
-            entity: switch.not_connected_grid_charge_point_3
+            entity: switch.ALPHA_PREFIX_grid_charge_point_3
             name: Grid 3
             vertical: false
             features_position: bottom
           - type: tile
-            entity: switch.not_connected_gen_charge_point_3
+            entity: switch.ALPHA_PREFIX_gen_charge_point_3
             name: Gen 3
             vertical: false
             features_position: bottom
           - type: tile
-            entity: switch.not_connected_grid_charge_point_4
+            entity: switch.ALPHA_PREFIX_grid_charge_point_4
             name: Grid 4
             vertical: false
             features_position: bottom
           - type: tile
-            entity: switch.not_connected_gen_charge_point_4
+            entity: switch.ALPHA_PREFIX_gen_charge_point_4
             name: Gen 4
             vertical: false
             features_position: bottom
           - type: tile
-            entity: switch.not_connected_grid_charge_point_5
+            entity: switch.ALPHA_PREFIX_grid_charge_point_5
             name: Grid 5
             vertical: false
             features_position: bottom
           - type: tile
-            entity: switch.not_connected_gen_charge_point_5
+            entity: switch.ALPHA_PREFIX_gen_charge_point_5
             name: Gen 5
             vertical: false
             features_position: bottom
           - type: tile
-            entity: switch.not_connected_grid_charge_point_6
+            entity: switch.ALPHA_PREFIX_grid_charge_point_6
             name: Grid 6
             vertical: false
             features_position: bottom
           - type: tile
-            entity: switch.not_connected_gen_charge_point_6
+            entity: switch.ALPHA_PREFIX_gen_charge_point_6
             name: Gen 6
             vertical: false
             features_position: bottom
@@ -263,11 +265,11 @@ views:
         cards:
           - type: entities
             entities:
-              - entity: number.not_connected_max_grid_charge_current
+              - entity: number.ALPHA_PREFIX_max_grid_charge_current
                 name: Ład. Sieć
-              - entity: number.not_connected_max_generator_charge_current
+              - entity: number.ALPHA_PREFIX_max_generator_charge_current
                 name: Ład Gen.
-              - entity: number.not_connected_max_charge_current
+              - entity: number.ALPHA_PREFIX_max_charge_current
                 name: Max. Ład.
 
   # =============================================================
@@ -295,7 +297,7 @@ views:
               label: TERAZ
               color: '#e74c3c'
             series:
-              - entity: sensor.not_connected_grid_power
+              - entity: sensor.ALPHA_PREFIX_grid_power
                 name: Moc Sieci
                 unit: ' W'
                 color: '#9b59b6'
@@ -372,7 +374,7 @@ views:
                 icon: mdi:target
                 type: simple-entity
               - type: divider
-              - entity: sensor.not_connected_state_of_charge
+              - entity: sensor.ALPHA_PREFIX_state_of_charge
                 name: Aktualny SOC Magazynu
                 icon: mdi:battery-high
               - entity: input_number.alpha_rce_param_20
@@ -497,11 +499,11 @@ views:
           - type: entities
             title: ⚡ Monitoring Napięcia Fazy
             entities:
-              - entity: sensor.not_connected_grid_voltage_1
+              - entity: sensor.ALPHA_PREFIX_grid_voltage_1
                 name: Faza L1
-              - entity: sensor.not_connected_grid_voltage_2
+              - entity: sensor.ALPHA_PREFIX_grid_voltage_2
                 name: Faza L2
-              - entity: sensor.not_connected_grid_voltage_3
+              - entity: sensor.ALPHA_PREFIX_grid_voltage_3
                 name: Faza L3
               - type: section
               - entity: input_boolean.alpha_rce_flaga_10
