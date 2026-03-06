@@ -1,8 +1,9 @@
 # =============================================================
-# ALPHA HEMS: CENTRALNY INTERFEJS UŻYTKOWNIKA (v1.09 - SOLAR ASSISTANT)
+# ALPHA HEMS: CENTRALNY INTERFEJS UŻYTKOWNIKA (v1.10 - SOLAR ASSISTANT)
 # STATUS: PRODUKCYJNY / EKSPORTOWY (Universal Dashboard)
 #
 # HISTORIA WERSJI:
+# - v1.10: Wdrożenie wizytówki STATUS LICENCJI (input_text.alpha_rce_stan_15) w panelu Monitor Systemu.
 # - v1.09: Fix matematyki baterii (invert_power: true). Pełne wdrożenie ALPHA_PREFIX, 
 #          w tym poprawka dla monitoringu faz. Usunięto zbędne przyciski diagnostyczne.
 # - v1.06: Wdrożenie znacznika ALPHA_PREFIX. Dashboard w 100% uniwersalny.
@@ -342,6 +343,11 @@ views:
               - entity: input_text.alpha_rce_stan_03
                 name: AKTUALNY STATUS
                 icon: mdi:robot-outline
+                type: simple-entity
+              - type: divider
+              - entity: input_text.alpha_rce_stan_15
+                name: STATUS LICENCJI
+                icon: mdi:shield-key
                 type: simple-entity
               - type: divider
               - entity: input_number.alpha_rce_param_02
