@@ -18,5 +18,10 @@
     "status": "BLOKADA",
     "klient": "Przyklad - Zablokowany (Totalne Odciecie)",
     "waznosc": "2027-03-07"
+  },
+  "2504265852": {
+    "status": "PRO",
+    "klient": "Marcin Bankiert",
+    "waznosc": "2026-06-07"
   }
 }
