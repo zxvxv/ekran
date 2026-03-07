@@ -1,8 +1,9 @@
 # =============================================================
-# ALPHA HEMS: CENTRALNY INTERFEJS UŻYTKOWNIKA (v1.11 - SOLAR ASSISTANT)
+# ALPHA HEMS: CENTRALNY INTERFEJS UŻYTKOWNIKA (v1.12 - SOLAR ASSISTANT)
 # STATUS: PRODUKCYJNY / EKSPORTOWY (Universal Dashboard)
 #
 # HISTORIA WERSJI:
+# - v1.12: Zmiana mapowania na dwa fizyczne stringi (mppts: 2). Podpięto twarde encje mocy: pv_power_1 oraz pv_power_2 pod uniwersalny prefix.
 # - v1.11: Wdrożenie informacji o wygasaniu licencji (SaaS) na dashboard.
 # - v1.10: Wdrożenie wizytówki STATUS LICENCJI (input_text.alpha_rce_stan_15) w panelu Monitor Systemu.
 # - v1.09: Fix matematyki baterii (invert_power: true). Pełne wdrożenie ALPHA_PREFIX, 
@@ -81,7 +82,7 @@ views:
               invert_flow: false
             solar:
               show_daily: true
-              mppts: 1
+              mppts: 2
               pv1_name: S_Edge
               auto_scale: true
               colour: '#c9cc05'
@@ -135,7 +136,7 @@ views:
               day_grid_export_77: sensor.ALPHA_PREFIX_grid_energy_out
               grid_ct_power_172: sensor.ALPHA_PREFIX_grid_power_ct
               day_load_energy_84: sensor.ALPHA_PREFIX_load_energy
-              pv1_power_186: sensor.ALPHA_PREFIX_auxiliary_pv_power
+              pv1_power_186: sensor.ALPHA_PREFIX_pv_power_1
               pv2_power_187: sensor.ALPHA_PREFIX_pv_power_2
               day_grid_import_76: sensor.ALPHA_PREFIX_grid_energy_in
               grid_ct_power_total: sensor.ALPHA_PREFIX_grid_power_ct
