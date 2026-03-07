@@ -1,18 +1,22 @@
 {
   "2508083052": {
     "status": "PRO",
-    "klient": "Paweł L - Centrala"
+    "klient": "Paweł L - Centrala",
+    "waznosc": "2030-12-31"
   },
   "2505072265": {
     "status": "PRO",
-    "klient": "Lukasz"
+    "klient": "Lukasz",
+    "waznosc": "2027-03-07"
   },
   "1122334455": {
     "status": "BASIC",
-    "klient": "Jan K - Testowy"
+    "klient": "Jan K - Testowy",
+    "waznosc": "2027-03-07"
   },
   "1111111111": {
     "status": "BLOKADA",
-    "klient": "Przyklad - Zablokowany (Totalne Odciecie)"
+    "klient": "Przyklad - Zablokowany (Totalne Odciecie)",
+    "waznosc": "2027-03-07"
   }
 }
