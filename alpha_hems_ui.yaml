@@ -1,8 +1,9 @@
 # =============================================================
-# ALPHA HEMS: CENTRALNY INTERFEJS UŻYTKOWNIKA (v1.06)
+# ALPHA HEMS: CENTRALNY INTERFEJS UŻYTKOWNIKA (v1.07)
 # STATUS: PRODUKCYJNY / EKSPORTOWY (Zatwierdzony Układ Własny)
 #
 # HISTORIA WERSJI:
+# - v1.07: Wdrożenie informacji o wygasaniu licencji (SaaS) na dashboard.
 # - v1.06: Wdrożenie wizytówki STATUS LICENCJI (input_text.alpha_rce_stan_15) w panelu Monitor Systemu.
 # - v1.02: Usunięcie encji prywatnych (Tuya, Solar Assistant, itp.).
 # - v1.03: Usunięcie sekcji Diagnostyka Baterii.
@@ -370,6 +371,10 @@ views:
               - entity: input_text.alpha_rce_stan_15
                 name: STATUS LICENCJI
                 icon: mdi:shield-key
+                type: simple-entity
+              - entity: sensor.alpha_licencja_wygasa
+                name: WAŻNA DO
+                icon: mdi:calendar-clock
                 type: simple-entity
               - type: divider
               - entity: input_number.alpha_rce_param_02
