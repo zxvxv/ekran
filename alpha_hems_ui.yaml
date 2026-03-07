@@ -1,8 +1,10 @@
 # =============================================================
-# ALPHA HEMS: CENTRALNY INTERFEJS UŻYTKOWNIKA (v1.09)
+# ALPHA HEMS: CENTRALNY INTERFEJS UŻYTKOWNIKA (v1.11)
 # STATUS: PRODUKCYJNY / EKSPORTOWY (Zatwierdzony Układ Własny)
 #
 # HISTORIA WERSJI:
+# - v1.11: Wdrożenie uniwersalnego Pomocnika 'Pozostało PV' (sensor.pozostalo_pv) dla precyzyjnego odliczania prognozy Solcast.
+# - v1.10: Wdrożenie analityki prognoz Solcast na główną kartę Sunsynk (zmienne energy_prognoza_106 oraz remaining_solar).
 # - v1.09: Naprawa błędu znikającego generatora (mppts: 3). Standaryzacja produkcji dziennej 
 #          (daily_pv_production) oraz przypisanie 3 źródeł: pv1_power, pv2_power i generator (jako pv3_power).
 # - v1.07: Wdrożenie informacji o wygasaniu licencji (SaaS) na dashboard.
@@ -114,7 +116,7 @@ views:
               columns: full
               rows: 1
             entities:
-              remaining_solar: sensor.pozostalo_pv_generator
+              remaining_solar: sensor.pozostalo_pv
               energy_prognoza_106: sensor.solcast_pv_forecast_prognoza_na_dzisiaj
               day_pv_energy_108: sensor.deye_inverter_daily_pv_production
               essential_load1: sensor.deye_inverter_load_ups_power
