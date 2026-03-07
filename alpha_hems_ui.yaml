@@ -1,8 +1,10 @@
 # =============================================================
-# ALPHA HEMS: CENTRALNY INTERFEJS UŻYTKOWNIKA (v1.07)
+# ALPHA HEMS: CENTRALNY INTERFEJS UŻYTKOWNIKA (v1.08)
 # STATUS: PRODUKCYJNY / EKSPORTOWY (Zatwierdzony Układ Własny)
 #
 # HISTORIA WERSJI:
+# - v1.08: Standaryzacja produkcji dziennej ze słońca (daily_pv_production) 
+#          oraz przypisanie mocy stringów (pv1_power, pv2_power). Ustawienie mppts na 2.
 # - v1.07: Wdrożenie informacji o wygasaniu licencji (SaaS) na dashboard.
 # - v1.06: Wdrożenie wizytówki STATUS LICENCJI (input_text.alpha_rce_stan_15) w panelu Monitor Systemu.
 # - v1.02: Usunięcie encji prywatnych (Tuya, Solar Assistant, itp.).
@@ -81,7 +83,7 @@ views:
               invert_flow: false
             solar:
               show_daily: true
-              mppts: 1
+              mppts: 2
               pv1_name: S_Edge
               auto_scale: true
               colour: '#c9cc05'
@@ -114,7 +116,7 @@ views:
             entities:
               remaining_solar: sensor.pozostalo_pv_generator
               energy_prognoza_106: sensor.solcast_pv_forecast_prognoza_na_dzisiaj
-              day_pv_energy_108: sensor.deye_inverter_daily_generator_production
+              day_pv_energy_108: sensor.deye_inverter_daily_pv_production
               essential_load1: sensor.deye_inverter_load_ups_power
               essential_load1_extra: sensor.dobowe_zuzycie_ups
               essential_load2: sensor.smart_plug_2_moc
@@ -135,8 +137,8 @@ views:
               day_grid_export_77: sensor.deye_inverter_daily_energy_sold
               grid_ct_power_172: sensor.deye_inverter_grid_l1_power
               day_load_energy_84: sensor.deye_inverter_daily_load_consumption
-              pv1_power_186: sensor.deye_inverter_generator_power_total
-              pv2_power_187: sensor.sunsynk_pv2_power
+              pv1_power_186: sensor.deye_inverter_pv1_power
+              pv2_power_187: sensor.deye_inverter_pv2_power
               day_grid_import_76: sensor.deye_inverter_daily_energy_bought
               grid_ct_power_total: sensor.deye_inverter_external_ct_power
               battery_temp_182: sensor.deye_inverter_battery_temperature
