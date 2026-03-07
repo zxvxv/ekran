@@ -1,10 +1,10 @@
 # =============================================================
-# ALPHA HEMS: CENTRALNY INTERFEJS UŻYTKOWNIKA (v1.08)
+# ALPHA HEMS: CENTRALNY INTERFEJS UŻYTKOWNIKA (v1.09)
 # STATUS: PRODUKCYJNY / EKSPORTOWY (Zatwierdzony Układ Własny)
 #
 # HISTORIA WERSJI:
-# - v1.08: Standaryzacja produkcji dziennej ze słońca (daily_pv_production) 
-#          oraz przypisanie mocy stringów (pv1_power, pv2_power). Ustawienie mppts na 2.
+# - v1.09: Naprawa błędu znikającego generatora (mppts: 3). Standaryzacja produkcji dziennej 
+#          (daily_pv_production) oraz przypisanie 3 źródeł: pv1_power, pv2_power i generator (jako pv3_power).
 # - v1.07: Wdrożenie informacji o wygasaniu licencji (SaaS) na dashboard.
 # - v1.06: Wdrożenie wizytówki STATUS LICENCJI (input_text.alpha_rce_stan_15) w panelu Monitor Systemu.
 # - v1.02: Usunięcie encji prywatnych (Tuya, Solar Assistant, itp.).
@@ -83,7 +83,7 @@ views:
               invert_flow: false
             solar:
               show_daily: true
-              mppts: 2
+              mppts: 3
               pv1_name: S_Edge
               auto_scale: true
               colour: '#c9cc05'
@@ -139,6 +139,7 @@ views:
               day_load_energy_84: sensor.deye_inverter_daily_load_consumption
               pv1_power_186: sensor.deye_inverter_pv1_power
               pv2_power_187: sensor.deye_inverter_pv2_power
+              pv3_power_188: sensor.deye_inverter_generator_power_total
               day_grid_import_76: sensor.deye_inverter_daily_energy_bought
               grid_ct_power_total: sensor.deye_inverter_external_ct_power
               battery_temp_182: sensor.deye_inverter_battery_temperature
