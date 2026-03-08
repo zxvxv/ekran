@@ -1,8 +1,10 @@
 # =============================================================
-# ALPHA HEMS: CENTRALNY INTERFEJS UŻYTKOWNIKA (v1.12)
+# ALPHA HEMS: CENTRALNY INTERFEJS UŻYTKOWNIKA (v1.13)
 # STATUS: PRODUKCYJNY / EKSPORTOWY (Zatwierdzony Układ Własny)
 #
 # HISTORIA WERSJI:
+# - v1.13: Przebudowa layoutu: przeniesienie 7-dniowej prognozy Solcast pod prądy ładowania
+#          w celu uniknięcia nakładania się kart. Aktualizacja nazw encji Solcast na kolejne dni.
 # - v1.12: Wpięcie natywnych encji Solcast do głównego widgetu Sunsynk (zamiast pomocnika)
 #          oraz dodanie czytelnej 7-dniowej prognozy Solcast w sekcji DEYE.
 # - v1.11: Wdrożenie uniwersalnego Pomocnika 'Pozostało PV' (sensor.pozostalo_pv) dla precyzyjnego odliczania prognozy Solcast.
@@ -281,8 +283,6 @@ views:
                 name: Ład Gen.
               - entity: number.deye_inverter_maximum_battery_charge_current
                 name: Max. Ład.
-      - type: grid
-        cards:
           - type: entities
             title: ☀️ Prognoza Solcast (7 dni)
             show_header_toggle: false
@@ -297,19 +297,19 @@ views:
               - entity: sensor.solcast_pv_forecast_prognoza_na_jutro
                 name: Jutro
                 icon: mdi:weather-partly-cloudy
-              - entity: sensor.solcast_pv_forecast_prognoza_d_3
+              - entity: sensor.solcast_pv_forecast_prognoza_na_dzien_3
                 name: Pojutrze
                 icon: mdi:calendar-clock
-              - entity: sensor.solcast_pv_forecast_prognoza_d_4
+              - entity: sensor.solcast_pv_forecast_prognoza_na_dzien_4
                 name: Za 3 dni
                 icon: mdi:calendar-clock
-              - entity: sensor.solcast_pv_forecast_prognoza_d_5
+              - entity: sensor.solcast_pv_forecast_prognoza_na_dzien_5
                 name: Za 4 dni
                 icon: mdi:calendar-clock
-              - entity: sensor.solcast_pv_forecast_prognoza_d_6
+              - entity: sensor.solcast_pv_forecast_prognoza_na_dzien_6
                 name: Za 5 dni
                 icon: mdi:calendar-clock
-              - entity: sensor.solcast_pv_forecast_prognoza_d_7
+              - entity: sensor.solcast_pv_forecast_prognoza_na_dzien_7
                 name: Za 6 dni
                 icon: mdi:calendar-clock
 
