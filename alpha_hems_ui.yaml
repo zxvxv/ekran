@@ -1,8 +1,10 @@
 # =============================================================
-# ALPHA HEMS: CENTRALNY INTERFEJS UŻYTKOWNIKA (v1.13)
+# ALPHA HEMS: CENTRALNY INTERFEJS UŻYTKOWNIKA (v1.14)
 # STATUS: PRODUKCYJNY / EKSPORTOWY (Zatwierdzony Układ Własny)
 #
 # HISTORIA WERSJI:
+# - v1.14: Dodano moduł finansowy (Zysk Total, Miesiąc, Rok) oparty na szufladkach 43-45. 
+#          Podział panelu Monitor Systemu na dwie kolumny.
 # - v1.13: Przebudowa layoutu: przeniesienie 7-dniowej prognozy Solcast pod prądy ładowania
 #          w celu uniknięcia nakładania się kart. Aktualizacja nazw encji Solcast na kolejne dni.
 # - v1.12: Wpięcie natywnych encji Solcast do głównego widgetu Sunsynk (zamiast pomocnika)
@@ -393,52 +395,68 @@ views:
                     const tsStr = String(entry.dtime).replace(' ', 'T');
                     return [new Date(tsStr).getTime(), c];
                   });
-          - type: entities
-            title: Monitor Systemu
-            show_header_toggle: false
-            entities:
-              - entity: input_text.alpha_rce_stan_01
-                name: DECYZJA MÓZGU
-                icon: mdi:brain
-                type: simple-entity
-              - entity: input_text.alpha_rce_stan_03
-                name: AKTUALNY STATUS
-                icon: mdi:robot-outline
-                type: simple-entity
-              - type: divider
-              - entity: input_text.alpha_rce_stan_15
-                name: STATUS LICENCJI
-                icon: mdi:shield-key
-                type: simple-entity
-              - entity: sensor.alpha_licencja_wygasa
-                name: WAŻNA DO
-                icon: mdi:calendar-clock
-                type: simple-entity
-              - type: divider
-              - entity: input_number.alpha_rce_param_02
-                name: Koszt zakupu (+straty)
-                icon: mdi:cash-minus
-                type: simple-entity
-              - entity: input_number.alpha_rce_param_03
-                name: Próg sprzedaży (+marża)
-                icon: mdi:target
-                type: simple-entity
-              - type: divider
-              - entity: sensor.deye_inverter_battery_bms_soc
-                name: Aktualny SOC Magazynu
-                icon: mdi:battery-high
-              - entity: input_number.alpha_rce_param_20
-                name: Docelowy SOC (Płotek)
-                icon: mdi:battery-clock
-                type: simple-entity
-              - entity: input_number.alpha_rce_param_04
-                name: Energia do Sprzedaży
-                icon: mdi:battery-arrow-up
-                type: simple-entity
-              - entity: input_number.alpha_rce_param_05
-                name: Szacowany Zysk (Dziś)
-                icon: mdi:piggy-bank
-                type: simple-entity
+          - type: horizontal-stack
+            cards:
+              - type: entities
+                title: Monitor Systemu
+                show_header_toggle: false
+                entities:
+                  - entity: input_text.alpha_rce_stan_01
+                    name: DECYZJA MÓZGU
+                    icon: mdi:brain
+                    type: simple-entity
+                  - entity: input_text.alpha_rce_stan_03
+                    name: AKTUALNY STATUS
+                    icon: mdi:robot-outline
+                    type: simple-entity
+                  - type: divider
+                  - entity: input_text.alpha_rce_stan_15
+                    name: STATUS LICENCJI
+                    icon: mdi:shield-key
+                    type: simple-entity
+                  - entity: sensor.alpha_licencja_wygasa
+                    name: WAŻNA DO
+                    icon: mdi:calendar-clock
+                    type: simple-entity
+                  - type: divider
+                  - entity: sensor.deye_inverter_battery_bms_soc
+                    name: Aktualny SOC Magazynu
+                    icon: mdi:battery-high
+                  - entity: input_number.alpha_rce_param_20
+                    name: Docelowy SOC (Płotek)
+                    icon: mdi:battery-clock
+                    type: simple-entity
+                  - entity: input_number.alpha_rce_param_04
+                    name: Energia do Sprzedaży
+                    icon: mdi:battery-arrow-up
+                    type: simple-entity
+              - type: entities
+                title: Finanse i Zyski
+                show_header_toggle: false
+                entities:
+                  - entity: input_number.alpha_rce_param_02
+                    name: Koszt zakupu (+straty)
+                    icon: mdi:cash-minus
+                    type: simple-entity
+                  - entity: input_number.alpha_rce_param_03
+                    name: Próg sprzedaży (+marża)
+                    icon: mdi:target
+                    type: simple-entity
+                  - type: divider
+                  - entity: input_number.alpha_rce_param_05
+                    name: Szacowany Zysk (Dziś)
+                    icon: mdi:piggy-bank
+                    type: simple-entity
+                  - type: divider
+                  - entity: input_number.alpha_rce_param_44
+                    name: Zrealizowany (Miesiąc)
+                    icon: mdi:chart-bar
+                  - entity: input_number.alpha_rce_param_45
+                    name: Zrealizowany (Rok)
+                    icon: mdi:chart-line
+                  - entity: input_number.alpha_rce_param_43
+                    name: Całkowity Zwrot (Total)
+                    icon: mdi:cash-multiple
       - type: custom:apexcharts-card
         graph_span: 24h
         update_interval: 1min
