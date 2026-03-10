@@ -1,8 +1,9 @@
 # =============================================================
-# ALPHA HEMS: CENTRALNY INTERFEJS UŻYTKOWNIKA (v1.14)
+# ALPHA HEMS: CENTRALNY INTERFEJS UŻYTKOWNIKA (v1.15)
 # STATUS: PRODUKCYJNY / EKSPORTOWY (Zatwierdzony Układ Własny)
 #
 # HISTORIA WERSJI:
+# - v1.15: Zmiana formatowania szufladek finansowych (43, 44, 45) na type: simple-entity w celu ukrycia suwaków.
 # - v1.14: Dodano moduł finansowy (Zysk Total, Miesiąc, Rok) oparty na szufladkach 43-45. 
 #          Podział panelu Monitor Systemu na dwie kolumny.
 # - v1.13: Przebudowa layoutu: przeniesienie 7-dniowej prognozy Solcast pod prądy ładowania
@@ -451,12 +452,15 @@ views:
                   - entity: input_number.alpha_rce_param_44
                     name: Zrealizowany (Miesiąc)
                     icon: mdi:chart-bar
+                    type: simple-entity
                   - entity: input_number.alpha_rce_param_45
                     name: Zrealizowany (Rok)
                     icon: mdi:chart-line
+                    type: simple-entity
                   - entity: input_number.alpha_rce_param_43
                     name: Całkowity Zwrot (Total)
                     icon: mdi:cash-multiple
+                    type: simple-entity
       - type: custom:apexcharts-card
         graph_span: 24h
         update_interval: 1min
