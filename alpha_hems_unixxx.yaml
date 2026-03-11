@@ -1,20 +1,15 @@
 # =============================================================
-# ALPHA HEMS: CENTRALNY INTERFEJS UŻYTKOWNIKA (v2.00 - OMNI)
+# ALPHA HEMS: CENTRALNY INTERFEJS UŻYTKOWNIKA (v2.01 - OMNI)
 # STATUS: WERSJA PRODUKCYJNA / UNIWERSALNA
 #
 # HISTORIA WERSJI:
-# - v2.00: (OMNI CORE) Dodano 4. zakładkę "MAPOWANIE" (Panel Instalatora) 
-#          zawierającą narzędzia Zwiadowcy oraz listy rozwijane (input_select).
-#          Usunięto sprzętowe TOU na rzecz Wirtualnych Okien OMNI.
-# - v1.15: Zmiana formatowania szufladek finansowych.
+# - v2.01: Dodano 13. encję do mapowania: Limit ładowania z sieci (Grid Charge Limit).
+# - v2.00: (OMNI CORE) Dodano 4. zakładkę "MAPOWANIE" (Panel Instalatora).
 # =============================================================
 
-title: ALPHA HEMS v2.00
+title: ALPHA HEMS v2.01
 icon: mdi:solar-power-variant
 views:
-  # =============================================================
-  # ZAKŁADKA 1: ⚡ SYSTEM (Infrastruktura i Wirtualne Okna)
-  # =============================================================
   - type: sections
     max_columns: 5
     title: SYSTEM OMNI
@@ -29,8 +24,6 @@ views:
       - type: grid
         column_span: 2
         cards:
-          # UWAGA: Karta graficzna pozostawiona ze sztywnymi encjami Deye 
-          # w celu zachowania układu wizualnego.
           - cardstyle: lite
             wide: false
             large_font: true
@@ -152,9 +145,6 @@ views:
               battery_shutdown_soc: number.deye_inverter_battery_shutdown_soc_low_dc
       - type: grid
         cards:
-          # ==========================================
-          # MODUŁ: WIRTUALNE OKNA (OMNI)
-          # ==========================================
           - type: entities
             title: ⚙️ Wirtualne Okna Czasowe
             show_header_toggle: false
@@ -207,9 +197,6 @@ views:
                 name: Za 6 dni
                 icon: mdi:calendar-clock
 
-  # =============================================================
-  # ZAKŁADKA 2: 📈 GIEŁDA (RCE IntegraSoft)
-  # =============================================================
   - type: sidebar
     path: rce_integra
     title: RCE_IntegraSoft
@@ -406,9 +393,6 @@ views:
                 return [new Date(entry.dtime.replace(/-/g, '/')).getTime(), entry.rce_pln / 1000];
               });
 
-  # =============================================================
-  # ZAKŁADKA 3: 🏠 DOM (Centrum Dowodzenia i Szufladki)
-  # =============================================================
   - type: panel
     path: dom
     title: DOM
@@ -480,9 +464,6 @@ views:
                 name: 🚀 NOWE OPOMIAROWANIE (ZASTRZYK DANYCH)
                 icon: mdi:database-refresh
 
-  # =============================================================
-  # ZAKŁADKA 4: ⚙️ MAPOWANIE (Panel Instalatora / Zwiadowca)
-  # =============================================================
   - type: panel
     path: mapowanie
     title: MAPOWANIE
@@ -548,3 +529,5 @@ views:
                 icon: mdi:swap-horizontal
               - entity: input_select.alpha_map_work_mode
                 icon: mdi:cog-outline
+              - entity: input_select.alpha_map_grid_charge_limit
+                icon: mdi:transmission-tower-export
