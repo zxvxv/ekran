@@ -1,14 +1,15 @@
 # =============================================================
-# ALPHA HEMS: CENTRALNY INTERFEJS UŻYTKOWNIKA (vXXX - OMNI)
-# STATUS: WERSJA TESTOWA / BAZA DLA WIRTUALNYCH OKIEN
+# ALPHA HEMS: CENTRALNY INTERFEJS UŻYTKOWNIKA (v2.00 - OMNI)
+# STATUS: WERSJA PRODUKCYJNA / UNIWERSALNA
 #
 # HISTORIA WERSJI:
-# - vXXX: (OMNI) Usunięcie sprzętowego modułu TOU. Wdrożenie Wirtualnych 
-#         Okien Czasowych dla uniwersalnego silnika.
+# - v2.00: (OMNI CORE) Dodano 4. zakładkę "MAPOWANIE" (Panel Instalatora) 
+#          zawierającą narzędzia Zwiadowcy oraz listy rozwijane (input_select).
+#          Usunięto sprzętowe TOU na rzecz Wirtualnych Okien OMNI.
 # - v1.15: Zmiana formatowania szufladek finansowych.
 # =============================================================
 
-title: ALPHA HEMS vXXX
+title: ALPHA HEMS v2.00
 icon: mdi:solar-power-variant
 views:
   # =============================================================
@@ -152,7 +153,7 @@ views:
       - type: grid
         cards:
           # ==========================================
-          # NOWY MODUŁ: WIRTUALNE OKNA (OMNI)
+          # MODUŁ: WIRTUALNE OKNA (OMNI)
           # ==========================================
           - type: entities
             title: ⚙️ Wirtualne Okna Czasowe
@@ -459,12 +460,17 @@ views:
               - **Niedziela:** {{ states('input_number.alpha_rce_param_37') }} kWh
 
           - type: entities
-            title: ⚙️ Sterowanie Zwiadowcą
+            title: ⚡ Monitoring Fazy i Systemu
+            show_header_toggle: false
             entities:
               - type: section
-                label: Opcje Skanowania
-              - entity: input_boolean.alpha_zwiadowca_szeroki
-                name: Tryb Szeroki (Wyszukiwanie Głębsze)
+                label: Napięcia na fazach
+              - entity: sensor.deye_inverter_grid_l1_voltage
+                name: Faza L1
+              - entity: sensor.deye_inverter_grid_l2_voltage
+                name: Faza L2
+              - entity: sensor.deye_inverter_grid_l3_voltage
+                name: Faza L3
               - type: section
                 label: Uruchamianie
               - entity: input_boolean.alpha_rce_flaga_10
@@ -473,3 +479,72 @@ views:
               - entity: input_boolean.alpha_rce_flaga_11
                 name: 🚀 NOWE OPOMIAROWANIE (ZASTRZYK DANYCH)
                 icon: mdi:database-refresh
+
+  # =============================================================
+  # ZAKŁADKA 4: ⚙️ MAPOWANIE (Panel Instalatora / Zwiadowca)
+  # =============================================================
+  - type: panel
+    path: mapowanie
+    title: MAPOWANIE
+    icon: mdi:tools
+    cards:
+      - type: vertical-stack
+        cards:
+          - type: entities
+            title: 🔍 Skaner Encji (Zwiadowca)
+            show_header_toggle: false
+            entities:
+              - type: section
+                label: "Metoda Skanowania"
+              - entity: input_boolean.alpha_zwiadowca_szeroki
+                name: "Tryb Głęboki (SA, ESP32, inne - brutal force)"
+                icon: mdi:radar
+              - type: section
+                label: "Wyzwalacz"
+              - type: call-service
+                icon: mdi:play-circle-outline
+                name: "URUCHOM SKANOWANIE ZWIADOWCY"
+                action_name: "SKANUJ"
+                service: script.alpha_skanuj_falownik
+
+          - type: entities
+            title: 📡 CZUJNIKI (Mapowanie Odczytów)
+            show_header_toggle: false
+            entities:
+              - entity: input_select.alpha_map_soc
+                icon: mdi:battery
+              - entity: input_select.alpha_map_batt_v
+                icon: mdi:lightning-bolt
+              - entity: input_select.alpha_map_batt_temp
+                icon: mdi:thermometer
+              - entity: input_select.alpha_map_pv_power
+                icon: mdi:solar-panel
+              - entity: input_select.alpha_map_grid_v_l1
+                icon: mdi:sine-wave
+              - entity: input_select.alpha_map_grid_v_l2
+                icon: mdi:sine-wave
+              - entity: input_select.alpha_map_grid_v_l3
+                icon: mdi:sine-wave
+              - entity: input_select.alpha_map_daily_load
+                icon: mdi:home-lightning-bolt
+              - entity: input_select.alpha_map_daily_pv
+                icon: mdi:white-balance-sunny
+              - entity: input_select.alpha_map_grid_power
+                icon: mdi:transmission-tower
+              - entity: input_select.alpha_map_load_power
+                icon: mdi:home-analytics
+
+          - type: entities
+            title: 🛠️ SIŁOWNIKI (Mapowanie Sterowania)
+            show_header_toggle: false
+            entities:
+              - entity: input_select.alpha_map_charge_limit
+                icon: mdi:battery-charging
+              - entity: input_select.alpha_map_discharge_limit
+                icon: mdi:battery-minus
+              - entity: input_select.alpha_map_export_limit
+                icon: mdi:export
+              - entity: input_select.alpha_map_sell_switch
+                icon: mdi:swap-horizontal
+              - entity: input_select.alpha_map_work_mode
+                icon: mdi:cog-outline
