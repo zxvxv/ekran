@@ -1,13 +1,15 @@
 # =============================================================
-# ALPHA HEMS: CENTRALNY INTERFEJS UŻYTKOWNIKA (v2.01 - OMNI)
+# ALPHA HEMS: CENTRALNY INTERFEJS UŻYTKOWNIKA (v2.02 - STATIC MAPPING)
 # STATUS: WERSJA PRODUKCYJNA / UNIWERSALNA
 #
 # HISTORIA WERSJI:
+# - v2.02: (STATIC MAPPING) Usunięto całkowicie zakładkę "MAPOWANIE" (Zwiadowcę). 
+#          Mapowanie encji odbywa się teraz bezawaryjnie z poziomu pliku wsadowego encje.yaml.
 # - v2.01: Dodano 13. encję do mapowania: Limit ładowania z sieci (Grid Charge Limit).
 # - v2.00: (OMNI CORE) Dodano 4. zakładkę "MAPOWANIE" (Panel Instalatora).
 # =============================================================
 
-title: ALPHA HEMS v2.01
+title: ALPHA HEMS v2.02
 icon: mdi:solar-power-variant
 views:
   - type: sections
@@ -463,71 +465,3 @@ views:
               - entity: input_boolean.alpha_rce_flaga_11
                 name: 🚀 NOWE OPOMIAROWANIE (ZASTRZYK DANYCH)
                 icon: mdi:database-refresh
-
-  - type: panel
-    path: mapowanie
-    title: MAPOWANIE
-    icon: mdi:tools
-    cards:
-      - type: vertical-stack
-        cards:
-          - type: entities
-            title: 🔍 Skaner Encji (Zwiadowca)
-            show_header_toggle: false
-            entities:
-              - type: section
-                label: "Metoda Skanowania"
-              - entity: input_boolean.alpha_zwiadowca_szeroki
-                name: "Tryb Głęboki (SA, ESP32, inne - brutal force)"
-                icon: mdi:radar
-              - type: section
-                label: "Wyzwalacz"
-              - type: call-service
-                icon: mdi:play-circle-outline
-                name: "URUCHOM SKANOWANIE ZWIADOWCY"
-                action_name: "SKANUJ"
-                service: script.alpha_skanuj_falownik
-
-          - type: entities
-            title: 📡 CZUJNIKI (Mapowanie Odczytów)
-            show_header_toggle: false
-            entities:
-              - entity: input_select.alpha_map_soc
-                icon: mdi:battery
-              - entity: input_select.alpha_map_batt_v
-                icon: mdi:lightning-bolt
-              - entity: input_select.alpha_map_batt_temp
-                icon: mdi:thermometer
-              - entity: input_select.alpha_map_pv_power
-                icon: mdi:solar-panel
-              - entity: input_select.alpha_map_grid_v_l1
-                icon: mdi:sine-wave
-              - entity: input_select.alpha_map_grid_v_l2
-                icon: mdi:sine-wave
-              - entity: input_select.alpha_map_grid_v_l3
-                icon: mdi:sine-wave
-              - entity: input_select.alpha_map_daily_load
-                icon: mdi:home-lightning-bolt
-              - entity: input_select.alpha_map_daily_pv
-                icon: mdi:white-balance-sunny
-              - entity: input_select.alpha_map_grid_power
-                icon: mdi:transmission-tower
-              - entity: input_select.alpha_map_load_power
-                icon: mdi:home-analytics
-
-          - type: entities
-            title: 🛠️ SIŁOWNIKI (Mapowanie Sterowania)
-            show_header_toggle: false
-            entities:
-              - entity: input_select.alpha_map_charge_limit
-                icon: mdi:battery-charging
-              - entity: input_select.alpha_map_discharge_limit
-                icon: mdi:battery-minus
-              - entity: input_select.alpha_map_export_limit
-                icon: mdi:export
-              - entity: input_select.alpha_map_sell_switch
-                icon: mdi:swap-horizontal
-              - entity: input_select.alpha_map_work_mode
-                icon: mdi:cog-outline
-              - entity: input_select.alpha_map_grid_charge_limit
-                icon: mdi:transmission-tower-export
