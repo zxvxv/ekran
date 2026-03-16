@@ -316,6 +316,19 @@ views:
               - entity: sensor.solcast_pv_forecast_prognoza_na_dzien_7
                 name: Za 6 dni
                 icon: mdi:calendar-clock
+          - type: entities
+            title: 🔋 Zdrowie Magazynów (Delta Cel)
+            show_header_toggle: false
+            entities:
+              - entity: sensor.bateria_1_delta_ogniw
+                name: Bateria 1 (Rozjazd)
+                icon: mdi:battery-heart-variant
+              - entity: sensor.bateria_2_delta_ogniw
+                name: Bateria 2 (Rozjazd)
+                icon: mdi:battery-heart-variant
+              - entity: sensor.bateria_3_delta_ogniw
+                name: Bateria 3 (Rozjazd)
+                icon: mdi:battery-heart-variant
 
   # =============================================================
   # ZAKŁADKA 2: 📈 GIEŁDA (RCE IntegraSoft)
