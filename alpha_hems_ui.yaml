@@ -3,22 +3,9 @@
 # STATUS: PRODUKCYJNY / EKSPORTOWY (Zatwierdzony Układ Własny)
 #
 # HISTORIA WERSJI:
-# - v1.16: Dodano nową zakładkę "PRZEPŁYW" (kopia karty Sunsynk). 
-#          Dodano licznik "Ile dni od balansowania" (Gauge) pod sekcją sterowania Grid.
-# - v1.15: Zmiana formatowania szufladek finansowych (43, 44, 45) na type: simple-entity w celu ukrycia suwaków.
-# - v1.14: Dodano moduł finansowy (Zysk Total, Miesiąc, Rok) oparty na szufladkach 43-45. 
-#          Podział panelu Monitor Systemu na dwie kolumny.
-# - v1.13: Przebudowa layoutu: przeniesienie 7-dniowej prognozy Solcast pod prądy ładowania
-#          w celu uniknięcia nakładania się kart. Aktualizacja nazw encji Solcast na kolejne dni.
-# - v1.12: Wpięcie natywnych encji Solcast do głównego widgetu Sunsynk (zamiast pomocnika)
-#          oraz dodanie czytelnej 7-dniowej prognozy Solcast w sekcji DEYE.
-# - v1.11: Wdrożenie uniwersalnego Pomocnika 'Pozostało PV' (sensor.pozostalo_pv) dla precyzyjnego odliczania prognozy Solcast.
-# - v1.10: Wdrożenie analityki prognoz Solcast na główną kartę Sunsynk (zmienne energy_prognoza_106 oraz remaining_solar).
-# - v1.09: Naprawa błędu znikającego generatora (mppts: 3). Standaryzacja produkcji dziennej 
-#          (daily_pv_production) oraz przypisanie 3 źródeł: pv1_power, pv2_power i generator (jako pv3_power).
-# - v1.07: Wdrożenie informacji o wygasaniu licencji (SaaS) na dashboard.
-# - v1.06: Wdrożenie wizytówki STATUS LICENCJI (input_text.alpha_rce_stan_15) w panelu Monitor Systemu.
-# - v1.05: Przebudowa interfejsu (wizualna edycja użytkownika), usunięcie dolnych zegarów, naprawa formatowania tekstu Markdown w zakładce DOM.
+# - v1.16: Dodano nową zakładkę "PRZEPŁYW" (Pełnoekranowa karta Sunsynk). 
+#          Dodano licznik "Balansowanie (dni)" (Gauge) w sekcji sterowania.
+# - v1.15: Zmiana formatowania szufladek finansowych (43, 44, 45) na type: simple-entity.
 # =============================================================
 
 title: ALPHA HEMS
@@ -33,15 +20,12 @@ views:
     path: deye-nev
     dense_section_placement: false
     top_margin: true
-    header:
-      layout: responsive
-      badges_position: bottom
-      badges_wrap: scroll
     sections:
       - type: grid
         column_span: 2
         cards:
-          - cardstyle: lite
+          - type: custom:sunsynk-power-flow-card
+            cardstyle: lite
             wide: false
             large_font: true
             show_solar: true
@@ -117,7 +101,6 @@ views:
               auto_scale: true
               colour: '#2a95cb'
               export_colour: '#e0c124'
-            type: custom:sunsynk-power-flow-card
             grid_options:
               columns: full
               rows: 1
@@ -160,6 +143,7 @@ views:
               battery_soc_184: sensor.deye_inverter_battery
               battery_rated_capacity: number.deye_inverter_battery_capacity
               battery_shutdown_soc: number.deye_inverter_battery_shutdown_soc_low_dc
+
       - type: grid
         cards:
           - type: entities
@@ -168,7 +152,6 @@ views:
                 name: 0:00 - 4:00
               - entity: number.deye_inverter_time_of_use_2_soc
                 name: 4:00 - 5:55
-                secondary_info: none
               - entity: number.deye_inverter_time_of_use_3_soc
                 name: 5:55 - 13:05
               - entity: number.deye_inverter_time_of_use_4_soc
@@ -177,44 +160,20 @@ views:
                 name: 14:55 - 22:05
               - entity: number.deye_inverter_time_of_use_6_soc
                 name: 22:05 - 0:00
-            state_color: true
-            show_header_toggle: false
             title: Time of Use
-            grid_options:
-              columns: 12
-              rows: auto
-          - show_name: true
-            show_icon: true
-            type: button
+          - type: button
             entity: switch.deye_inverter_time_of_use
             show_state: true
-            grid_options:
-              columns: 3
-              rows: 3
-          - show_name: true
-            show_icon: true
-            type: button
+          - type: button
             entity: switch.deye_inverter_force_off_grid
-            grid_options:
-              columns: 3
-              rows: 3
-          - show_name: true
-            show_icon: true
-            type: button
+          - type: button
             entity: button.deye_inverter_sync_inverter_time
-            grid_options:
-              columns: 3
-              rows: 3
+
       - type: grid
         cards:
           - type: tile
             entity: sensor.deye_inverter_device_date_time
             name: Czas Deye
-            vertical: false
-            features_position: bottom
-            grid_options:
-              columns: 12
-              rows: 1
           - type: tile
             entity: switch.deye_inverter_time_of_use_1_grid_charge
             name: Grid 1
@@ -251,191 +210,47 @@ views:
           - type: tile
             entity: switch.deye_inverter_time_of_use_6_gen
             name: Gen 6
-          # --- NOWY LICZNIK BALANSOWANIA ---
+          # --- LICZNIK BALANSOWANIA ---
           - type: gauge
             entity: input_number.alpha_rce_param_42
             name: Balansowanie (dni)
             grid_options:
               columns: 12
-              rows: auto
             needle: true
             severity:
               green: 0
               yellow: 8
               red: 14
             max: 21
-      - type: grid
-        cards:
-          - type: entities
-            entities:
-              - entity: number.deye_inverter_maximum_battery_grid_charge_current
-                name: Ład. Sieć
-              - entity: number.deye_inverter_battery_generator_charging_current
-                name: Ład Gen.
-              - entity: number.deye_inverter_maximum_battery_charge_current
-                name: Max. Ład.
-          - type: entities
-            title: ☀️ Prognoza Solcast (7 dni)
-            show_header_toggle: false
-            entities:
-              - entity: sensor.solcast_pv_forecast_pozostala_prognoza_na_dzis
-                name: Pozostało na dziś
-                icon: mdi:solar-power
-              - type: divider
-              - entity: sensor.solcast_pv_forecast_prognoza_na_dzisiaj
-                name: Dziś (Całkowita)
-                icon: mdi:weather-sunny
-              - entity: sensor.solcast_pv_forecast_prognoza_na_jutro
-                name: Jutro
-                icon: mdi:weather-partly-cloudy
-              - entity: sensor.solcast_pv_forecast_prognoza_na_dzien_3
-                name: Pojutrze
-                icon: mdi:calendar-clock
-              - entity: sensor.solcast_pv_forecast_prognoza_na_dzien_4
-                name: Za 3 dni
-              - entity: sensor.solcast_pv_forecast_prognoza_na_dzien_5
-                name: Za 4 dni
-              - entity: sensor.solcast_pv_forecast_prognoza_na_dzien_6
-                name: Za 5 dni
-              - entity: sensor.solcast_pv_forecast_prognoza_na_dzien_7
-                name: Za 6 dni
 
   # =============================================================
   # ZAKŁADKA 2: 📈 GIEŁDA (RCE IntegraSoft)
   # =============================================================
   - type: sidebar
     path: rce_integra
-    title: RCE_IntegraSoft
+    title: GIEŁDA
     icon: mdi:chart-line
     cards:
-      - type: horizontal-stack
-        cards:
-          - type: custom:apexcharts-card
-            graph_span: 24h
-            update_interval: 1min
-            header:
-              show: true
-              title: 'Alpha: Monitor Sprzedaży'
-              show_states: true
-              colorize_states: true
-            span:
-              start: day
-            now:
-              show: true
-              label: TERAZ
-              color: '#e74c3c'
-            series:
-              - entity: sensor.deye_inverter_grid_power
-                name: Moc Sieci
-                unit: ' W'
-                color: '#9b59b6'
-                show:
-                  in_chart: false
-                  in_header: true
-              - entity: input_number.alpha_rce_param_01
-                name: Cena Teraz
-                unit: ' zł'
-                float_precision: 2
-                show:
-                  in_chart: false
-                  in_header: true
-              - entity: input_number.alpha_rce_param_03
-                name: Mój Próg
-                unit: ' zł'
-                color: '#e67e22'
-                float_precision: 2
-                show:
-                  in_chart: false
-                  in_header: true
-              - entity: sensor.alpha_pse_dzisiaj_2
-                name: Zarabiam
-                type: column
-                color: '#2ecc71'
-                opacity: 0.4
-                float_precision: 2
-                show:
-                  in_header: false
-                data_generator: >
-                  const data = entity.attributes.value || entity.attributes.prices;
-                  if (!data) return [];  const p = parseFloat(hass.states['input_number.alpha_rce_param_03'].state) || 0.7; return data.map((entry) => {
-                    const val = entry.rce_pln !== undefined ? entry.rce_pln : (entry.cen_cost !== undefined ? entry.cen_cost : (entry.price || 0));
-                    const c = parseFloat(val) / 1000;
-                    const tsStr = String(entry.dtime).replace(' ', 'T');
-                    return [new Date(tsStr).getTime(), c >= p ? c : 0];
-                  });
-              - entity: sensor.alpha_pse_dzisiaj_2
-                name: Ceny na dziś
-                type: line
-                curve: stepline
-                stroke_width: 2
-                color: '#3498db'
-                float_precision: 2
-                show:
-                  in_header: false
-                data_generator: >
-                  const data = entity.attributes.value || entity.attributes.prices;
-                  if (!data) return []; return data.map((entry) => {
-                    const val = entry.rce_pln !== undefined ? entry.rce_pln : (entry.cen_cost !== undefined ? entry.cen_cost : (entry.price || 0));
-                    const c = parseFloat(val) / 1000;
-                    const tsStr = String(entry.dtime).replace(' ', 'T');
-                    return [new Date(tsStr).getTime(), c];
-                  });
-      - type: horizontal-stack
-        cards:
-          - type: entities
-            title: Monitor Systemu
-            show_header_toggle: false
-            entities:
-              - entity: input_text.alpha_rce_stan_01
-                name: DECYZJA MÓZGU
-                icon: mdi:brain
-                type: simple-entity
-              - entity: input_text.alpha_rce_stan_03
-                name: AKTUALNY STATUS
-                icon: mdi:robot-outline
-                type: simple-entity
-              - type: divider
-              - entity: input_text.alpha_rce_stan_15
-                name: STATUS LICENCJI
-                icon: mdi:shield-key
-                type: simple-entity
-              - entity: sensor.alpha_licencja_wygasa
-                name: WAŻNA DO
-                icon: mdi:calendar-clock
-                type: simple-entity
-              - type: divider
-              - entity: sensor.deye_inverter_battery_bms_soc
-                name: Aktualny SOC Magazynu
-                icon: mdi:battery-high
-              - entity: input_number.alpha_rce_param_20
-                name: Docelowy SOC (Płotek)
-                icon: mdi:battery-clock
-                type: simple-entity
-          - type: entities
-            title: Finanse i Zyski
-            show_header_toggle: false
-            entities:
-              - entity: input_number.alpha_rce_param_02
-                name: Koszt zakupu (+straty)
-                icon: mdi:cash-minus
-                type: simple-entity
-              - entity: input_number.alpha_rce_param_03
-                name: Próg sprzedaży (+marża)
-                icon: mdi:target
-                type: simple-entity
-              - type: divider
-              - entity: input_number.alpha_rce_param_44
-                name: Zrealizowany (Miesiąc)
-                icon: mdi:chart-bar
-                type: simple-entity
-              - entity: input_number.alpha_rce_param_45
-                name: Zrealizowany (Rok)
-                icon: mdi:chart-line
-                type: simple-entity
-              - entity: input_number.alpha_rce_param_43
-                name: Całkowity Zwrot (Total)
-                icon: mdi:cash-multiple
-                type: simple-entity
+      - type: custom:apexcharts-card
+        graph_span: 24h
+        header:
+          show: true
+          title: 'Alpha: Monitor Sprzedaży'
+          show_states: true
+        series:
+          - entity: input_number.alpha_rce_param_01
+            name: Cena Teraz
+            float_precision: 2
+          - entity: sensor.alpha_pse_dzisiaj_2
+            name: Ceny na dziś
+            type: line
+            curve: stepline
+            data_generator: >
+              const data = entity.attributes.value || entity.attributes.prices;
+              if (!data) return []; return data.map((entry) => {
+                const val = entry.rce_pln !== undefined ? entry.rce_pln : entry.price;
+                return [new Date(entry.dtime.replace(' ', 'T')).getTime(), parseFloat(val) / 1000];
+              });
 
   # =============================================================
   # ZAKŁADKA 3: 🏠 DOM (Centrum Dowodzenia)
@@ -449,36 +264,24 @@ views:
         cards:
           - type: markdown
             content: >
-              ## 📊 ALPHA HEMS: Status & Cel
-              **Stan Systemu:** {{ states('input_text.alpha_rce_stan_03') }}
-              **Cel ładowania (Płotek):** {{ states('input_number.alpha_rce_param_20') }} %
-              **Bieżąca cena RCE:** {{ states('input_number.alpha_rce_param_01') }} zł/kWh
+              ## 📊 ALPHA HEMS: Status
+              **Stan:** {{ states('input_text.alpha_rce_stan_03') }}
           - type: entities
-            title: ⚡ Monitoring Napięcia Fazy
             entities:
               - entity: sensor.deye_inverter_grid_l1_voltage
-                name: Faza L1
               - entity: sensor.deye_inverter_grid_l2_voltage
-                name: Faza L2
               - entity: sensor.deye_inverter_grid_l3_voltage
-                name: Faza L3
-              - type: section
-              - entity: input_boolean.alpha_rce_flaga_10
-                name: 🔄 WYMUŚ ALPHA SYNC / SETUP
-                icon: mdi:tools
-              - entity: input_boolean.alpha_rce_flaga_11
-                name: 🚀 NOWE OPOMIAROWANIE
-                icon: mdi:database-refresh
 
   # =============================================================
-  # ZAKŁADKA 4: 🔄 PRZEPŁYW (Widok uproszczony)
+  # ZAKŁADKA 4: 🔄 PRZEPŁYW (Poprawiony Pełny Ekran)
   # =============================================================
   - type: panel
     path: flow-view
     title: PRZEPŁYW
     icon: mdi:sync
     cards:
-      - cardstyle: lite
+      - type: custom:sunsynk-power-flow-card
+        cardstyle: lite
         wide: true
         large_font: true
         show_solar: true
@@ -492,32 +295,44 @@ views:
           three_phase: true
           auto_scale: true
           modern: true
+          colour: '#217cb5'
         battery:
           show_daily: true
-          show_remaining_energy: true
+          auto_scale: true
+          show_absolute: true
+          colour: '#c01b1b'
           energy: 47616
+          shutdown_soc: 6
         solar:
           show_daily: true
           mppts: 3
+          auto_scale: true
+          colour: '#c9cc05'
         load:
           show_daily: true
+          colour: '#2cce6a'
           additional_loads: 1
         grid:
           show_daily_buy: true
           show_daily_sell: true
-        type: custom:sunsynk-power-flow-card
+          auto_scale: true
+          colour: '#2a95cb'
         entities:
           remaining_solar: sensor.solcast_pv_forecast_pozostala_prognoza_na_dzis
           energy_prognoza_106: sensor.solcast_pv_forecast_prognoza_na_dzisiaj
           day_pv_energy_108: sensor.deye_inverter_daily_pv_production
+          essential_load1: sensor.deye_inverter_load_ups_power
+          use_timer_248: switch.sunsynk_toggle_system_timer
           priority_load_243: sensor.deye_inverter_load_power
+          inverter_voltage_154: sensor.deye_inverter_output_l1_voltage
           battery_voltage_183: sensor.deye_inverter_battery_bms_voltage
           battery_power_190: sensor.deye_inverter_battery_power
           battery_current_191: sensor.deye_inverter_battery_bms_current
           grid_power_169: sensor.sunsynk_grid_power
           day_grid_export_77: sensor.deye_inverter_daily_energy_sold
-          day_grid_import_76: sensor.deye_inverter_daily_energy_bought
-          battery_soc_184: sensor.deye_inverter_battery
+          day_load_energy_84: sensor.deye_inverter_daily_load_consumption
           pv1_power_186: sensor.deye_inverter_pv1_power
           pv2_power_187: sensor.deye_inverter_pv2_power
           pv3_power_188: sensor.deye_inverter_generator_power_total
+          day_grid_import_76: sensor.deye_inverter_daily_energy_bought
+          battery_soc_184: sensor.deye_inverter_battery
