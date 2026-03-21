@@ -1,8 +1,10 @@
 # =============================================================
-# ALPHA HEMS: CENTRALNY INTERFEJS UŻYTKOWNIKA (v1.16)
+# ALPHA HEMS: CENTRALNY INTERFEJS UŻYTKOWNIKA (v1.17)
 # STATUS: PRODUKCYJNY / EKSPORTOWY (Zatwierdzony Układ Własny)
 #
 # HISTORIA WERSJI:
+# - v1.17: Zmiana źródła pomiaru sieci (grid_ct_power_total) z encji CT 
+#          na główną encję grid_power w celu poprawnego wyświetlania eksportu.
 # - v1.16: Dodano nową zakładkę "PRZEPŁYW" (kopia głównej karty Sunsynk w trybie panel).
 #          Dodano licznik "Ile dni od balansowania" (Gauge) pod sekcją sterowania Grid.
 # - v1.15: Zmiana formatowania szufladek finansowych (43, 44, 45) na type: simple-entity w celu ukrycia suwaków.
@@ -152,7 +154,7 @@ views:
               pv2_power_187: sensor.deye_inverter_pv2_power
               pv3_power_188: sensor.deye_inverter_generator_power_total
               day_grid_import_76: sensor.deye_inverter_daily_energy_bought
-              grid_ct_power_total: sensor.deye_inverter_external_ct_power
+              grid_ct_power_total: sensor.deye_inverter_grid_power
               battery_temp_182: sensor.deye_inverter_battery_temperature
               day_aux_energy: sensor.solcast_pv_forecast_prognoza_na_dzisiaj
               essential_power: sensor.deye_inverter_load_power
@@ -715,7 +717,7 @@ views:
           pv2_power_187: sensor.deye_inverter_pv2_power
           pv3_power_188: sensor.deye_inverter_generator_power_total
           day_grid_import_76: sensor.deye_inverter_daily_energy_bought
-          grid_ct_power_total: sensor.deye_inverter_external_ct_power
+          grid_ct_power_total: sensor.deye_inverter_grid_power
           battery_temp_182: sensor.deye_inverter_battery_temperature
           day_aux_energy: sensor.solcast_pv_forecast_prognoza_na_dzisiaj
           essential_power: sensor.deye_inverter_load_power
