@@ -1,8 +1,10 @@
 # =============================================================
-# ALPHA HEMS: CENTRALNY INTERFEJS UŻYTKOWNIKA (v1.17)
+# ALPHA HEMS: CENTRALNY INTERFEJS UŻYTKOWNIKA (v1.18)
 # STATUS: PRODUKCYJNY / EKSPORTOWY (Zatwierdzony Układ Własny)
 #
 # HISTORIA WERSJI:
+# - v1.18: Przeniesienie Flagi 11 (Zastrzyk Danych) do zakładki DEYE obok przycisków sterowania. 
+#          Usunięcie głównego przełącznika (show_header_toggle: false) z karty Monitoring Napięcia Fazy w zakładce DOM.
 # - v1.17: Zmiana źródła pomiaru sieci (grid_ct_power_total) z encji CT 
 #          na główną encję grid_power w celu poprawnego wyświetlania eksportu.
 # - v1.16: Dodano nową zakładkę "PRZEPŁYW" (kopia głównej karty Sunsynk w trybie panel).
@@ -207,6 +209,15 @@ views:
             show_icon: true
             type: button
             entity: button.deye_inverter_sync_inverter_time
+            grid_options:
+              columns: 3
+              rows: 3
+          - show_name: true
+            show_icon: true
+            type: button
+            entity: input_boolean.alpha_rce_flaga_11
+            name: Zastrzyk Danych
+            icon: mdi:database-refresh
             grid_options:
               columns: 3
               rows: 3
@@ -586,6 +597,7 @@ views:
 
           - type: entities
             title: ⚡ Monitoring Napięcia Fazy
+            show_header_toggle: false
             entities:
               - entity: sensor.deye_inverter_grid_l1_voltage
                 name: Faza L1
@@ -597,9 +609,6 @@ views:
               - entity: input_boolean.alpha_rce_flaga_10
                 name: 🔄 WYMUŚ ALPHA SYNC / SETUP
                 icon: mdi:tools
-              - entity: input_boolean.alpha_rce_flaga_11
-                name: 🚀 NOWE OPOMIAROWANIE (ZASTRZYK DANYCH)
-                icon: mdi:database-refresh
 
   # =============================================================
   # ZAKŁADKA 4: 🔄 PRZEPŁYW (Widok uproszczony)
