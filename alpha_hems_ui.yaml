@@ -1,8 +1,12 @@
 # =============================================================
-# ALPHA HEMS: CENTRALNY INTERFEJS UŻYTKOWNIKA (v1.19)
+# ALPHA HEMS: CENTRALNY INTERFEJS UŻYTKOWNIKA (v1.20)
 # STATUS: PRODUKCYJNY / EKSPORTOWY (Zatwierdzony Układ Własny)
 #
 # HISTORIA WERSJI:
+# - v1.20: Całkowita przebudowa zakładki GIEŁDA pod urządzenia mobilne.
+#          Zastosowanie układu pionowego (vertical-stack) w widoku typu panel.
+#          Elementy układają się naturalnie: Wykres 1 -> Monitor -> Finanse -> Wykres 2,
+#          zapewniając 100% szerokości ekranu dla każdego komponentu.
 # - v1.19: Optymalizacja mobilna (RWD). Zamiana wymuszonych układów poziomych 
 #          (horizontal-stack) na elastyczną siatkę (grid) w zakładce GIEŁDA.
 #          Usunięcie sztywnych podziałów kolumnowych w sekcji DEYE.
@@ -330,14 +334,12 @@ views:
   # =============================================================
   # ZAKŁADKA 2: 📈 GIEŁDA (RCE IntegraSoft)
   # =============================================================
-  - type: sidebar
+  - type: panel
     path: rce_integra
     title: RCE_IntegraSoft
     icon: mdi:chart-line
     cards:
-      - type: grid
-        square: false
-        columns: 2
+      - type: vertical-stack
         cards:
           - type: custom:apexcharts-card
             graph_span: 24h
@@ -409,126 +411,122 @@ views:
                     const tsStr = String(entry.dtime).replace(' ', 'T');
                     return [new Date(tsStr).getTime(), c];
                   });
-          - type: grid
-            square: false
-            columns: 2
-            cards:
-              - type: entities
-                title: Monitor Systemu
-                show_header_toggle: false
-                entities:
-                  - entity: input_text.alpha_rce_stan_01
-                    name: DECYZJA MÓZGU
-                    icon: mdi:brain
-                    type: simple-entity
-                  - entity: input_text.alpha_rce_stan_03
-                    name: AKTUALNY STATUS
-                    icon: mdi:robot-outline
-                    type: simple-entity
-                  - type: divider
-                  - entity: input_text.alpha_rce_stan_15
-                    name: STATUS LICENCJI
-                    icon: mdi:shield-key
-                    type: simple-entity
-                  - entity: sensor.alpha_licencja_wygasa
-                    name: WAŻNA DO
-                    icon: mdi:calendar-clock
-                    type: simple-entity
-                  - type: divider
-                  - entity: sensor.deye_inverter_battery_bms_soc
-                    name: Aktualny SOC Magazynu
-                    icon: mdi:battery-high
-                  - entity: input_number.alpha_rce_param_20
-                    name: Docelowy SOC (Płotek)
-                    icon: mdi:battery-clock
-                    type: simple-entity
-                  - entity: input_number.alpha_rce_param_04
-                    name: Energia do Sprzedaży
-                    icon: mdi:battery-arrow-up
-                    type: simple-entity
-              - type: entities
-                title: Finanse i Zyski
-                show_header_toggle: false
-                entities:
-                  - entity: input_number.alpha_rce_param_02
-                    name: Koszt zakupu (+straty)
-                    icon: mdi:cash-minus
-                    type: simple-entity
-                  - entity: input_number.alpha_rce_param_03
-                    name: Próg sprzedaży (+marża)
-                    icon: mdi:target
-                    type: simple-entity
-                  - type: divider
-                  - entity: input_number.alpha_rce_param_05
-                    name: Szacowany Zysk (Dziś)
-                    icon: mdi:piggy-bank
-                    type: simple-entity
-                  - type: divider
-                  - entity: input_number.alpha_rce_param_44
-                    name: Zrealizowany (Miesiąc)
-                    icon: mdi:chart-bar
-                    type: simple-entity
-                  - entity: input_number.alpha_rce_param_45
-                    name: Zrealizowany (Rok)
-                    icon: mdi:chart-line
-                    type: simple-entity
-                  - entity: input_number.alpha_rce_param_43
-                    name: Całkowity Zwrot (Total)
-                    icon: mdi:cash-multiple
-                    type: simple-entity
-      - type: custom:apexcharts-card
-        graph_span: 24h
-        update_interval: 1min
-        header:
-          show: true
-          title: 'Alpha: Plan Sprzedaży - JUTRO'
-          show_states: true
-          colorize_states: true
-        span:
-          start: day
-          offset: +1d
-        series:
-          - entity: sensor.alpha_pse_jutro_2
-            name: Min
-            unit: ' zł'
-            float_precision: 2
-            show:
-              in_chart: false
-              in_header: true
-            data_generator: >
-              const d = entity.attributes.value; if (!d) return []; const min = Math.min(...d.map(e => e.rce_pln / 1000)); return [[new Date(d[0].dtime.replace(/-/g, '/')).getTime(), min]];
-          - entity: sensor.alpha_pse_jutro_2
-            name: Max
-            unit: ' zł'
-            float_precision: 2
-            show:
-              in_chart: false
-              in_header: true
-            data_generator: >
-              const d = entity.attributes.value; if (!d) return []; const max = Math.max(...d.map(e => e.rce_pln / 1000)); return [[new Date(d[0].dtime.replace(/-/g, '/')).getTime(), max]];
-          - entity: sensor.alpha_pse_jutro_2
-            name: Zysk (Plan)
-            type: column
-            color: '#2ecc71'
-            opacity: 0.4
-            show:
-              in_header: false
-            data_generator: >
-              const data = entity.attributes.value; if (!data) return []; const p = parseFloat(hass.states['input_number.alpha_rce_param_03'].state) || 0.7; return data.map((entry) => {
-                const c = entry.rce_pln / 1000;
-                return [new Date(entry.dtime.replace(/-/g, '/')).getTime(), c >= p ? c : 0];
-              });
-          - entity: sensor.alpha_pse_jutro_2
-            name: Giełda Jutro
-            type: line
-            curve: stepline
-            color: '#3498db'
-            show:
-              in_header: false
-            data_generator: >
-              const data = entity.attributes.value; if (!data) return []; return data.map((entry) => {
-                return [new Date(entry.dtime.replace(/-/g, '/')).getTime(), entry.rce_pln / 1000];
-              });
+          - type: entities
+            title: Monitor Systemu
+            show_header_toggle: false
+            entities:
+              - entity: input_text.alpha_rce_stan_01
+                name: DECYZJA MÓZGU
+                icon: mdi:brain
+                type: simple-entity
+              - entity: input_text.alpha_rce_stan_03
+                name: AKTUALNY STATUS
+                icon: mdi:robot-outline
+                type: simple-entity
+              - type: divider
+              - entity: input_text.alpha_rce_stan_15
+                name: STATUS LICENCJI
+                icon: mdi:shield-key
+                type: simple-entity
+              - entity: sensor.alpha_licencja_wygasa
+                name: WAŻNA DO
+                icon: mdi:calendar-clock
+                type: simple-entity
+              - type: divider
+              - entity: sensor.deye_inverter_battery_bms_soc
+                name: Aktualny SOC Magazynu
+                icon: mdi:battery-high
+              - entity: input_number.alpha_rce_param_20
+                name: Docelowy SOC (Płotek)
+                icon: mdi:battery-clock
+                type: simple-entity
+              - entity: input_number.alpha_rce_param_04
+                name: Energia do Sprzedaży
+                icon: mdi:battery-arrow-up
+                type: simple-entity
+          - type: entities
+            title: Finanse i Zyski
+            show_header_toggle: false
+            entities:
+              - entity: input_number.alpha_rce_param_02
+                name: Koszt zakupu (+straty)
+                icon: mdi:cash-minus
+                type: simple-entity
+              - entity: input_number.alpha_rce_param_03
+                name: Próg sprzedaży (+marża)
+                icon: mdi:target
+                type: simple-entity
+              - type: divider
+              - entity: input_number.alpha_rce_param_05
+                name: Szacowany Zysk (Dziś)
+                icon: mdi:piggy-bank
+                type: simple-entity
+              - type: divider
+              - entity: input_number.alpha_rce_param_44
+                name: Zrealizowany (Miesiąc)
+                icon: mdi:chart-bar
+                type: simple-entity
+              - entity: input_number.alpha_rce_param_45
+                name: Zrealizowany (Rok)
+                icon: mdi:chart-line
+                type: simple-entity
+              - entity: input_number.alpha_rce_param_43
+                name: Całkowity Zwrot (Total)
+                icon: mdi:cash-multiple
+                type: simple-entity
+          - type: custom:apexcharts-card
+            graph_span: 24h
+            update_interval: 1min
+            header:
+              show: true
+              title: 'Alpha: Plan Sprzedaży - JUTRO'
+              show_states: true
+              colorize_states: true
+            span:
+              start: day
+              offset: +1d
+            series:
+              - entity: sensor.alpha_pse_jutro_2
+                name: Min
+                unit: ' zł'
+                float_precision: 2
+                show:
+                  in_chart: false
+                  in_header: true
+                data_generator: >
+                  const d = entity.attributes.value; if (!d) return []; const min = Math.min(...d.map(e => e.rce_pln / 1000)); return [[new Date(d[0].dtime.replace(/-/g, '/')).getTime(), min]];
+              - entity: sensor.alpha_pse_jutro_2
+                name: Max
+                unit: ' zł'
+                float_precision: 2
+                show:
+                  in_chart: false
+                  in_header: true
+                data_generator: >
+                  const d = entity.attributes.value; if (!d) return []; const max = Math.max(...d.map(e => e.rce_pln / 1000)); return [[new Date(d[0].dtime.replace(/-/g, '/')).getTime(), max]];
+              - entity: sensor.alpha_pse_jutro_2
+                name: Zysk (Plan)
+                type: column
+                color: '#2ecc71'
+                opacity: 0.4
+                show:
+                  in_header: false
+                data_generator: >
+                  const data = entity.attributes.value; if (!data) return []; const p = parseFloat(hass.states['input_number.alpha_rce_param_03'].state) || 0.7; return data.map((entry) => {
+                    const c = entry.rce_pln / 1000;
+                    return [new Date(entry.dtime.replace(/-/g, '/')).getTime(), c >= p ? c : 0];
+                  });
+              - entity: sensor.alpha_pse_jutro_2
+                name: Giełda Jutro
+                type: line
+                curve: stepline
+                color: '#3498db'
+                show:
+                  in_header: false
+                data_generator: >
+                  const data = entity.attributes.value; if (!data) return []; return data.map((entry) => {
+                    return [new Date(entry.dtime.replace(/-/g, '/')).getTime(), entry.rce_pln / 1000];
+                  });
 
   # =============================================================
   # ZAKŁADKA 3: 🏠 DOM (Centrum Dowodzenia i Szufladki)
