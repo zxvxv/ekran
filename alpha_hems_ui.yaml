@@ -1,8 +1,11 @@
 # =============================================================
-# ALPHA HEMS: CENTRALNY INTERFEJS UŻYTKOWNIKA (v1.21)
+# ALPHA HEMS: CENTRALNY INTERFEJS UŻYTKOWNIKA (v1.22)
 # STATUS: PRODUKCYJNY / EKSPORTOWY (Zatwierdzony Układ Własny)
 #
 # HISTORIA WERSJI:
+# - v1.22: Przywrócenie type: panel w zakładce GIEŁDA dla poprawnego, szerokiego 
+#          wyświetlania na monitorach PC. Korekta limitu wysokości wykresów ApexCharts 
+#          do 400px (apex_config), aby zachować idealne proporcje bez konieczności scrollowania.
 # - v1.21: Optymalizacja PC/Mobile dla zakładki GIEŁDA. Usunięto wymuszenie type: panel,
 #          co zapobiega nadmiernemu rozciąganiu na szerokich monitorach. Dodano parametr
 #          apex_config (height: 350) do obu wykresów ApexCharts, aby zmniejszyć ich 
@@ -338,7 +341,8 @@ views:
   # =============================================================
   # ZAKŁADKA 2: 📈 GIEŁDA (RCE IntegraSoft)
   # =============================================================
-  - path: rce_integra
+  - type: panel
+    path: rce_integra
     title: RCE_IntegraSoft
     icon: mdi:chart-line
     cards:
@@ -349,7 +353,7 @@ views:
             update_interval: 1min
             apex_config:
               chart:
-                height: 350
+                height: 400
             header:
               show: true
               title: 'Alpha: Monitor Sprzedaży'
@@ -485,7 +489,7 @@ views:
             update_interval: 1min
             apex_config:
               chart:
-                height: 350
+                height: 400
             header:
               show: true
               title: 'Alpha: Plan Sprzedaży - JUTRO'
