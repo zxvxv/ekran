@@ -1,8 +1,11 @@
 # =============================================================
-# ALPHA HEMS: CENTRALNY INTERFEJS UŻYTKOWNIKA (v1.22)
+# ALPHA HEMS: CENTRALNY INTERFEJS UŻYTKOWNIKA (v1.23)
 # STATUS: PRODUKCYJNY / EKSPORTOWY (Zatwierdzony Układ Własny)
 #
 # HISTORIA WERSJI:
+# - v1.23: Dodanie kafelka z obciążeniem domu (load_power) oraz reorganizacja układu
+#          (Gen po lewej, Grid po prawej) w celu wyrównania siatki przycisków 
+#          względem okien Time of Use na monitorach PC.
 # - v1.22: Przywrócenie type: panel w zakładce GIEŁDA dla poprawnego, szerokiego 
 #          wyświetlania na monitorach PC. Korekta limitu wysokości wykresów ApexCharts 
 #          do 400px (apex_config), aby zachować idealne proporcje bez konieczności scrollowania.
@@ -230,8 +233,8 @@ views:
             vertical: false
             features_position: bottom
           - type: tile
-            entity: switch.deye_inverter_time_of_use_1_grid_charge
-            name: Grid 1
+            entity: sensor.deye_inverter_load_power
+            name: Obciążenie Domu
             vertical: false
             features_position: bottom
           - type: tile
@@ -240,8 +243,8 @@ views:
             vertical: false
             features_position: bottom
           - type: tile
-            entity: switch.deye_inverter_time_of_use_2_grid_charge
-            name: Grid 2
+            entity: switch.deye_inverter_time_of_use_1_grid_charge
+            name: Grid 1
             vertical: false
             features_position: bottom
           - type: tile
@@ -250,8 +253,8 @@ views:
             vertical: false
             features_position: bottom
           - type: tile
-            entity: switch.deye_inverter_time_of_use_3_grid_charge
-            name: Grid 3
+            entity: switch.deye_inverter_time_of_use_2_grid_charge
+            name: Grid 2
             vertical: false
             features_position: bottom
           - type: tile
@@ -260,8 +263,8 @@ views:
             vertical: false
             features_position: bottom
           - type: tile
-            entity: switch.deye_inverter_time_of_use_4_grid_charge
-            name: Grid 4
+            entity: switch.deye_inverter_time_of_use_3_grid_charge
+            name: Grid 3
             vertical: false
             features_position: bottom
           - type: tile
@@ -270,8 +273,8 @@ views:
             vertical: false
             features_position: bottom
           - type: tile
-            entity: switch.deye_inverter_time_of_use_5_grid_charge
-            name: Grid 5
+            entity: switch.deye_inverter_time_of_use_4_grid_charge
+            name: Grid 4
             vertical: false
             features_position: bottom
           - type: tile
@@ -280,13 +283,18 @@ views:
             vertical: false
             features_position: bottom
           - type: tile
-            entity: switch.deye_inverter_time_of_use_6_grid_charge
-            name: Grid 6
+            entity: switch.deye_inverter_time_of_use_5_grid_charge
+            name: Grid 5
             vertical: false
             features_position: bottom
           - type: tile
             entity: switch.deye_inverter_time_of_use_6_gen
             name: Gen 6
+            vertical: false
+            features_position: bottom
+          - type: tile
+            entity: switch.deye_inverter_time_of_use_6_grid_charge
+            name: Grid 6
             vertical: false
             features_position: bottom
           - type: gauge
