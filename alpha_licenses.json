@@ -23,5 +23,15 @@
     "status": "PRO",
     "klient": "Marcin Bankiert",
     "waznosc": "2027-01-01"
+  },
+  "2510234274": {
+    "status": "PRO",
+    "klient": "Krzysztof Mieczkowski",
+    "waznosc": "2027-06-30"
+  },
+  "2511193838": {
+    "status": "PRO",
+    "klient": "Mateusz Witkowski",
+    "waznosc": "2027-06-30"
   }
 }
