@@ -186,26 +186,31 @@ views:
               battery_soc_184: sensor.deye_inverter_battery
               battery_rated_capacity: number.deye_inverter_battery_capacity
               battery_shutdown_soc: number.deye_inverter_battery_shutdown_soc_low_dc
-      - type: grid
-        cards:
-          - type: entities
-            entities:
-              - entity: number.deye_inverter_time_of_use_1_soc
-                name: 0:00 - 4:00
-              - entity: number.deye_inverter_time_of_use_2_soc
-                name: 4:00 - 5:55
-                secondary_info: none
-              - entity: number.deye_inverter_time_of_use_3_soc
-                name: 5:55 - 13:05
-              - entity: number.deye_inverter_time_of_use_4_soc
-                name: 13:05 - 14:55
-              - entity: number.deye_inverter_time_of_use_5_soc
-                name: 14:55 - 22:05
-              - entity: number.deye_inverter_time_of_use_6_soc
-                name: 22:05 - 0:00
-            state_color: true
-            show_header_toggle: false
-            title: Time of Use
+      - type: vertical-stack
+            cards:
+              - type: markdown
+                content: >
+                  **⏰ Aktualne godziny Time of Use (Zegarmistrz PGE):**
+                  
+                  **1:** {{ states('time.deye_inverter_time_of_use_1_start') }} | **2:** {{ states('time.deye_inverter_time_of_use_2_start') }} | **3:** {{ states('time.deye_inverter_time_of_use_3_start') }}
+                  
+                  **4:** {{ states('time.deye_inverter_time_of_use_4_start') }} | **5:** {{ states('time.deye_inverter_time_of_use_5_start') }} | **6:** {{ states('time.deye_inverter_time_of_use_6_start') }}
+              - type: entities
+                entities:
+                  - entity: number.deye_inverter_time_of_use_1_soc
+                    name: Okienko 1 (Dolina Nocna)
+                  - entity: number.deye_inverter_time_of_use_2_soc
+                    name: Okienko 2 (Dolina Rano)
+                  - entity: number.deye_inverter_time_of_use_3_soc
+                    name: Okienko 3 (Szczyt Dzienny)
+                  - entity: number.deye_inverter_time_of_use_4_soc
+                    name: Okienko 4 (Dolina Popołudniowa)
+                  - entity: number.deye_inverter_time_of_use_5_soc
+                    name: Okienko 5 (Szczyt Wieczorny)
+                  - entity: number.deye_inverter_time_of_use_6_soc
+                    name: Okienko 6 (Dolina Nocna)
+                state_color: true
+                show_header_toggle: false
           - show_name: true
             show_icon: true
             type: button
