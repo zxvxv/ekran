@@ -1,51 +1,18 @@
 # =============================================================
-# ALPHA HEMS: CENTRALNY INTERFEJS UŻYTKOWNIKA (v1.24)
+# ALPHA HEMS: CENTRALNY INTERFEJS UŻYTKOWNIKA (v1.25)
 # STATUS: PRODUKCYJNY / EKSPORTOWY (Zatwierdzony Układ Własny)
 #
 # HISTORIA WERSJI:
-# - v1.24: (ZEGARMISTRZ PGE) Wdrożenie dynamicznej karty Time of Use. Godziny pobierają się z inwertera (Markdown), suwaki otrzymały opisy zamiast sztywnych czasów.
+# - v1.25: (ZEGARMISTRZ PGE) Wdrożenie kart warunkowych dla Time of Use. 
+#          Automatyczna podmiana opisów godzin (15:05-16:55 / 13:05-14:55) 
+#          przy zachowaniu idealnej osiowości siatki przycisków.
+# - v1.24: Próba dynamicznego Markdowna (wycofana - zaburzała układ).
 # - v1.23: Dodanie kafelka z obciążeniem domu (load_power) oraz reorganizacja układu
 #          (Gen po lewej, Grid po prawej) w celu wyrównania siatki przycisków 
 #          względem okien Time of Use na monitorach PC.
-# - v1.22: Przywrócenie type: panel w zakładce GIEŁDA dla poprawnego, szerokiego 
-#          wyświetlania na monitorach PC. Korekta limitu wysokości wykresów ApexCharts 
-#          do 400px (apex_config), aby zachować idealne proporcje bez konieczności scrollowania.
-# - v1.21: Optymalizacja PC/Mobile dla zakładki GIEŁDA. Usunięto wymuszenie type: panel,
-#          co zapobiega nadmiernemu rozciąganiu na szerokich monitorach. Dodano parametr
-#          apex_config (height: 350) do obu wykresów ApexCharts, aby zmniejszyć ich 
-#          wysokość w pionie o ok. 20% i poprawić czytelność na PC bez psucia widoku Mobile.
-# - v1.20: Całkowita przebudowa zakładki GIEŁDA pod urządzenia mobilne.
-#          Zastosowanie układu pionowego (vertical-stack) w widoku typu panel.
-#          Elementy układają się naturalnie: Wykres 1 -> Monitor -> Finanse -> Wykres 2,
-#          zapewniając 100% szerokości ekranu dla każdego komponentu.
-# - v1.19: Optymalizacja mobilna (RWD). Zamiana wymuszonych układów poziomych 
-#          (horizontal-stack) na elastyczną siatkę (grid) w zakładce GIEŁDA.
-#          Usunięcie sztywnych podziałów kolumnowych w sekcji DEYE.
-#          Wyłączenie wymuszenia szerokiego widoku (wide: false) w karcie 
-#          przepływu Sunsynk dla poprawnego wyświetlania na smartfonach.
-# - v1.18: Przeniesienie Flagi 11 (Zastrzyk Danych) do zakładki DEYE obok przycisków sterowania. 
-#          Usunięcie głównego przełącznika (show_header_toggle: false) z karty Monitoring Napięcia Fazy w zakładce DOM.
-# - v1.17: Zmiana źródła pomiaru sieci (grid_ct_power_total) z encji CT 
-#          na główną encję grid_power w celu poprawnego wyświetlania eksportu.
-# - v1.16: Dodano nową zakładkę "PRZEPŁYW" (kopia głównej karty Sunsynk w trybie panel).
-#          Dodano licznik "Ile dni od balansowania" (Gauge) pod sekcją sterowania Grid.
-# - v1.15: Zmiana formatowania szufladek finansowych (43, 44, 45) na type: simple-entity w celu ukrycia suwaków.
-# - v1.14: Dodano moduł finansowy (Zysk Total, Miesiąc, Rok) oparty na szufladkach 43-45. 
-#          Podział panelu Monitor Systemu na dwie kolumny.
-# - v1.13: Przebudowa layoutu: przeniesienie 7-dniowej prognozy Solcast pod prądy ładowania
-#          w celu uniknięcia nakładania się kart. Aktualizacja nazw encji Solcast na kolejne dni.
-# - v1.12: Wpięcie natywnych encji Solcast do głównego widgetu Sunsynk (zamiast pomocnika)
-#          oraz dodanie czytelnej 7-dniowej prognozy Solcast w sekcji DEYE.
-# - v1.11: Wdrożenie uniwersalnego Pomocnika 'Pozostało PV' (sensor.pozostalo_pv) dla precyzyjnego odliczania prognozy Solcast.
-# - v1.10: Wdrożenie analityki prognoz Solcast na główną kartę Sunsynk (zmienne energy_prognoza_106 oraz remaining_solar).
-# - v1.09: Naprawa błędu znikającego generatora (mppts: 3). Standaryzacja produkcji dziennej 
-#          (daily_pv_production) oraz przypisanie 3 źródeł: pv1_power, pv2_power i generator (jako pv3_power).
-# - v1.07: Wdrożenie informacji o wygasaniu licencji (SaaS) na dashboard.
-# - v1.06: Wdrożenie wizytówki STATUS LICENCJI (input_text.alpha_rce_stan_15) w panelu Monitor Systemu.
-# - v1.02: Usunięcie encji prywatnych (Tuya, Solar Assistant, itp.).
-# - v1.03: Usunięcie sekcji Diagnostyka Baterii.
-# - v1.04: Wyłączenie agresywnego upychania (dense_section_placement: false).
-# - v1.05: Przebudowa interfejsu (wizualna edycja użytkownika), usunięcie dolnych zegarów, naprawa formatowania tekstu Markdown w zakładce DOM.
+# - v1.22: Przywrócenie type: panel w zakładce GIEŁDA.
+# - v1.14: Dodano moduł finansowy (Zysk Total, Miesiąc, Rok).
+# - v1.12: Wpięcie natywnych encji Solcast do głównego widgetu Sunsynk.
 # =============================================================
 
 title: ALPHA HEMS
@@ -191,30 +158,52 @@ views:
         cards:
           - type: vertical-stack
             cards:
-              - type: markdown
-                content: >-
-                  **⏰ Aktualne godziny Time of Use:**
-
-                  **1:** {{ states('time.deye_inverter_time_of_use_1_start') }} | **2:** {{ states('time.deye_inverter_time_of_use_2_start') }} | **3:** {{ states('time.deye_inverter_time_of_use_3_start') }}
-
-                  **4:** {{ states('time.deye_inverter_time_of_use_4_start') }} | **5:** {{ states('time.deye_inverter_time_of_use_5_start') }} | **6:** {{ states('time.deye_inverter_time_of_use_6_start') }}
-              - type: entities
-                entities:
-                  - entity: number.deye_inverter_time_of_use_1_soc
-                    name: Okienko 1 (Dolina Nocna)
-                  - entity: number.deye_inverter_time_of_use_2_soc
-                    name: Okienko 2 (Dolina Rano)
-                    secondary_info: none
-                  - entity: number.deye_inverter_time_of_use_3_soc
-                    name: Okienko 3 (Szczyt Dzienny)
-                  - entity: number.deye_inverter_time_of_use_4_soc
-                    name: Okienko 4 (Dolina PGE)
-                  - entity: number.deye_inverter_time_of_use_5_soc
-                    name: Okienko 5 (Szczyt PGE)
-                  - entity: number.deye_inverter_time_of_use_6_soc
-                    name: Okienko 6 (Dolina Nocna)
-                state_color: true
-                show_header_toggle: false
+              # KARTA TOU - WERSJA LATO (PGE)
+              - type: conditional
+                conditions:
+                  - entity: input_boolean.alpha_rce_flaga_12
+                    state: 'off'
+                card:
+                  type: entities
+                  title: Time of Use (Lato)
+                  show_header_toggle: false
+                  state_color: true
+                  entities:
+                    - entity: number.deye_inverter_time_of_use_1_soc
+                      name: 0:00 - 4:00
+                    - entity: number.deye_inverter_time_of_use_2_soc
+                      name: 4:00 - 5:55
+                    - entity: number.deye_inverter_time_of_use_3_soc
+                      name: 5:55 - 15:05
+                    - entity: number.deye_inverter_time_of_use_4_soc
+                      name: 15:05 - 16:55
+                    - entity: number.deye_inverter_time_of_use_5_soc
+                      name: 16:55 - 22:05
+                    - entity: number.deye_inverter_time_of_use_6_soc
+                      name: 22:05 - 0:00
+              # KARTA TOU - WERSJA ZIMA (PGE)
+              - type: conditional
+                conditions:
+                  - entity: input_boolean.alpha_rce_flaga_12
+                    state: 'on'
+                card:
+                  type: entities
+                  title: Time of Use (Zima)
+                  show_header_toggle: false
+                  state_color: true
+                  entities:
+                    - entity: number.deye_inverter_time_of_use_1_soc
+                      name: 0:00 - 4:00
+                    - entity: number.deye_inverter_time_of_use_2_soc
+                      name: 4:00 - 5:55
+                    - entity: number.deye_inverter_time_of_use_3_soc
+                      name: 5:55 - 13:05
+                    - entity: number.deye_inverter_time_of_use_4_soc
+                      name: 13:05 - 14:55
+                    - entity: number.deye_inverter_time_of_use_5_soc
+                      name: 14:55 - 22:05
+                    - entity: number.deye_inverter_time_of_use_6_soc
+                      name: 22:05 - 0:00
           - show_name: true
             show_icon: true
             type: button
