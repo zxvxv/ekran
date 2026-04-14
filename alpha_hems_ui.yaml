@@ -1,8 +1,9 @@
 # =============================================================
-# ALPHA HEMS: CENTRALNY INTERFEJS UŻYTKOWNIKA (v1.23)
+# ALPHA HEMS: CENTRALNY INTERFEJS UŻYTKOWNIKA (v1.24)
 # STATUS: PRODUKCYJNY / EKSPORTOWY (Zatwierdzony Układ Własny)
 #
 # HISTORIA WERSJI:
+# - v1.24: (ZEGARMISTRZ PGE) Wdrożenie dynamicznej karty Time of Use. Godziny pobierają się z inwertera (Markdown), suwaki otrzymały opisy zamiast sztywnych czasów.
 # - v1.23: Dodanie kafelka z obciążeniem domu (load_power) oraz reorganizacja układu
 #          (Gen po lewej, Grid po prawej) w celu wyrównania siatki przycisków 
 #          względem okien Time of Use na monitorach PC.
@@ -186,14 +187,16 @@ views:
               battery_soc_184: sensor.deye_inverter_battery
               battery_rated_capacity: number.deye_inverter_battery_capacity
               battery_shutdown_soc: number.deye_inverter_battery_shutdown_soc_low_dc
-      - type: vertical-stack
+      - type: grid
+        cards:
+          - type: vertical-stack
             cards:
               - type: markdown
-                content: >
-                  **⏰ Aktualne godziny Time of Use (Zegarmistrz PGE):**
-                  
+                content: >-
+                  **⏰ Aktualne godziny Time of Use:**
+
                   **1:** {{ states('time.deye_inverter_time_of_use_1_start') }} | **2:** {{ states('time.deye_inverter_time_of_use_2_start') }} | **3:** {{ states('time.deye_inverter_time_of_use_3_start') }}
-                  
+
                   **4:** {{ states('time.deye_inverter_time_of_use_4_start') }} | **5:** {{ states('time.deye_inverter_time_of_use_5_start') }} | **6:** {{ states('time.deye_inverter_time_of_use_6_start') }}
               - type: entities
                 entities:
@@ -201,12 +204,13 @@ views:
                     name: Okienko 1 (Dolina Nocna)
                   - entity: number.deye_inverter_time_of_use_2_soc
                     name: Okienko 2 (Dolina Rano)
+                    secondary_info: none
                   - entity: number.deye_inverter_time_of_use_3_soc
                     name: Okienko 3 (Szczyt Dzienny)
                   - entity: number.deye_inverter_time_of_use_4_soc
-                    name: Okienko 4 (Dolina Popołudniowa)
+                    name: Okienko 4 (Dolina PGE)
                   - entity: number.deye_inverter_time_of_use_5_soc
-                    name: Okienko 5 (Szczyt Wieczorny)
+                    name: Okienko 5 (Szczyt PGE)
                   - entity: number.deye_inverter_time_of_use_6_soc
                     name: Okienko 6 (Dolina Nocna)
                 state_color: true
