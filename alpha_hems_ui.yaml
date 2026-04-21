@@ -1,8 +1,9 @@
 # =============================================================
-# ALPHA HEMS: CENTRALNY INTERFEJS UŻYTKOWNIKA (v1.25)
+# ALPHA HEMS: CENTRALNY INTERFEJS UŻYTKOWNIKA (v1.26)
 # STATUS: PRODUKCYJNY / EKSPORTOWY (Zatwierdzony Układ Własny)
 #
 # HISTORIA WERSJI:
+# - v1.26: (OSD SYNC & UX CLEANUP) Usunięcie mylącego wskaźnika "Energii do sprzedaży". Przebudowa kart TOU na twardy odczyt godzin z falownika (time.deye_inverter_time_of_use_4_start) odporny na zmiany operatorów.
 # - v1.25: (ZEGARMISTRZ PGE) Wdrożenie kart warunkowych dla Time of Use. 
 #          Automatyczna podmiana opisów godzin (15:05-16:55 / 13:05-14:55) 
 #          przy zachowaniu idealnej osiowości siatki przycisków.
@@ -161,11 +162,11 @@ views:
               # KARTA TOU - WERSJA LATO (PGE)
               - type: conditional
                 conditions:
-                  - entity: input_boolean.alpha_rce_flaga_12
-                    state: 'off'
+                  - entity: time.deye_inverter_time_of_use_4_start
+                    state: '15:05:00'
                 card:
                   type: entities
-                  title: Time of Use (Lato)
+                  title: Time of Use (Lato - PGE)
                   show_header_toggle: false
                   state_color: true
                   entities:
@@ -181,14 +182,14 @@ views:
                       name: 16:55 - 22:05
                     - entity: number.deye_inverter_time_of_use_6_soc
                       name: 22:05 - 0:00
-              # KARTA TOU - WERSJA ZIMA (PGE)
+              # KARTA TOU - WERSJA ZIMA (PGE) / STANDARD (Tauron, inni)
               - type: conditional
                 conditions:
-                  - entity: input_boolean.alpha_rce_flaga_12
-                    state: 'on'
+                  - entity: time.deye_inverter_time_of_use_4_start
+                    state: '13:05:00'
                 card:
                   type: entities
-                  title: Time of Use (Zima)
+                  title: Time of Use (Standard / Zima)
                   show_header_toggle: false
                   state_color: true
                   entities:
@@ -455,10 +456,6 @@ views:
               - entity: input_number.alpha_rce_param_20
                 name: Docelowy SOC (Płotek)
                 icon: mdi:battery-clock
-                type: simple-entity
-              - entity: input_number.alpha_rce_param_04
-                name: Energia do Sprzedaży
-                icon: mdi:battery-arrow-up
                 type: simple-entity
           - type: entities
             title: Finanse i Zyski
