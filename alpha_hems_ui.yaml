@@ -1,16 +1,14 @@
 # =============================================================
-# ALPHA HEMS: CENTRALNY INTERFEJS UŻYTKOWNIKA (v1.26)
+# ALPHA HEMS: CENTRALNY INTERFEJS UŻYTKOWNIKA (v1.27)
 # STATUS: PRODUKCYJNY / EKSPORTOWY (Zatwierdzony Układ Własny)
 #
 # HISTORIA WERSJI:
-# - v1.26: (OSD SYNC & UX CLEANUP) Usunięcie mylącego wskaźnika "Energii do sprzedaży". Przebudowa kart TOU na twardy odczyt godzin z falownika (time.deye_inverter_time_of_use_4_start) odporny na zmiany operatorów.
+# - v1.27: (DECISION X-RAY) Wdrożenie karty analitycznej Markdown "Rentgen Decyzji" 
+#          w zakładce DOM, wyświetlającej na żywo proces decyzyjny Księgowego.
+# - v1.26: (OSD SYNC & UX CLEANUP) Usunięcie mylącego wskaźnika "Energii do sprzedaży". 
+#          Przebudowa kart TOU na twardy odczyt godzin z falownika.
 # - v1.25: (ZEGARMISTRZ PGE) Wdrożenie kart warunkowych dla Time of Use. 
-#          Automatyczna podmiana opisów godzin (15:05-16:55 / 13:05-14:55) 
-#          przy zachowaniu idealnej osiowości siatki przycisków.
-# - v1.24: Próba dynamicznego Markdowna (wycofana - zaburzała układ).
-# - v1.23: Dodanie kafelka z obciążeniem domu (load_power) oraz reorganizacja układu
-#          (Gen po lewej, Grid po prawej) w celu wyrównania siatki przycisków 
-#          względem okien Time of Use na monitorach PC.
+# - v1.23: Dodanie kafelka z obciążeniem domu (load_power) oraz reorganizacja układu.
 # - v1.22: Przywrócenie type: panel w zakładce GIEŁDA.
 # - v1.14: Dodano moduł finansowy (Zysk Total, Miesiąc, Rok).
 # - v1.12: Wpięcie natywnych encji Solcast do głównego widgetu Sunsynk.
@@ -608,7 +606,11 @@ views:
               - entity: sensor.deye_inverter_grid_l3_voltage
                 name: Faza L3
               - type: section
-              - type: markdown
+              - entity: input_boolean.alpha_rce_flaga_10
+                name: 🔄 WYMUŚ ALPHA SYNC / SETUP
+                icon: mdi:tools
+
+          - type: markdown
             title: 🧠 Rentgen Decyzji (Autoscale RCE)
             content: >
               {% set sensor_rce = 'sensor.alpha_pse_dzisiaj_2' %}
