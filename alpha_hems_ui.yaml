@@ -384,13 +384,36 @@ views:
                 
                 **Zastosowany mnożnik dachu:** {{ (mnoznik * zima) | round(2) }}
                 
-                - **Dziś (Całkowita):** {{ ((raw_rad[0:24] | map('float') | sum * mnoznik * zima) / 1000) | round(2) if raw_rad | length >= 24 else 0.0 }} kWh
-                - **Jutro:** {{ ((raw_rad[24:48] | map('float') | sum * mnoznik * zima) / 1000) | round(2) if raw_rad | length >= 48 else 0.0 }} kWh
-                - **Pojutrze:** {{ ((raw_rad[48:72] | map('float') | sum * mnoznik * zima) / 1000) | round(2) if raw_rad | length >= 72 else 0.0 }} kWh
-                - **Za 3 dni:** {{ ((raw_rad[72:96] | map('float') | sum * mnoznik * zima) / 1000) | round(2) if raw_rad | length >= 96 else 0.0 }} kWh
-                - **Za 4 dni:** {{ ((raw_rad[96:120] | map('float') | sum * mnoznik * zima) / 1000) | round(2) if raw_rad | length >= 120 else 0.0 }} kWh
-                - **Za 5 dni:** {{ ((raw_rad[120:144] | map('float') | sum * mnoznik * zima) / 1000) | round(2) if raw_rad | length >= 144 else 0.0 }} kWh
-                - **Za 6 dni:** {{ ((raw_rad[144:168] | map('float') | sum * mnoznik * zima) / 1000) | round(2) if raw_rad | length >= 168 else 0.0 }} kWh
+                <table width="100%">
+                  <tr>
+                    <td style="padding: 8px 0;"><ha-icon icon="mdi:weather-sunny"></ha-icon> <b>Dziś:</b></td>
+                    <td align="right"><b>{{ ((raw_rad[0:24] | map('float') | sum * mnoznik * zima) / 1000) | round(1) if raw_rad | length >= 24 else 0.0 }}</b> kWh</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 8px 0;"><ha-icon icon="mdi:weather-partly-cloudy"></ha-icon> <b>Jutro:</b></td>
+                    <td align="right"><b>{{ ((raw_rad[24:48] | map('float') | sum * mnoznik * zima) / 1000) | round(1) if raw_rad | length >= 48 else 0.0 }}</b> kWh</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 8px 0;"><ha-icon icon="mdi:calendar-clock"></ha-icon> <b>Pojutrze:</b></td>
+                    <td align="right"><b>{{ ((raw_rad[48:72] | map('float') | sum * mnoznik * zima) / 1000) | round(1) if raw_rad | length >= 72 else 0.0 }}</b> kWh</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 8px 0;"><ha-icon icon="mdi:calendar-clock"></ha-icon> <b>Za 3 dni:</b></td>
+                    <td align="right"><b>{{ ((raw_rad[72:96] | map('float') | sum * mnoznik * zima) / 1000) | round(1) if raw_rad | length >= 96 else 0.0 }}</b> kWh</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 8px 0;"><ha-icon icon="mdi:calendar-clock"></ha-icon> <b>Za 4 dni:</b></td>
+                    <td align="right"><b>{{ ((raw_rad[96:120] | map('float') | sum * mnoznik * zima) / 1000) | round(1) if raw_rad | length >= 120 else 0.0 }}</b> kWh</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 8px 0;"><ha-icon icon="mdi:calendar-clock"></ha-icon> <b>Za 5 dni:</b></td>
+                    <td align="right"><b>{{ ((raw_rad[120:144] | map('float') | sum * mnoznik * zima) / 1000) | round(1) if raw_rad | length >= 144 else 0.0 }}</b> kWh</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 8px 0;"><ha-icon icon="mdi:calendar-clock"></ha-icon> <b>Za 6 dni:</b></td>
+                    <td align="right"><b>{{ ((raw_rad[144:168] | map('float') | sum * mnoznik * zima) / 1000) | round(1) if raw_rad | length >= 168 else 0.0 }}</b> kWh</td>
+                  </tr>
+                </table>
 
   # =============================================================
   # ZAKŁADKA 2: 📈 GIEŁDA (RCE IntegraSoft)
