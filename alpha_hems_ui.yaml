@@ -1,8 +1,10 @@
 # =============================================================
-# ALPHA HEMS: CENTRALNY INTERFEJS UŻYTKOWNIKA (v1.27)
+# ALPHA HEMS: CENTRALNY INTERFEJS UŻYTKOWNIKA (v1.28)
 # STATUS: PRODUKCYJNY / EKSPORTOWY (Zatwierdzony Układ Własny)
 #
 # HISTORIA WERSJI:
+# - v1.28: (DYNAMIC WEATHER SWITCH) Dodano interfejs konfiguracji pogody (Flaga 14) 
+#          oraz karty warunkowe przełączające widok: Solcast (7 dni) <-> Alpha AI (7 dni).
 # - v1.27: (DECISION X-RAY) Wdrożenie karty analitycznej Markdown "Rentgen Decyzji" 
 #          w zakładce DOM, wyświetlającej na żywo proces decyzyjny Księgowego.
 # - v1.26: (OSD SYNC & UX CLEANUP) Usunięcie mylącego wskaźnika "Energii do sprzedaży". 
@@ -313,35 +315,82 @@ views:
                 name: Ład Gen.
               - entity: number.deye_inverter_maximum_battery_charge_current
                 name: Max. Ład.
+                
+          # --- PRZEŁĄCZNIK ŹRÓDŁA POGODY ---
           - type: entities
-            title: ☀️ Prognoza Solcast (7 dni)
+            title: ⚙️ Konfiguracja Pogody ALPHA
             show_header_toggle: false
             entities:
-              - entity: sensor.solcast_pv_forecast_pozostala_prognoza_na_dzis
-                name: Pozostało na dziś
-                icon: mdi:solar-power
-              - type: divider
-              - entity: sensor.solcast_pv_forecast_prognoza_na_dzisiaj
-                name: Dziś (Całkowita)
-                icon: mdi:weather-sunny
-              - entity: sensor.solcast_pv_forecast_prognoza_na_jutro
-                name: Jutro
-                icon: mdi:weather-partly-cloudy
-              - entity: sensor.solcast_pv_forecast_prognoza_na_dzien_3
-                name: Pojutrze
-                icon: mdi:calendar-clock
-              - entity: sensor.solcast_pv_forecast_prognoza_na_dzien_4
-                name: Za 3 dni
-                icon: mdi:calendar-clock
-              - entity: sensor.solcast_pv_forecast_prognoza_na_dzien_5
-                name: Za 4 dni
-                icon: mdi:calendar-clock
-              - entity: sensor.solcast_pv_forecast_prognoza_na_dzien_6
-                name: Za 5 dni
-                icon: mdi:calendar-clock
-              - entity: sensor.solcast_pv_forecast_prognoza_na_dzien_7
-                name: Za 6 dni
-                icon: mdi:calendar-clock
+              - entity: input_boolean.alpha_rce_flaga_14
+                name: "Włącz: Alpha AI, Wyłącz: Solcast"
+                icon: mdi:weather-cloudy-clock
+                
+          # --- KARTA 1: SOLCAST (Widoczna, gdy Flaga 14 jest WYŁĄCZONA) ---
+          - type: conditional
+            conditions:
+              - condition: state
+                entity: input_boolean.alpha_rce_flaga_14
+                state: 'off'
+            card:
+              type: entities
+              title: ☀️ Prognoza Solcast (7 dni)
+              show_header_toggle: false
+              entities:
+                - entity: sensor.solcast_pv_forecast_pozostala_prognoza_na_dzis
+                  name: Pozostało na dziś
+                  icon: mdi:solar-power
+                - type: divider
+                - entity: sensor.solcast_pv_forecast_prognoza_na_dzisiaj
+                  name: Dziś (Całkowita)
+                  icon: mdi:weather-sunny
+                - entity: sensor.solcast_pv_forecast_prognoza_na_jutro
+                  name: Jutro
+                  icon: mdi:weather-partly-cloudy
+                - entity: sensor.solcast_pv_forecast_prognoza_na_dzien_3
+                  name: Pojutrze
+                  icon: mdi:calendar-clock
+                - entity: sensor.solcast_pv_forecast_prognoza_na_dzien_4
+                  name: Za 3 dni
+                  icon: mdi:calendar-clock
+                - entity: sensor.solcast_pv_forecast_prognoza_na_dzien_5
+                  name: Za 4 dni
+                  icon: mdi:calendar-clock
+                - entity: sensor.solcast_pv_forecast_prognoza_na_dzien_6
+                  name: Za 5 dni
+                  icon: mdi:calendar-clock
+                - entity: sensor.solcast_pv_forecast_prognoza_na_dzien_7
+                  name: Za 6 dni
+                  icon: mdi:calendar-clock
+
+          # --- KARTA 2: ALPHA AI (Widoczna, gdy Flaga 14 jest WŁĄCZONA) ---
+          - type: conditional
+            conditions:
+              - condition: state
+                entity: input_boolean.alpha_rce_flaga_14
+                state: 'on'
+            card:
+              type: markdown
+              title: 🧠 Prognoza Alpha AI (Open-Meteo)
+              content: >
+                {% set mnoznik = states('input_number.alpha_rce_param_46') | float(6.0) %}
+                {% set zima = 0.6 if states('input_boolean.alpha_rce_flaga_12') == 'on' else 1.0 %}
+                {% set radar = 'sensor.ai_raw_forecast_data' %}
+                {% for state in states.weather | selectattr('attributes.attribution', 'defined') %}
+                  {% if 'Open-Meteo' in state.attributes.attribution %}
+                    {% set radar = state.entity_id %}
+                  {% endif %}
+                {% endfor %}
+                {% set raw_rad = state_attr(radar, 'forecast') | default([], true) | map(attribute='shortwave_radiation') | select('defined') | list if radar.startswith('weather.') else state_attr('sensor.ai_raw_forecast_data', 'shortwave_radiation') | default([], true) %}
+                
+                **Zastosowany mnożnik dachu:** {{ (mnoznik * zima) | round(2) }}
+                
+                - **Dziś (Całkowita):** {{ ((raw_rad[0:24] | map('float') | sum * mnoznik * zima) / 1000) | round(2) if raw_rad | length >= 24 else 0.0 }} kWh
+                - **Jutro:** {{ ((raw_rad[24:48] | map('float') | sum * mnoznik * zima) / 1000) | round(2) if raw_rad | length >= 48 else 0.0 }} kWh
+                - **Pojutrze:** {{ ((raw_rad[48:72] | map('float') | sum * mnoznik * zima) / 1000) | round(2) if raw_rad | length >= 72 else 0.0 }} kWh
+                - **Za 3 dni:** {{ ((raw_rad[72:96] | map('float') | sum * mnoznik * zima) / 1000) | round(2) if raw_rad | length >= 96 else 0.0 }} kWh
+                - **Za 4 dni:** {{ ((raw_rad[96:120] | map('float') | sum * mnoznik * zima) / 1000) | round(2) if raw_rad | length >= 120 else 0.0 }} kWh
+                - **Za 5 dni:** {{ ((raw_rad[120:144] | map('float') | sum * mnoznik * zima) / 1000) | round(2) if raw_rad | length >= 144 else 0.0 }} kWh
+                - **Za 6 dni:** {{ ((raw_rad[144:168] | map('float') | sum * mnoznik * zima) / 1000) | round(2) if raw_rad | length >= 168 else 0.0 }} kWh
 
   # =============================================================
   # ZAKŁADKA 2: 📈 GIEŁDA (RCE IntegraSoft)
@@ -618,9 +667,6 @@ views:
               {% set cap = (cap_raw * 51.2 / 1000) | round(1) if cap_raw > 150 else cap_raw | round(1) %}
               {% set inv_w = states('sensor.deye_inverter_device_rated_power') | float(12000) %}
               {% set moc_kw = [states('number.deye_inverter_max_sell_power') | float(6000), inv_w] | min / 1000 %}
-
-              {% set current_soc = states('sensor.deye_inverter_battery_bms_soc') | float(0) %}
-              {% set docelowy_soc = states('input_number.alpha_rce_param_20') | float(20) %}
 
               **Fizyka Magazynu:**
               Obecny SOC: {{ current_soc }}% | Docelowy SOC: {{ docelowy_soc }}%
