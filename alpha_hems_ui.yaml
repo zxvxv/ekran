@@ -3,17 +3,15 @@
 # STATUS: PRODUKCYJNY / EKSPORTOWY (Zatwierdzony Układ Własny)
 #
 # HISTORIA WERSJI:
-# - v1.28: (DYNAMIC WEATHER SWITCH) Dodano interfejs konfiguracji pogody (Flaga 14) 
-#          oraz karty warunkowe przełączające widok: Solcast (7 dni) <-> Alpha AI (7 dni).
+# - v1.28: (DASHBOARD REBUILD) Uporządkowanie sekcji pogodowej. Wdrożenie tabeli HTML 
+#          dla Alpha AI (Open-Meteo) oraz naprawa widoczności "Rentgena Decyzji" 
+#          i "Decyzji Mózgu" w zakładce DOM.
 # - v1.27: (DECISION X-RAY) Wdrożenie karty analitycznej Markdown "Rentgen Decyzji" 
 #          w zakładce DOM, wyświetlającej na żywo proces decyzyjny Księgowego.
 # - v1.26: (OSD SYNC & UX CLEANUP) Usunięcie mylącego wskaźnika "Energii do sprzedaży". 
 #          Przebudowa kart TOU na twardy odczyt godzin z falownika.
 # - v1.25: (ZEGARMISTRZ PGE) Wdrożenie kart warunkowych dla Time of Use. 
-# - v1.23: Dodanie kafelka z obciążeniem domu (load_power) oraz reorganizacja układu.
-# - v1.22: Przywrócenie type: panel w zakładce GIEŁDA.
 # - v1.14: Dodano moduł finansowy (Zysk Total, Miesiąc, Rok).
-# - v1.12: Wpięcie natywnych encji Solcast do głównego widgetu Sunsynk.
 # =============================================================
 
 title: ALPHA HEMS
@@ -628,11 +626,80 @@ views:
             content: >
               ## 📊 ALPHA HEMS: Status & Cel
 
-              **Stan Systemu:** {{ states('input_text.alpha_rce_stan_03') }}
+              **🧠 Decyzja Mózgu (Plan):** {{ states('input_text.alpha_rce_stan_01') }}
+              
+              **⚙️ Aktualny Status:** {{ states('input_text.alpha_rce_stan_03') }}
 
+              ---
               **Cel ładowania (Płotek):** {{ states('input_number.alpha_rce_param_20') }} %
 
               **Bieżąca cena RCE:** {{ states('input_number.alpha_rce_param_01') }} zł/kWh
+
+          - type: markdown
+            title: 🧠 Rentgen Decyzji (Autoscale RCE)
+            content: >
+              {% set sensor_rce = 'sensor.alpha_pse_dzisiaj_2' %}
+              {% set cap_raw = states('number.deye_inverter_battery_capacity') | float(47.0) %}
+              {% set cap = (cap_raw * 51.2 / 1000) | round(1) if cap_raw > 150 else cap_raw | round(1) %}
+              {% set inv_w = states('sensor.deye_inverter_device_rated_power') | float(12000) %}
+              {% set moc_kw = [states('number.deye_inverter_max_sell_power') | float(6000), inv_w] | min / 1000 %}
+
+              **Fizyka Magazynu:**
+              Obecny SOC: {{ states('sensor.deye_inverter_battery_bms_soc') | float(0) }}% | Docelowy SOC: {{ states('input_number.alpha_rce_param_20') | float(20) }}%
+              {% set wolny_soc = [states('sensor.deye_inverter_battery_bms_soc') | float(0) - states('input_number.alpha_rce_param_20') | float(20), 0] | max %}
+              {% set wolna_energia = (wolny_soc / 100) * cap %}
+              - Energia do zrzutu: **{{ wolna_energia | round(2) }} kWh**
+
+              {% set slupki_req = (wolna_energia / (moc_kw * 0.25)) | round(0, 'ceil') | int %}
+              **Kalkulacja Czasu:**
+              Falownik ({{ moc_kw }} kW) wymaga **{{ slupki_req }}** słupków 15-min., aby zrzucić nadwyżkę.
+
+              {% set prices = state_attr(sensor_rce, 'value') %}
+              {% if not prices %} {% set prices = state_attr(sensor_rce, 'prices') %} {% endif %}
+              
+              {% set now_ts = as_timestamp(now()) %}
+              {% set h = now().hour %}
+              {% set prognoza_shift = 15 if states('input_boolean.alpha_rce_flaga_12') == 'on' else 13 %}
+              {% set t_aggr = 15 if states('input_boolean.alpha_rce_flaga_12') == 'on' else 13 %}
+              {% set prog = states('input_number.alpha_rce_param_03') | float(0) * 1000 %}
+              
+              {% set ns = namespace(future_active=[], is_now=false) %}
+              
+              {% if slupki_req > 0 and prices is iterable and prices is not string and prices is not mapping %}
+                {% for p in prices %}
+                  {% set p_ts = as_timestamp(as_datetime(p.dtime | string)) if as_datetime(p.dtime | string) != none else as_timestamp(strptime(p.dtime | string, '%Y-%m-%d %H:%M:%S', strptime(p.dtime | string, '%Y-%m-%d %H:%M', none))) %}
+                  {% if p_ts != none and p_ts >= (now_ts - 900) %}
+                    {% if (h < t_aggr and p_ts < as_timestamp(today_at('%02d:01' % t_aggr))) or (h >= prognoza_shift) %}
+                      {% set val = p.rce_pln | default(p.cen_cost | default(p.price | default(0))) | float(0) %}
+                      {% if val >= prog %}
+                        {% set ns.future_active = ns.future_active + [{'dtime': p.dtime | string, 'cena': val, 'ts': p_ts}] %}
+                      {% endif %}
+                    {% endif %}
+                  {% endif %}
+                {% endfor %}
+                
+                {% if ns.future_active | length > 0 %}
+                  {% set top_slupki = ns.future_active | sort(attribute='cena', reverse=true) | batch(slupki_req) | first | default([]) %}
+                  
+                  **🎯 Celownik Systemu (TOP {{ slupki_req }}):**
+                  {% for b in top_slupki %}
+                    - {{ b.dtime[11:16] }} -> **{{ b.cena }}** zł/MWh
+                    {% if now_ts >= b.ts and now_ts < (b.ts + 900) %}
+                      {% set ns.is_now = true %}
+                    {% endif %}
+                  {% endfor %}
+                  
+                  ---
+                  **🛑 Werdykt Rentgena:**
+                  {{ '✅ Cel zablokowany: SPRZEDAŻ!' if ns.is_now else '⏳ Oczekuję na lepsze ceny.' }}
+                {% else %}
+                  ---
+                  🛑 **Werdykt Rentgena:** Brak opłacalnych okienek powyżej progu.
+                {% endif %}
+              {% else %}
+                ---
+                🛑 **Werdykt Rentgena:** Brak energii do zrzutu lub ujemne ceny.
+              {% endif %}
 
           - type: markdown
             title: 🌙 Sektor Nocny (22:00-06:00)
@@ -681,73 +748,6 @@ views:
               - entity: input_boolean.alpha_rce_flaga_10
                 name: 🔄 WYMUŚ ALPHA SYNC / SETUP
                 icon: mdi:tools
-
-          - type: markdown
-            title: 🧠 Rentgen Decyzji (Autoscale RCE)
-            content: >
-              {% set sensor_rce = 'sensor.alpha_pse_dzisiaj_2' %}
-              {% set cap_raw = states('number.deye_inverter_battery_capacity') | float(47.0) %}
-              {% set cap = (cap_raw * 51.2 / 1000) | round(1) if cap_raw > 150 else cap_raw | round(1) %}
-              {% set inv_w = states('sensor.deye_inverter_device_rated_power') | float(12000) %}
-              {% set moc_kw = [states('number.deye_inverter_max_sell_power') | float(6000), inv_w] | min / 1000 %}
-
-              **Fizyka Magazynu:**
-              Obecny SOC: {{ current_soc }}% | Docelowy SOC: {{ docelowy_soc }}%
-              {% set wolny_soc = [current_soc - docelowy_soc, 0] | max %}
-              {% set wolna_energia = (wolny_soc / 100) * cap %}
-              - Energia do zrzutu: **{{ wolna_energia | round(2) }} kWh**
-
-              {% set slupki_req = (wolna_energia / (moc_kw * 0.25)) | round(0, 'ceil') | int %}
-              **Kalkulacja Czasu:**
-              Falownik ({{ moc_kw }} kW) wymaga **{{ slupki_req }}** słupków 15-minutowych, aby sprzedać całą nadwyżkę.
-
-              {% set prices = state_attr(sensor_rce, 'value') %}
-              {% if not prices %} {% set prices = state_attr(sensor_rce, 'prices') %} {% endif %}
-              
-              {% set now_ts = as_timestamp(now()) %}
-              {% set h = now().hour %}
-              {% set prognoza_shift = 15 if states('input_boolean.alpha_rce_flaga_12') == 'on' else 13 %}
-              {% set t_aggr = 15 if states('input_boolean.alpha_rce_flaga_12') == 'on' else 13 %}
-              {% set prog = states('input_number.alpha_rce_param_03') | float(0) * 1000 %}
-              
-              {% set ns = namespace(future_active=[], is_now=false) %}
-              
-              {% if slupki_req > 0 and prices is iterable and prices is not string and prices is not mapping %}
-                {% for p in prices %}
-                  {% set p_str = p.dtime | string %}
-                  {% set p_ts = as_timestamp(as_datetime(p_str)) if as_datetime(p_str) != none else as_timestamp(strptime(p_str, '%Y-%m-%d %H:%M:%S', strptime(p_str, '%Y-%m-%d %H:%M', none))) %}
-                  {% if p_ts != none and p_ts >= (now_ts - 900) %}
-                    {% if (h < t_aggr and p_ts < as_timestamp(today_at('%02d:01' % t_aggr))) or (h >= prognoza_shift) %}
-                      {% set val = p.rce_pln | default(p.cen_cost | default(p.price | default(0))) | float(0) %}
-                      {% if val >= prog %}
-                        {% set ns.future_active = ns.future_active + [{'dtime': p_str, 'cena': val, 'ts': p_ts}] %}
-                      {% endif %}
-                    {% endif %}
-                  {% endif %}
-                {% endfor %}
-                
-                {% if ns.future_active | length > 0 %}
-                  {% set top_slupki = ns.future_active | sort(attribute='cena', reverse=true) | batch(slupki_req) | first | default([]) %}
-                  
-                  **🎯 Celownik Systemu (TOP {{ slupki_req }}):**
-                  {% for b in top_slupki %}
-                    - {{ b.dtime[11:16] }} -> **{{ b.cena }}** zł/MWh
-                    {% if now_ts >= b.ts and now_ts < (b.ts + 900) %}
-                      {% set ns.is_now = true %}
-                    {% endif %}
-                  {% endfor %}
-                  
-                  ---
-                  **🛑 Werdykt dla obecnego kwadransa:**
-                  {{ '✅ Jesteśmy w paśmie TOP -> SPRZEDAŻ!' if ns.is_now else '⏳ Kwadrans zbyt tani -> OCZEKIWANIE.' }}
-                {% else %}
-                  ---
-                  🛑 **Werdykt:** Brak spełnionych warunków opłacalności do końca dnia.
-                {% endif %}
-              {% else %}
-                ---
-                🛑 **Werdykt:** Brak nadwyżki do zrzutu lub brak cen z giełdy.
-              {% endif %}
 
   # =============================================================
   # ZAKŁADKA 4: 🔄 PRZEPŁYW (Widok uproszczony)
