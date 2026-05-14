@@ -1,8 +1,11 @@
 # =============================================================
-# ALPHA HEMS: CENTRALNY INTERFEJS UŻYTKOWNIKA (v1.28)
+# ALPHA HEMS: CENTRALNY INTERFEJS UŻYTKOWNIKA (v1.29)
 # STATUS: PRODUKCYJNY / EKSPORTOWY (Zatwierdzony Układ Własny)
 #
 # HISTORIA WERSJI:
+# - v1.29: (SURVIVAL CALCULATOR) Usunięcie zbędnych kart TOU, Grid Charge i Gen Charge.
+#          Wdrożenie "Raportu Księgowego" z Kalkulatorem Przetrwania, Amunicją Maklera
+#          w kWh oraz wskaźnikiem awaryjnego trybu BYPASS. Optymalizacja UI.
 # - v1.28: (DASHBOARD REBUILD) Uporządkowanie sekcji pogodowej. Wdrożenie tabeli HTML 
 #          dla Alpha AI (Open-Meteo) oraz naprawa widoczności "Rentgena Decyzji" 
 #          i "Decyzji Mózgu" w zakładce DOM.
@@ -157,56 +160,47 @@ views:
         cards:
           - type: vertical-stack
             cards:
-              # KARTA TOU - WERSJA LATO (PGE)
-              - type: conditional
-                conditions:
-                  - entity: time.deye_inverter_time_of_use_4_start
-                    state: '15:05:00'
-                card:
-                  type: entities
-                  title: Time of Use (Lato - PGE)
-                  show_header_toggle: false
-                  state_color: true
-                  entities:
-                    - entity: number.deye_inverter_time_of_use_1_soc
-                      name: 0:00 - 4:00
-                    - entity: number.deye_inverter_time_of_use_2_soc
-                      name: 4:00 - 5:55
-                    - entity: number.deye_inverter_time_of_use_3_soc
-                      name: 5:55 - 15:05
-                    - entity: number.deye_inverter_time_of_use_4_soc
-                      name: 15:05 - 16:55
-                    - entity: number.deye_inverter_time_of_use_5_soc
-                      name: 16:55 - 22:05
-                    - entity: number.deye_inverter_time_of_use_6_soc
-                      name: 22:05 - 0:00
-              # KARTA TOU - WERSJA ZIMA (PGE) / STANDARD (Tauron, inni)
-              - type: conditional
-                conditions:
-                  - entity: time.deye_inverter_time_of_use_4_start
-                    state: '13:05:00'
-                card:
-                  type: entities
-                  title: Time of Use (Standard / Zima)
-                  show_header_toggle: false
-                  state_color: true
-                  entities:
-                    - entity: number.deye_inverter_time_of_use_1_soc
-                      name: 0:00 - 4:00
-                    - entity: number.deye_inverter_time_of_use_2_soc
-                      name: 4:00 - 5:55
-                    - entity: number.deye_inverter_time_of_use_3_soc
-                      name: 5:55 - 13:05
-                    - entity: number.deye_inverter_time_of_use_4_soc
-                      name: 13:05 - 14:55
-                    - entity: number.deye_inverter_time_of_use_5_soc
-                      name: 14:55 - 22:05
-                    - entity: number.deye_inverter_time_of_use_6_soc
-                      name: 22:05 - 0:00
+              # NOWY RAPORT KSIĘGOWEGO (Zastępuje stare, zabetonowane okienka TOU)
+              - type: markdown
+                title: 🛡️ Raport Księgowego (Kalkulator Przetrwania)
+                content: >
+                  {% set cap_raw = states('number.deye_inverter_battery_capacity') | float(47.0) %}
+                  {% set cap = (cap_raw * 51.2 / 1000) | round(1) if cap_raw > 150 else cap_raw | round(1) %}
+                  {% set soc = states('sensor.deye_inverter_battery_bms_soc') | float(0) %}
+                  {% set plotek = states('input_number.alpha_rce_param_20') | float(20) %}
+                  {% set wolny_soc = [soc - plotek, 0] | max %}
+                  {% set amunicja = (wolny_soc / 100) * cap %}
+                  
+                  {% set is_dst = now().month >= 4 and now().month <= 9 %}
+                  {% set dzienne_od = '15:05' if is_dst else '13:05' %}
+                  {% set dzienne_do = '16:55' if is_dst else '14:55' %}
+                  
+                  {% set tou_state = states('switch.deye_inverter_time_of_use') %}
+                  {% set bypass = '🔴 **AKTYWNY (Ssanie z sieci!)**' if tou_state == 'off' else '🟢 **WYŁĄCZONY (Praca normalna)**' %}
+
+                  **Dioda BYPASSU:** {{ bypass }}
+
+                  ---
+                  ### ☀️ Tanie Okienko Dzienne ({{ dzienne_od }} - {{ dzienne_do }})
+                  ### 🌙 Tanie Okienko Nocne (22:05 - 06:00)
+
+                  **Status Zabezpieczeń Domu:**
+                  - **Nasz Płotek (Cel):** {{ plotek }}% SOC
+                  - **Twój magazyn ma teraz:** {{ soc }}% SOC
+                  - **Werdykt:** {% if soc >= plotek %} 🟢 Śpimy spokojnie (Dom zabezpieczony) {% else %} 🔴 Brakuje energii - Księgowy ładuje z sieci! {% endif %}
+                  
+                  <font color="gray"><i>* Logika uwzględnia +20% fizycznej rezerwy w kWh na nieprzewidziane zużycie (np. na wypadek, gdyby żona włączyła piekarnik).</i></font>
+                  
+                  ---
+                  ### 📈 Amunicja dla Maklera RCE
+                  - **Wolna energia do handlu:** **{{ amunicja | round(1) }} kWh**
+                  <font color="gray"><i>* To Twoja czysta, przeliczona nadwyżka powyżej Płotka, którą system może bezpiecznie zrzucić na giełdę bez ryzyka wyczerpania baterii w nocy.</i></font>
+
           - show_name: true
             show_icon: true
             type: button
             entity: switch.deye_inverter_time_of_use
+            name: Główny Bypass (TOU)
             show_state: true
           - show_name: true
             show_icon: true
@@ -235,74 +229,11 @@ views:
             vertical: false
             features_position: bottom
           - type: tile
-            entity: switch.deye_inverter_time_of_use_1_gen
-            name: Gen 1
-            vertical: false
-            features_position: bottom
-          - type: tile
-            entity: switch.deye_inverter_time_of_use_1_grid_charge
-            name: Grid 1
-            vertical: false
-            features_position: bottom
-          - type: tile
-            entity: switch.deye_inverter_time_of_use_2_gen
-            name: Gen 2
-            vertical: false
-            features_position: bottom
-          - type: tile
-            entity: switch.deye_inverter_time_of_use_2_grid_charge
-            name: Grid 2
-            vertical: false
-            features_position: bottom
-          - type: tile
-            entity: switch.deye_inverter_time_of_use_3_gen
-            name: Gen 3
-            vertical: false
-            features_position: bottom
-          - type: tile
-            entity: switch.deye_inverter_time_of_use_3_grid_charge
-            name: Grid 3
-            vertical: false
-            features_position: bottom
-          - type: tile
-            entity: switch.deye_inverter_time_of_use_4_gen
-            name: Gen 4
-            vertical: false
-            features_position: bottom
-          - type: tile
-            entity: switch.deye_inverter_time_of_use_4_grid_charge
-            name: Grid 4
-            vertical: false
-            features_position: bottom
-          - type: tile
-            entity: switch.deye_inverter_time_of_use_5_gen
-            name: Gen 5
-            vertical: false
-            features_position: bottom
-          - type: tile
-            entity: switch.deye_inverter_time_of_use_5_grid_charge
-            name: Grid 5
-            vertical: false
-            features_position: bottom
-          - type: tile
-            entity: switch.deye_inverter_time_of_use_6_gen
-            name: Gen 6
-            vertical: false
-            features_position: bottom
-          - type: tile
-            entity: switch.deye_inverter_time_of_use_6_grid_charge
-            name: Grid 6
-            vertical: false
-            features_position: bottom
-          - type: gauge
             entity: input_number.alpha_rce_param_42
-            name: Ile dni od balansowania - 21
-            needle: true
-            severity:
-              green: 0
-              yellow: 8
-              red: 14
-            max: 21
+            name: Dni od Balansowania
+            icon: mdi:battery-sync
+            vertical: false
+            features_position: bottom
       - type: grid
         cards:
           - type: entities
