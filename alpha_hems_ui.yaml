@@ -1,20 +1,13 @@
 # =============================================================
-# ALPHA HEMS: CENTRALNY INTERFEJS UŻYTKOWNIKA (v1.29)
+# ALPHA HEMS: CENTRALNY INTERFEJS UŻYTKOWNIKA (v1.30)
 # STATUS: PRODUKCYJNY / EKSPORTOWY (Zatwierdzony Układ Własny)
 #
 # HISTORIA WERSJI:
-# - v1.29: (SURVIVAL CALCULATOR) Usunięcie zbędnych kart TOU, Grid Charge i Gen Charge.
-#          Wdrożenie "Raportu Księgowego" z Kalkulatorem Przetrwania, Amunicją Maklera
-#          w kWh oraz wskaźnikiem awaryjnego trybu BYPASS. Optymalizacja UI.
-# - v1.28: (DASHBOARD REBUILD) Uporządkowanie sekcji pogodowej. Wdrożenie tabeli HTML 
-#          dla Alpha AI (Open-Meteo) oraz naprawa widoczności "Rentgena Decyzji" 
-#          i "Decyzji Mózgu" w zakładce DOM.
-# - v1.27: (DECISION X-RAY) Wdrożenie karty analitycznej Markdown "Rentgen Decyzji" 
-#          w zakładce DOM, wyświetlającej na żywo proces decyzyjny Księgowego.
-# - v1.26: (OSD SYNC & UX CLEANUP) Usunięcie mylącego wskaźnika "Energii do sprzedaży". 
-#          Przebudowa kart TOU na twardy odczyt godzin z falownika.
-# - v1.25: (ZEGARMISTRZ PGE) Wdrożenie kart warunkowych dla Time of Use. 
-# - v1.14: Dodano moduł finansowy (Zysk Total, Miesiąc, Rok).
+# - v1.30: (UX REVOLUTION) Całkowita przebudowa Raportu Księgowego.
+#          Wdrożenie struktury blokowej, systemowych alertów <ha-alert>
+#          oraz tabelarycznego bilansu energii. Optymalizacja czytelności.
+# - v1.29: (SURVIVAL CALCULATOR) Usunięcie zbędnych kart TOU. 
+# - v1.28: (DASHBOARD REBUILD) Uporządkowanie sekcji pogodowej Alpha AI.
 # =============================================================
 
 title: ALPHA HEMS
@@ -160,9 +153,9 @@ views:
         cards:
           - type: vertical-stack
             cards:
-              # NOWY RAPORT KSIĘGOWEGO (Zastępuje stare, zabetonowane okienka TOU)
+              # MODUŁ: PROFESJONALNY RAPORT KSIĘGOWEGO v1.30
               - type: markdown
-                title: 🛡️ Raport Księgowego (Kalkulator Przetrwania)
+                title: 🛡️ Raport Księgowego ALPHA
                 content: >
                   {% set cap_raw = states('number.deye_inverter_battery_capacity') | float(47.0) %}
                   {% set cap = (cap_raw * 51.2 / 1000) | round(1) if cap_raw > 150 else cap_raw | round(1) %}
@@ -170,31 +163,60 @@ views:
                   {% set plotek = states('input_number.alpha_rce_param_20') | float(20) %}
                   {% set wolny_soc = [soc - plotek, 0] | max %}
                   {% set amunicja = (wolny_soc / 100) * cap %}
-                  
+                  {% set tou_state = states('switch.deye_inverter_time_of_use') %}
                   {% set is_dst = now().month >= 4 and now().month <= 9 %}
                   {% set dzienne_od = '15:05' if is_dst else '13:05' %}
                   {% set dzienne_do = '16:55' if is_dst else '14:55' %}
-                  
-                  {% set tou_state = states('switch.deye_inverter_time_of_use') %}
-                  {% set bypass = '🔴 **AKTYWNY (Ssanie z sieci!)**' if tou_state == 'off' else '🟢 **WYŁĄCZONY (Praca normalna)**' %}
 
-                  **Dioda BYPASSU:** {{ bypass }}
+                  <div style="border: 1px solid var(--divider-color); border-radius: 12px; padding: 12px; background-color: rgba(100,100,100,0.05); margin-bottom: 12px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                      <span><b>⚙️ Status Operacyjny</b></span>
+                      {% if tou_state == 'off' %}
+                        <span style="color: #e74c3c; font-weight: bold; font-size: 0.9em;">🔴 BYPASS AKTYWNY</span>
+                      {% else %}
+                        <span style="color: #2ecc71; font-weight: bold; font-size: 0.9em;">🟢 PRACA NORMALNA</span>
+                      {% endif %}
+                    </div>
+                    <div style="font-size: 0.9em; color: var(--secondary-text-color);">
+                      ☀️ Okno Dzień: <b>{{ dzienne_od }} — {{ dzienne_do }}</b><br>
+                      🌙 Okno Noc: <b>22:05 — 06:00</b>
+                    </div>
+                  </div>
 
-                  ---
-                  ### ☀️ Tanie Okienko Dzienne ({{ dzienne_od }} - {{ dzienne_do }})
-                  ### 🌙 Tanie Okienko Nocne (22:05 - 06:00)
+                  <div style="border: 1px solid var(--divider-color); border-radius: 12px; padding: 12px; margin-bottom: 12px;">
+                    <div style="margin-bottom: 10px;"><b>🔋 Bilans Przetrwania</b></div>
+                    <table width="100%" style="border-collapse: collapse; margin-bottom: 10px;">
+                      <tr>
+                        <td align="center" style="color: var(--secondary-text-color); font-size: 0.8em; padding-bottom: 4px;">CEL (PŁOTEK)</td>
+                        <td align="center" style="color: var(--secondary-text-color); font-size: 0.8em; padding-bottom: 4px;">MAGAZYN</td>
+                      </tr>
+                      <tr>
+                        <td align="center"><span style="font-size: 2em; font-weight: 300;">{{ plotek | int }}%</span></td>
+                        <td align="center"><span style="font-size: 2em; font-weight: 500; color: {% if soc >= plotek %}var(--success-color){% else %}var(--error-color){% endif %};">{{ soc | int }}%</span></td>
+                      </tr>
+                    </table>
 
-                  **Status Zabezpieczeń Domu:**
-                  - **Nasz Płotek (Cel):** {{ plotek }}% SOC
-                  - **Twój magazyn ma teraz:** {{ soc }}% SOC
-                  - **Werdykt:** {% if soc >= plotek %} 🟢 Śpimy spokojnie (Dom zabezpieczony) {% else %} 🔴 Brakuje energii - Księgowy ładuje z sieci! {% endif %}
-                  
-                  <font color="gray"><i>* Logika uwzględnia +20% fizycznej rezerwy w kWh na nieprzewidziane zużycie (np. na wypadek, gdyby żona włączyła piekarnik).</i></font>
-                  
-                  ---
-                  ### 📈 Amunicja dla Maklera RCE
-                  - **Wolna energia do handlu:** **{{ amunicja | round(1) }} kWh**
-                  <font color="gray"><i>* To Twoja czysta, przeliczona nadwyżka powyżej Płotka, którą system może bezpiecznie zrzucić na giełdę bez ryzyka wyczerpania baterii w nocy.</i></font>
+                    {% if soc >= plotek %}
+                      <ha-alert alert-type="success" title="Dom zabezpieczony">Mamy wystarczający zapas energii na bieżący sektor.</ha-alert>
+                    {% elif tou_state == 'off' %}
+                      <ha-alert alert-type="error" title="Ładowanie awaryjne">Bypass aktywny. System uzupełnia energię z sieci do poziomu Płotka.</ha-alert>
+                    {% else %}
+                      <ha-alert alert-type="warning" title="Oczekiwanie">Zapas poniżej Płotka, ale energia jest obecnie zbyt droga. Czekam na słońce lub tanie okienko.</ha-alert>
+                    {% endif %}
+                  </div>
+
+                  <div style="border: 1px solid var(--divider-color); border-radius: 12px; padding: 12px; background-color: rgba(46, 204, 113, 0.05);">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                      <span><b>📈 Amunicja Maklera RCE</b></span>
+                      <span style="font-size: 1.3em; font-weight: bold; color: var(--success-color);">{{ amunicja | round(1) }} kWh</span>
+                    </div>
+                    <details style="margin-top: 8px; cursor: pointer;">
+                      <summary style="font-size: 0.85em; color: var(--secondary-text-color);">Pokaż założenia logiki...</summary>
+                      <div style="font-size: 0.8em; color: var(--secondary-text-color); padding: 8px; border-top: 1px solid var(--divider-color); margin-top: 5px;">
+                        System przeliczył zapotrzebowanie domu do kolejnego taniego okienka i dodał <b>+20% fizycznej rezerwy (kWh)</b> na wypadek skoków obciążenia (np. piekarnik). Widoczna Amunicja to wyłącznie czysta nadwyżka, którą Makler może bezpiecznie sprzedać na giełdzie bez narażania domu na nocny import.
+                      </div>
+                    </details>
+                  </div>
 
           - show_name: true
             show_icon: true
