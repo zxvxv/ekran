@@ -860,6 +860,8 @@ views:
             opacity: 0.4
             stroke_width: 1
             yaxis_id: power
+            show:
+              in_header: false
             transform: 'return (x !== null && Number(x) > 0) ? Number(x) : 0;'
             group_by:
               func: avg
@@ -871,6 +873,8 @@ views:
             opacity: 0.4
             stroke_width: 1
             yaxis_id: power
+            show:
+              in_header: false
             transform: 'return (x !== null && Number(x) < 0) ? Math.abs(Number(x)) : 0;'
             group_by:
               func: avg
