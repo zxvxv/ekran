@@ -1,8 +1,11 @@
 # =============================================================
-# ALPHA HEMS: CENTRALNY INTERFEJS UŻYTKOWNIKA (v1.35)
+# === POCZĄTEK CZĘŚCI 1 ===
+# =============================================================
+# ALPHA HEMS: CENTRALNY INTERFEJS UŻYTKOWNIKA (v1.36)
 # STATUS: PRODUKCYJNY / EKSPORTOWY (Zatwierdzony Układ Własny)
 #
 # HISTORIA WERSJI:
+# - v1.36: (HEMS FIX) Usunięcie twardego kodowania okienka letniego w raporcie Księgowego. Zegarmistrz odczytuje teraz realne godziny z falownika.
 # - v1.35: (GRAAL HEMS) Dodanie zakładki 5 "HISTORIA 24H" z wykresem ApexCharts o podwójnej osi Y.
 # - v1.34: (UX TWEAKS) Usunięcie kafelka "Obciążenie Domu", przeniesienie 
 #          "Czas Deye" i "Dni od Balansowania" pod prognozę pogody dla lepszej spójności wizualnej.
@@ -164,9 +167,10 @@ views:
                   {% set wolny_soc = [soc - plotek, 0] | max %}
                   {% set amunicja = (wolny_soc / 100) * cap %}
                   {% set tou_state = states('switch.deye_inverter_time_of_use') %}
-                  {% set is_dst = now().month >= 4 and now().month <= 9 %}
-                  {% set dzienne_od = '15:05' if is_dst else '13:05' %}
-                  {% set dzienne_do = '16:55' if is_dst else '14:55' %}
+                  {% set start_okienka = states('time.deye_inverter_time_of_use_4_start') %}
+                  {% set stop_okienka = states('time.deye_inverter_time_of_use_5_start') %}
+                  {% set dzienne_od = start_okienka if start_okienka not in ['unknown', 'unavailable', ''] else '??:??' %}
+                  {% set dzienne_do = stop_okienka if stop_okienka not in ['unknown', 'unavailable', ''] else '??:??' %}
 
                   ### ⚙️ Status Operacyjny
                   {% if tou_state == 'off' %}
@@ -175,7 +179,7 @@ views:
                   **🟢 PRACA NORMALNA** (Sterowanie automatyczne)
                   {% endif %}
                   
-                  * ☀️ Okno Dzień: **{{ dzienne_od }} — {{ dzienne_do }}**
+                  * ☀️ Okno Dzień: **{{ dzienne_od[:5] }} — {{ dzienne_do[:5] }}**
                   * 🌙 Okno Noc: **22:05 — 06:00**
 
                   ---
@@ -545,7 +549,12 @@ views:
                   const data = entity.attributes.value; if (!data) return []; return data.map((entry) => {
                     return [new Date(entry.dtime.replace(/-/g, '/')).getTime(), entry.rce_pln / 1000];
                   });
-
+# =============================================================
+# === KONIEC CZĘŚCI 1 (SKLEJ Z POCZĄTKIEM CZĘŚCI 2) ===
+# =============================================================
+# =============================================================
+# === POCZĄTEK CZĘŚCI 2 (SKLEJ Z KOŃCEM CZĘŚCI 1) ===
+# =============================================================
   # =============================================================
   # ZAKŁADKA 3: 🏠 DOM (Centrum Dowodzenia i Szufladki)
   # =============================================================
@@ -889,5 +898,5 @@ views:
               func: avg
               duration: 5m
 # =============================================================
-# === KONIEC CZĘŚCI 3 (TO KONIEC PLIKU) ===
+# === KONIEC CZĘŚCI 2 (TO KONIEC PLIKU) ===
 # =============================================================
