@@ -809,3 +809,94 @@ views:
           battery_soc_184: sensor.deye_inverter_battery
           battery_rated_capacity: number.deye_inverter_battery_capacity
           battery_shutdown_soc: number.deye_inverter_battery_shutdown_soc_low_dc
+  # =============================================================
+# === POCZĄTEK CZĘŚCI 3 (DODAJ NA SAMYM DOLE KODU) ===
+# =============================================================
+  # =============================================================
+  # ZAKŁADKA 5: 📊 HISTORIA 24H (Święty Graal HEMS)
+  # =============================================================
+  - type: panel
+    path: historia-24h
+    title: HISTORIA 24H
+    icon: mdi:chart-timeline-variant
+    cards:
+      - type: custom:apexcharts-card
+        graph_span: 24h
+        update_interval: 1min
+        header:
+          show: true
+          title: 'Przebieg dobowy (Moc i Magazyn)'
+          show_states: true
+          colorize_states: true
+        apex_config:
+          chart:
+            height: 600
+          stroke:
+            curve: smooth
+          legend:
+            show: true
+        yaxis:
+          - id: power
+            min: 0
+            decimals: 0
+            title: 'Moc (W)'
+          - id: soc
+            min: 0
+            max: 100
+            opposite: true
+            decimals: 0
+            title: 'SOC (%)'
+        series:
+          - entity: sensor.deye_inverter_load_power
+            name: Zużycie Domu
+            type: line
+            color: '#e0e0e0'
+            stroke_width: 2
+            yaxis_id: power
+            group_by:
+              func: avg
+              duration: 5m
+          - entity: sensor.deye_inverter_dc_power
+            name: Słońce (PV)
+            type: area
+            color: '#f1c40f'
+            opacity: 0.3
+            stroke_width: 1
+            yaxis_id: power
+            group_by:
+              func: avg
+              duration: 5m
+          - entity: sensor.deye_inverter_grid_power
+            name: Zakup z Sieci
+            type: area
+            color: '#e74c3c'
+            opacity: 0.4
+            stroke_width: 1
+            yaxis_id: power
+            transform: 'return x > 0 ? x : 0;'
+            group_by:
+              func: avg
+              duration: 5m
+          - entity: sensor.deye_inverter_grid_power
+            name: Sprzedaż do Sieci
+            type: area
+            color: '#2ecc71'
+            opacity: 0.4
+            stroke_width: 1
+            yaxis_id: power
+            transform: 'return x < 0 ? Math.abs(x) : 0;'
+            group_by:
+              func: avg
+              duration: 5m
+          - entity: sensor.deye_inverter_battery_bms_soc
+            name: SOC Magazynu
+            type: line
+            color: '#3498db'
+            stroke_width: 3
+            yaxis_id: soc
+            group_by:
+              func: avg
+              duration: 5m
+# =============================================================
+# === KONIEC CZĘŚCI 3 (TO KONIEC PLIKU) ===
+# =============================================================
