@@ -1,7 +1,4 @@
 # =============================================================
-# === POCZĄTEK CZĘŚCI 1 ===
-# =============================================================
-# =============================================================
 # ALPHA HEMS: CENTRALNY INTERFEJS UŻYTKOWNIKA (v1.35)
 # STATUS: PRODUKCYJNY / EKSPORTOWY (Zatwierdzony Układ Własny)
 #
@@ -548,12 +545,7 @@ views:
                   const data = entity.attributes.value; if (!data) return []; return data.map((entry) => {
                     return [new Date(entry.dtime.replace(/-/g, '/')).getTime(), entry.rce_pln / 1000];
                   });
-# =============================================================
-# === KONIEC CZĘŚCI 1 (SKLEJ Z POCZĄTKIEM CZĘŚCI 2) ===
-# =============================================================
-# =============================================================
-# === POCZĄTEK CZĘŚCI 2 (SKLEJ Z KOŃCEM CZĘŚCI 1) ===
-# =============================================================
+
   # =============================================================
   # ZAKŁADKA 3: 🏠 DOM (Centrum Dowodzenia i Szufladki)
   # =============================================================
@@ -846,13 +838,11 @@ views:
           - id: power
             min: 0
             decimals: 0
-            title: 'Moc (W)'
           - id: soc
             min: 0
             max: 100
             opposite: true
             decimals: 0
-            title: 'SOC (%)'
         series:
           - entity: sensor.deye_inverter_load_power
             name: Zużycie Domu
@@ -880,7 +870,7 @@ views:
             opacity: 0.4
             stroke_width: 1
             yaxis_id: power
-            transform: 'return x > 0 ? x : 0;'
+            transform: 'return (x !== null && Number(x) > 0) ? Number(x) : 0;'
             group_by:
               func: avg
               duration: 5m
@@ -891,7 +881,7 @@ views:
             opacity: 0.4
             stroke_width: 1
             yaxis_id: power
-            transform: 'return x < 0 ? Math.abs(x) : 0;'
+            transform: 'return (x !== null && Number(x) < 0) ? Math.abs(Number(x)) : 0;'
             group_by:
               func: avg
               duration: 5m
@@ -904,6 +894,3 @@ views:
             group_by:
               func: avg
               duration: 5m
-# =============================================================
-# === KONIEC CZĘŚCI 2 (TO KONIEC PLIKU) ===
-# =============================================================
