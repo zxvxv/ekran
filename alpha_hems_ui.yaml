@@ -1,11 +1,11 @@
 # =============================================================
 # === POCZĄTEK CZĘŚCI 1 ===
 # =============================================================
-# ALPHA HEMS: CENTRALNY INTERFEJS UŻYTKOWNIKA (v1.36)
+# ALPHA HEMS: CENTRALNY INTERFEJS UŻYTKOWNIKA (v1.37)
 # STATUS: PRODUKCYJNY / EKSPORTOWY (Zatwierdzony Układ Własny)
 #
 # HISTORIA WERSJI:
-# - v1.36: (HEMS FIX) Usunięcie twardego kodowania okienka letniego w raporcie Księgowego. Zegarmistrz odczytuje teraz realne godziny z falownika.
+# - v1.37: (UNIVERSAL UI FIX) Usunięcie twardego kodowania okienka letniego (PGE) w raporcie Księgowego. Dashboard odczytuje teraz uniwersalne ramy czasowe podane bezpośrednio przez aplikację główną.
 # - v1.35: (GRAAL HEMS) Dodanie zakładki 5 "HISTORIA 24H" z wykresem ApexCharts o podwójnej osi Y.
 # - v1.34: (UX TWEAKS) Usunięcie kafelka "Obciążenie Domu", przeniesienie 
 #          "Czas Deye" i "Dni od Balansowania" pod prognozę pogody dla lepszej spójności wizualnej.
@@ -167,10 +167,7 @@ views:
                   {% set wolny_soc = [soc - plotek, 0] | max %}
                   {% set amunicja = (wolny_soc / 100) * cap %}
                   {% set tou_state = states('switch.deye_inverter_time_of_use') %}
-                  {% set start_okienka = states('time.deye_inverter_time_of_use_4_start') %}
-                  {% set stop_okienka = states('time.deye_inverter_time_of_use_5_start') %}
-                  {% set dzienne_od = start_okienka if start_okienka not in ['unknown', 'unavailable', ''] else '??:??' %}
-                  {% set dzienne_do = stop_okienka if stop_okienka not in ['unknown', 'unavailable', ''] else '??:??' %}
+                  {% set okno_dzienne = states('input_text.alpha_rce_stan_04') %}
 
                   ### ⚙️ Status Operacyjny
                   {% if tou_state == 'off' %}
@@ -179,7 +176,7 @@ views:
                   **🟢 PRACA NORMALNA** (Sterowanie automatyczne)
                   {% endif %}
                   
-                  * ☀️ Okno Dzień: **{{ dzienne_od[:5] }} — {{ dzienne_do[:5] }}**
+                  * ☀️ Okno Dzień: **{{ okno_dzienne if okno_dzienne not in ['unknown', 'unavailable', ''] else 'Oczekiwanie...' }}**
                   * 🌙 Okno Noc: **22:05 — 06:00**
 
                   ---
