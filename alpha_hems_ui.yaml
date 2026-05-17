@@ -853,16 +853,6 @@ views:
             group_by:
               func: avg
               duration: 5m
-          - entity: sensor.deye_inverter_dc_power
-            name: Słońce (PV)
-            type: area
-            color: '#f1c40f'
-            opacity: 0.3
-            stroke_width: 1
-            yaxis_id: power
-            group_by:
-              func: avg
-              duration: 5m
           - entity: sensor.deye_inverter_grid_power
             name: Zakup z Sieci
             type: area
@@ -894,3 +884,6 @@ views:
             group_by:
               func: avg
               duration: 5m
+# =============================================================
+# === KONIEC CZĘŚCI 3 (TO KONIEC PLIKU) ===
+# =============================================================
