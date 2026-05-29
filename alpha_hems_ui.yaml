@@ -814,12 +814,12 @@ views:
   # ZAKŁADKA 5: 📊 HISTORIA 24H (Święty Graal HEMS)
   # =============================================================
   - type: panel
-    path: historia-48h
-    title: HISTORIA 48H
+    path: historia-36h
+    title: HISTORIA 36H
     icon: mdi:chart-timeline-variant
     cards:
       - type: custom:apexcharts-card
-        graph_span: 48h
+        graph_span: 36h
         update_interval: 1min
         header:
           show: true
