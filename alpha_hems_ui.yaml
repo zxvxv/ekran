@@ -1,8 +1,10 @@
 # =============================================================
-# ALPHA HEMS: CENTRALNY INTERFEJS UŻYTKOWNIKA (v1.38)
+# ALPHA HEMS: CENTRALNY INTERFEJS UŻYTKOWNIKA (v1.39)
 # STATUS: PRODUKCYJNY / EKSPORTOWY (Zatwierdzony Układ Własny)
 #
 # HISTORIA WERSJI:
+# - v1.39: (FROZEN METEO FIX) Usunięcie wyszukiwarki encji weather.* z karty Alpha AI. 
+#          Dashboard odczytuje teraz wyłącznie zamrożoną (o 14:00) encję poligonową.
 # - v1.37: (UNIVERSAL UI FIX) Usunięcie twardego kodowania okienka letniego (PGE) w raporcie Księgowego. Dashboard odczytuje teraz uniwersalne ramy czasowe podane bezpośrednio przez aplikację główną.
 # - v1.35: (GRAAL HEMS) Dodanie zakładki 5 "HISTORIA 24H" z wykresem ApexCharts o podwójnej osi Y.
 # - v1.34: (UX TWEAKS) Usunięcie kafelka "Obciążenie Domu", przeniesienie 
@@ -290,13 +292,7 @@ views:
               content: >
                 {% set mnoznik = states('input_number.alpha_rce_param_46') | float(6.0) %}
                 {% set zima = 0.6 if states('input_boolean.alpha_rce_flaga_12') == 'on' else 1.0 %}
-                {% set radar = 'sensor.ai_raw_forecast_data' %}
-                {% for state in states.weather | selectattr('attributes.attribution', 'defined') %}
-                  {% if 'Open-Meteo' in state.attributes.attribution %}
-                    {% set radar = state.entity_id %}
-                  {% endif %}
-                {% endfor %}
-                {% set raw_rad = state_attr(radar, 'forecast') | default([], true) | map(attribute='shortwave_radiation') | select('defined') | list if radar.startswith('weather.') else state_attr('sensor.ai_raw_forecast_data', 'shortwave_radiation') | default([], true) %}
+                {% set raw_rad = state_attr('sensor.ai_raw_forecast_data', 'shortwave_radiation') | default([], true) %}
                 
                 **Zastosowany mnożnik dachu:** {{ (mnoznik * zima) | round(2) }}
                 
