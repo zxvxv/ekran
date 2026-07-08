@@ -883,3 +883,80 @@ views:
             group_by:
               func: avg
               duration: 5m
+# =============================================================
+  # ZAKŁADKA 6: 🔮 SOC PROGNOZA (Predictive Twin)
+  # =============================================================
+  - type: panel
+    path: soc-prognoza
+    title: SOC PROGNOZA
+    icon: mdi:chart-bell-curve-cumulative
+    cards:
+      - type: custom:apexcharts-card
+        header:
+          show: true
+          title: 🔮 Predictive Twin (Baza vs Symulacja RCE)
+          show_states: true
+        graph_span: 24h
+        span:
+          start: minute
+        apex_config:
+          chart:
+            height: 900
+        all_series_config:
+          stroke_width: 3
+          curve: smooth
+        series:
+          - entity: sensor.alpha_soc_predictive_twin
+            name: SOC Baza (Bez sprzedaży)
+            unit: "%"
+            color: "#00a8ff"
+            type: area
+            opacity: 0.2
+            yaxis_id: percent
+            data_generator: >
+              let d = entity.attributes.simulation; return (typeof d === 'string' ? JSON.parse(d) : d).map(p => [p.timestamp, p.soc]);
+          - entity: sensor.alpha_soc_predictive_twin
+            name: SOC Symulacja RCE
+            unit: "%"
+            color: "#9b59b6"
+            type: line
+            stroke_width: 4
+            yaxis_id: percent
+            data_generator: >
+              let d = entity.attributes.simulation; return (typeof d === 'string' ? JSON.parse(d) : d).map(p => [p.timestamp, p.soc_sell]);
+          - entity: sensor.alpha_soc_predictive_twin
+            name: Krytyczny SOC (Deye Low)
+            unit: "%"
+            color: "#ff4500"
+            type: line
+            stroke_width: 1
+            yaxis_id: percent
+            data_generator: >
+              let d = entity.attributes.simulation; let limit = parseFloat(hass.states['number.deye_inverter_battery_low_soc'].state) || 20; return (typeof d === 'string' ? JSON.parse(d) : d).map(p => [p.timestamp, limit]);
+          - entity: sensor.alpha_soc_predictive_twin
+            name: Uzysk słońca
+            unit: kWh
+            color: "#f1c40f"
+            type: area
+            opacity: 0.3
+            yaxis_id: energy
+            data_generator: >
+              let d = entity.attributes.simulation; return (typeof d === 'string' ? JSON.parse(d) : d).map(p => [p.timestamp, p.pv]);
+          - entity: sensor.alpha_soc_predictive_twin
+            name: Pobór domu
+            unit: kWh
+            color: "#e84118"
+            type: line
+            yaxis_id: energy
+            data_generator: >
+              let d = entity.attributes.simulation; return (typeof d === 'string' ? JSON.parse(d) : d).map(p => [p.timestamp, p.cons]);
+        yaxis:
+          - id: percent
+            min: 0
+            max: 100
+            decimals: 0
+            opposite: false
+          - id: energy
+            min: 0
+            decimals: 2
+            opposite: true
