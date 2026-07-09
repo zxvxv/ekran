@@ -1001,7 +1001,7 @@ views:
                     name: "Moc sprzedaży RCE"
                     icon: mdi:transmission-tower-export
                   - entity: input_boolean.alpha_rce_flaga_01
-                    name: "Rozliczenie: Net-Billing (Wył = Opusty)"
+                    name: "Rozliczenie: Nowe zasady (Net-billing) [Wył = Stare zasady / Net-metering]"
                     icon: mdi:scale-balance
                   - type: section
                     label: "Taryfy i Tryby Pracy"
