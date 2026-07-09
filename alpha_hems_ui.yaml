@@ -968,7 +968,7 @@ views:
             opposite: true
 
   # =============================================================
-  # ZAKŁADKA 7: ⚙️ USTAWIENIA (Centrum Dowodzenia v1.42)
+  # ZAKŁADKA 7: ⚙️ USTAWIENIA (Centrum Dowodzenia v1.43)
   # =============================================================
   - type: panel
     path: ustawienia
@@ -978,7 +978,7 @@ views:
       - type: vertical-stack
         cards:
           - type: markdown
-            title: "🛠️ Centrum Dowodzenia ALPHA v1.42"
+            title: "🛠️ Centrum Dowodzenia ALPHA v1.43"
             content: "Konfiguracja parametrów pracy systemu bezpośrednio z interfejsu."
 
           - type: grid
@@ -1036,9 +1036,9 @@ views:
                   - entity: input_boolean.alpha_rce_flaga_04
                     name: "🔔 Włącz powiadomienia PUSH"
                     icon: mdi:bell-ring
-                  - entity: input_text.alpha_rce_stan_25
-                    name: "Telefon (np. device_tracker.dummy)"
-                    icon: mdi:cellphone-message
+  # =============================================================
+  # KONIEC ZAKŁADKI 7
+  # =============================================================
 
 # =============================================================
 # LEGENDA ZAJĘTYCH POMOCNIKÓW (MOST INTERFEJSU v1.40)
