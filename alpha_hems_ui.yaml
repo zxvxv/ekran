@@ -968,7 +968,7 @@ views:
             opposite: true
 
   # =============================================================
-  # ZAKŁADKA 7: ⚙️ USTAWIENIA (Centrum Dowodzenia ALPHA v1.40)
+  # ZAKŁADKA 7: ⚙️ USTAWIENIA (Centrum Dowodzenia v1.40)
   # =============================================================
   - type: panel
     path: ustawienia
@@ -978,214 +978,72 @@ views:
       - type: vertical-stack
         cards:
           - type: markdown
-            title: "🛠️ Centrum Dowodzenia ALPHA v1.40"
-            content: >
-              Konfiguracja parametrów pracy systemu bezpośrednio z interfejsu dotykowego. Wszystkie opcje bazują na zdefiniowanej w systemie uniwersalnej matrycy pomocników tekstowych i flag logicznych.
+            title: "🛠️ Centrum Dowodzenia ALPHA"
+            content: "Konfiguracja parametrów pracy systemu bezpośrednio z interfejsu dotykowego."
 
           - type: grid
             columns: 2
-            square: false
             cards:
-              # --- SEKCJA 1: FINANSE I WYDAJNOŚĆ (Brak suwaków - Czysty Box z klawiatury) ---
+              # --- SEKCJA 1: FINANSE I WYDAJNOŚĆ ---
               - type: entities
                 title: "💰 Finanse i Giełda"
                 show_header_toggle: false
                 entities:
-                  - entity: input_text.alpha_rce_stan_06
-                    name: "Cena zakupu energii (zł/kWh)"
+                  - entity: input_number.alpha_koszt_zakupu
+                    name: "Cena zakupu energii"
                     icon: mdi:cash-minus
-                  - entity: input_text.alpha_rce_stan_07
-                    name: "Oczekiwany zysk minimalny (zł/kWh)"
+                  - entity: input_number.alpha_zysk_minimalny
+                    name: "Oczekiwany zysk minimalny"
                     icon: mdi:chart-line-variant
-                  - entity: input_text.alpha_rce_stan_08
-                    name: "Moc sprzedaży RCE (W)"
+                  - entity: input_number.alpha_moc_sprzedazy
+                    name: "Moc sprzedaży RCE"
                     icon: mdi:transmission-tower-export
                   - type: section
                   - entity: input_boolean.alpha_rce_flaga_01
-                    name: "System Rozliczeń (Bieżący stan)"
+                    name: "Rozliczenie: Net-Billing (Wył = Opusty)"
                     icon: mdi:scale-balance
-                  - type: buttons
-                    buttons:
-                      - name: "Net-Billing"
-                        icon: mdi:currency-usd
-                        tap_action:
-                          action: call-service
-                          service: input_boolean.turn_on
-                          target:
-                            entity_id: input_boolean.alpha_rce_flaga_01
-                      - name: "Net-Metering / Opusty"
-                        icon: mdi:restore
-                        tap_action:
-                          action: call-service
-                          service: input_boolean.turn_off
-                          target:
-                            entity_id: input_boolean.alpha_rce_flaga_01
 
-              # --- SEKCJA 2: PARAMETRY PRACY FALOWNIKA (Pełny wybór z opcji) ---
+              # --- SEKCJA 2: PARAMETRY PRACY FALOWNIKA ---
               - type: entities
                 title: "⚡ Taryfy i Tryby Pracy"
                 show_header_toggle: false
                 entities:
-                  - entity: input_boolean.alpha_rce_flaga_06
-                    name: "Tryb Spoczynku (Bieżący stan)"
+                  - entity: input_select.alpha_tryb_bilansowania
+                    name: "Tryb Spoczynku"
                     icon: mdi:home-lightning-bolt
-                  - type: buttons
-                    buttons:
-                      - name: "Zero Export To CT"
-                        icon: mdi:current-ac
-                        tap_action:
-                          action: call-service
-                          service: input_boolean.turn_off
-                          target:
-                            entity_id: input_boolean.alpha_rce_flaga_06
-                      - name: "Zero Export To Load"
-                        icon: mdi:home-lightning-bolt
-                        tap_action:
-                          action: call-service
-                          service: input_boolean.turn_on
-                          target:
-                            entity_id: input_boolean.alpha_rce_flaga_06
-                  - type: section
-                  - entity: input_text.alpha_rce_stan_10
-                    name: "Bieżąca Taryfa"
-                    icon: mdi:clock-time-eight
-                  - type: buttons
-                    buttons:
-                      - name: "Wybierz G12"
-                        icon: mdi:clock-outline
-                        tap_action:
-                          action: call-service
-                          service: input_text.set_value
-                          target:
-                            entity_id: input_text.alpha_rce_stan_10
-                          data:
-                            value: "G12"
-                      - name: "Wybierz G12W"
-                        icon: mdi:calendar-clock
-                        tap_action:
-                          action: call-service
-                          service: input_text.set_value
-                          target:
-                            entity_id: input_text.alpha_rce_stan_10
-                          data:
-                            value: "G12W"
-                  - type: section
-                  - entity: input_text.alpha_rce_stan_09
-                    name: "Wybrany Operator OSD"
+                  - entity: input_select.alpha_osd
+                    name: "Operator OSD"
                     icon: mdi:factory
-                  - type: buttons
-                    buttons:
-                      - name: "PGE"
-                        tap_action:
-                          action: call-service
-                          service: input_text.set_value
-                          target:
-                            entity_id: input_text.alpha_rce_stan_09
-                          data:
-                            value: "PGE"
-                      - name: "Tauron"
-                        tap_action:
-                          action: call-service
-                          service: input_text.set_value
-                          target:
-                            entity_id: input_text.alpha_rce_stan_09
-                          data:
-                            value: "Tauron"
-                      - name: "Enea"
-                        tap_action:
-                          action: call-service
-                          service: input_text.set_value
-                          target:
-                            entity_id: input_text.alpha_rce_stan_09
-                          data:
-                            value: "Enea"
-                      - name: "Energa"
-                        tap_action:
-                          action: call-service
-                          service: input_text.set_value
-                          target:
-                            entity_id: input_text.alpha_rce_stan_09
-                          data:
-                            value: "Energa"
+                  - entity: input_select.alpha_taryfa
+                    name: "Taryfa"
+                    icon: mdi:clock-time-eight
 
-              # --- SEKCJA 3: BEZPIECZEŃSTWO I ZAPASY (Bufor Komfortu) ---
+              # --- SEKCJA 3: BEZPIECZEŃSTWO I ZAPASY ---
               - type: entities
-                title: "🛋️ Zarządzanie Zapasem i Pogodą"
+                title: "🛋️ Zarządzanie Zapasem"
                 show_header_toggle: false
                 entities:
                   - entity: input_number.alpha_rezerwa_soc
                     name: "Rozmiar Bufora Komfortu (%)"
                     icon: mdi:battery-plus
-                  - type: section
                   - entity: input_boolean.alpha_rce_flaga_03
-                    name: "Automatyka pogodowa bufora"
+                    name: "☀️ Wyłącz Bufor w słoneczne dni (>140%)"
                     icon: mdi:weather-sunny
-                  - type: buttons
-                    buttons:
-                      - name: "Inteligentny (>140% słońca wyłącz)"
-                        icon: mdi:brain
-                        tap_action:
-                          action: call-service
-                          service: input_boolean.turn_on
-                          target:
-                            entity_id: input_boolean.alpha_rce_flaga_03
-                      - name: "Zawsze Włączony Zapas"
-                        icon: mdi:lock
-                        tap_action:
-                          action: call-service
-                          service: input_boolean.turn_off
-                          target:
-                            entity_id: input_boolean.alpha_rce_flaga_03
 
-              # --- SEKCJA 4: STRUMIEŃ SYSTEMOWY I DI DIAGNOSTYKA ---
+              # --- SEKCJA 4: SYSTEM I DIAGNOSTYKA ---
               - type: entities
                 title: "🛡️ System i Komunikacja"
                 show_header_toggle: false
                 entities:
                   - entity: input_boolean.alpha_rce_flaga_02
-                    name: "Tryb Pracy Giełdowej"
+                    name: "🛡️ TRYB SYMULACJI (Blokada handlu)"
                     icon: mdi:shield-lock
-                  - type: buttons
-                    buttons:
-                      - name: "URUCHOM HANDEL GIEŁDOWY"
-                        icon: mdi:play-circle
-                        tap_action:
-                          action: call-service
-                          service: input_boolean.turn_off
-                          target:
-                            entity_id: input_boolean.alpha_rce_flaga_02
-                      - name: "WŁĄCZ SYMULACJĘ (Blokada)"
-                        icon: mdi:pause-circle
-                        tap_action:
-                          action: call-service
-                          service: input_boolean.turn_on
-                          target:
-                            entity_id: input_boolean.alpha_rce_flaga_02
-                  - type: section
                   - entity: input_boolean.alpha_rce_flaga_04
-                    name: "Powiadomienia Push"
+                    name: "🔔 Włącz powiadomienia PUSH"
                     icon: mdi:bell-ring
-                  - type: buttons
-                    buttons:
-                      - name: "Włącz PUSH"
-                        icon: mdi:bell-check
-                        tap_action:
-                          action: call-service
-                          service: input_boolean.turn_on
-                          target:
-                            entity_id: input_boolean.alpha_rce_flaga_04
-                      - name: "Wyłącz PUSH"
-                        icon: mdi:bell-off
-                        tap_action:
-                          action: call-service
-                          service: input_boolean.turn_off
-                          target:
-                            entity_id: input_boolean.alpha_rce_flaga_04
-                  - type: section
-                  - entity: input_text.alpha_rce_stan_11
-                    name: "Identyfikator telefonu (device_tracker)"
+                  - entity: input_text.alpha_rce_stan_25
+                    name: "Telefon (np. device_tracker.dummy)"
                     icon: mdi:cellphone-message
-
 # =============================================================
 # LEGENDA ZAJĘTYCH POMOCNIKÓW (MOST INTERFEJSU v1.40)
 # =============================================================
