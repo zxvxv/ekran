@@ -968,7 +968,7 @@ views:
             opposite: true
 
   # =============================================================
-  # ZAKŁADKA 7: ⚙️ USTAWIENIA (Centrum Dowodzenia v1.40)
+  # ZAKŁADKA 7: ⚙️ USTAWIENIA (Centrum Dowodzenia v1.41)
   # =============================================================
   - type: panel
     path: ustawienia
@@ -978,8 +978,8 @@ views:
       - type: vertical-stack
         cards:
           - type: markdown
-            title: "🛠️ Centrum Dowodzenia ALPHA"
-            content: "Konfiguracja parametrów pracy systemu bezpośrednio z interfejsu dotykowego."
+            title: "🛠️ Centrum Dowodzenia ALPHA v1.41"
+            content: "Konfiguracja parametrów pracy systemu bezpośrednio z interfejsu."
 
           - type: grid
             columns: 2
