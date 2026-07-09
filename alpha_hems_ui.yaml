@@ -968,7 +968,7 @@ views:
             opposite: true
 
   # =============================================================
-  # ZAKŁADKA 7: ⚙️ USTAWIENIA (Centrum Dowodzenia v1.41)
+  # ZAKŁADKA 7: ⚙️ USTAWIENIA (Centrum Dowodzenia v1.42)
   # =============================================================
   - type: panel
     path: ustawienia
@@ -978,17 +978,19 @@ views:
       - type: vertical-stack
         cards:
           - type: markdown
-            title: "🛠️ Centrum Dowodzenia ALPHA v1.41"
+            title: "🛠️ Centrum Dowodzenia ALPHA v1.42"
             content: "Konfiguracja parametrów pracy systemu bezpośrednio z interfejsu."
 
           - type: grid
             columns: 2
             cards:
-              # --- SEKCJA 1: FINANSE I WYDAJNOŚĆ ---
+              # --- KOLUMNA 1: FINANSE, TARYFY I GIEŁDA ---
               - type: entities
-                title: "💰 Finanse i Giełda"
+                title: "💰 Handel i Parametry Sieci"
                 show_header_toggle: false
                 entities:
+                  - type: section
+                    label: "Finanse i Giełda"
                   - entity: input_number.alpha_koszt_zakupu
                     name: "Cena zakupu energii"
                     icon: mdi:cash-minus
@@ -998,16 +1000,11 @@ views:
                   - entity: input_number.alpha_moc_sprzedazy
                     name: "Moc sprzedaży RCE"
                     icon: mdi:transmission-tower-export
-                  - type: section
                   - entity: input_boolean.alpha_rce_flaga_01
                     name: "Rozliczenie: Net-Billing (Wył = Opusty)"
                     icon: mdi:scale-balance
-
-              # --- SEKCJA 2: PARAMETRY PRACY FALOWNIKA ---
-              - type: entities
-                title: "⚡ Taryfy i Tryby Pracy"
-                show_header_toggle: false
-                entities:
+                  - type: section
+                    label: "Taryfy i Tryby Pracy"
                   - entity: input_select.alpha_tryb_bilansowania
                     name: "Tryb Spoczynku"
                     icon: mdi:home-lightning-bolt
@@ -1018,23 +1015,21 @@ views:
                     name: "Taryfa"
                     icon: mdi:clock-time-eight
 
-              # --- SEKCJA 3: BEZPIECZEŃSTWO I ZAPASY ---
+              # --- KOLUMNA 2: ZAPASY, SYSTEM I KOMUNIKACJA ---
               - type: entities
-                title: "🛋️ Zarządzanie Zapasem"
+                title: "🛡️ Bezpieczeństwo i System"
                 show_header_toggle: false
                 entities:
+                  - type: section
+                    label: "Zarządzanie Zapasem"
                   - entity: input_number.alpha_rezerwa_soc
                     name: "Rozmiar Bufora Komfortu (%)"
                     icon: mdi:battery-plus
                   - entity: input_boolean.alpha_rce_flaga_03
                     name: "☀️ Wyłącz Bufor w słoneczne dni (>140%)"
                     icon: mdi:weather-sunny
-
-              # --- SEKCJA 4: SYSTEM I DIAGNOSTYKA ---
-              - type: entities
-                title: "🛡️ System i Komunikacja"
-                show_header_toggle: false
-                entities:
+                  - type: section
+                    label: "System i Komunikacja"
                   - entity: input_boolean.alpha_rce_flaga_02
                     name: "🛡️ TRYB SYMULACJI (Blokada handlu)"
                     icon: mdi:shield-lock
@@ -1044,6 +1039,7 @@ views:
                   - entity: input_text.alpha_rce_stan_25
                     name: "Telefon (np. device_tracker.dummy)"
                     icon: mdi:cellphone-message
+
 # =============================================================
 # LEGENDA ZAJĘTYCH POMOCNIKÓW (MOST INTERFEJSU v1.40)
 # =============================================================
