@@ -960,3 +960,108 @@ views:
             min: 0
             decimals: 2
             opposite: true
+  # =============================================================
+  # ZAKŁADKA 7: ⚙️ USTAWIENIA (Centrum Dowodzenia)
+  # =============================================================
+  - type: panel
+    path: ustawienia
+    title: USTAWIENIA
+    icon: mdi:cog
+    cards:
+      - type: vertical-stack
+        cards:
+          - type: markdown
+            title: 🛠️ Centrum Dowodzenia ALPHA
+            content: >
+              Zmiana poniższych parametrów natychmiast modyfikuje logikę pracy systemu, bez konieczności edycji kodu Blueprintu.
+
+          - type: grid
+            columns: 2
+            cards:
+              # --- BLOK 1: FINANSE I GIEŁDA ---
+              - type: entities
+                title: 💰 Finanse i RCE
+                show_header_toggle: false
+                entities:
+                  - entity: input_boolean.alpha_rce_flaga_02
+                    name: "🛡️ TRYB SYMULACJI (Blokada handlu)"
+                    icon: mdi:shield-lock
+                  - entity: input_boolean.alpha_rce_flaga_01
+                    name: "Rozliczenie: Net-Billing (Wył = Opusty)"
+                    icon: mdi:scale-balance
+                  - type: divider
+                  - entity: input_number.alpha_koszt_zakupu
+                    name: "Cena zakupu energii"
+                    icon: mdi:cash-minus
+                  - entity: input_number.alpha_zysk_minimalny
+                    name: "Oczekiwany zysk minimalny"
+                    icon: mdi:chart-line-variant
+                  - entity: input_number.alpha_rce_param_55
+                    name: "Moc sprzedaży RCE"
+                    icon: mdi:transmission-tower-export
+
+              # --- BLOK 2: PARAMETRY PRACY FALOWNIKA ---
+              - type: entities
+                title: ⚡ Parametry Falownika i OSD
+                show_header_toggle: false
+                entities:
+                  - entity: input_boolean.alpha_rce_flaga_06
+                    name: "Tryb: Zero Export To Load (Wył = To CT)"
+                    icon: mdi:home-lightning-bolt
+                  - entity: input_text.alpha_rce_stan_06
+                    name: "OSD (Wpisz: PGE, Tauron, Enea...)"
+                    icon: mdi:factory
+                  - entity: input_boolean.alpha_rce_flaga_05
+                    name: "Taryfa: G12W (Wył = G12 standard)"
+                    icon: mdi:clock-time-eight
+
+              # --- BLOK 3: BEZPIECZEŃSTWO I ZAPASY ---
+              - type: entities
+                title: 🛋️ Bufor Komfortu (Zapas)
+                show_header_toggle: false
+                entities:
+                  - entity: input_number.alpha_rezerwa_soc
+                    name: "Pojemność Bufora Komfortu"
+                    icon: mdi:battery-plus
+                  - entity: input_boolean.alpha_rce_flaga_03
+                    name: "☀️ Wyłącz Bufor w słoneczne dni (>140%)"
+                    icon: mdi:weather-sunny
+
+              # --- BLOK 4: POWIADOMIENIA ---
+              - type: entities
+                title: 📱 Komunikacja
+                show_header_toggle: false
+                entities:
+                  - entity: input_boolean.alpha_rce_flaga_04
+                    name: "🔔 Włącz powiadomienia PUSH"
+                    icon: mdi:bell-ring
+                  - entity: input_text.alpha_rce_stan_07
+                    name: "Telefon (np. device_tracker.telefon)"
+                    icon: mdi:cellphone-message
+
+# =============================================================
+# LEGENDA ZAJĘTYCH POMOCNIKÓW (MAPOWANIE Z BLUEPRINTU)
+# =============================================================
+# Poniższa lista określa, które zasoby z matrycy 'alpha_rce'
+# zostały na stałe przypisane do funkcji z menu ustawień.
+#
+# --- DEDYKOWANE (Istniejące z nazwy):
+# 1. input_number.alpha_koszt_zakupu    -> Cena zakupu energii (zł/kWh)
+# 2. input_number.alpha_zysk_minimalny  -> Oczekiwany zysk minimalny (zł/kWh)
+# 3. input_number.alpha_rezerwa_soc     -> Bufor komfortu (%)
+#
+# --- FLAGI LOGICZNE (ON/OFF):
+# 4. input_boolean.alpha_rce_flaga_01   -> System rozliczeń (ON = Net-Billing, OFF = Net-Metering/Opusty)
+# 5. input_boolean.alpha_rce_flaga_02   -> Tryb symulacji (ON = Aktywny, OFF = Praca na giełdzie)
+# 6. input_boolean.alpha_rce_flaga_03   -> Smart Bufor Komfortu (ON = Wyłącz bufor gdy słońce > 140%)
+# 7. input_boolean.alpha_rce_flaga_04   -> Powiadomienia PUSH (ON = Włączone)
+# 8. input_boolean.alpha_rce_flaga_05   -> Taryfa (ON = G12W, OFF = G12)
+# 9. input_boolean.alpha_rce_flaga_06   -> Tryb spoczynku (ON = Zero Export to Load, OFF = Zero Export to CT)
+#
+# --- PARAMETRY LICZBOWE:
+# 10. input_number.alpha_rce_param_55   -> Moc sprzedaży RCE (W)
+#
+# --- PARAMETRY TEKSTOWE:
+# 11. input_text.alpha_rce_stan_06      -> Operator OSD (np. "PGE")
+# 12. input_text.alpha_rce_stan_07      -> Encja telefonu do powiadomień (np. "device_tracker.dummy")
+# =============================================================
