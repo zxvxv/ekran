@@ -951,6 +951,7 @@ views:
             data_generator: >
               let d = entity.attributes.simulation; return (typeof d === 'string' ? JSON.parse(d) : d).map(p => [p.timestamp, p.cons]);
         yaxis:
+          # === KOTWICA GÓRNA (Dashboard Lovelace) ===
           - id: percent
             min: 0
             max: 100
@@ -960,6 +961,7 @@ views:
             min: 0
             decimals: 2
             opposite: true
+# === POCZĄTEK MODYFIKACJI ===
   # =============================================================
   # ZAKŁADKA 7: ⚙️ USTAWIENIA (Centrum Dowodzenia)
   # =============================================================
@@ -996,7 +998,7 @@ views:
                   - entity: input_number.alpha_zysk_minimalny
                     name: "Oczekiwany zysk minimalny"
                     icon: mdi:chart-line-variant
-                  - entity: input_number.alpha_rce_param_55
+                  - entity: input_number.alpha_moc_sprzedazy
                     name: "Moc sprzedaży RCE"
                     icon: mdi:transmission-tower-export
 
@@ -1005,14 +1007,14 @@ views:
                 title: ⚡ Parametry Falownika i OSD
                 show_header_toggle: false
                 entities:
-                  - entity: input_boolean.alpha_rce_flaga_06
-                    name: "Tryb: Zero Export To Load (Wył = To CT)"
+                  - entity: input_select.alpha_tryb_bilansowania
+                    name: "Tryb Spoczynku"
                     icon: mdi:home-lightning-bolt
-                  - entity: input_text.alpha_rce_stan_06
-                    name: "OSD (Wpisz: PGE, Tauron, Enea...)"
+                  - entity: input_select.alpha_osd
+                    name: "Operator OSD"
                     icon: mdi:factory
-                  - entity: input_boolean.alpha_rce_flaga_05
-                    name: "Taryfa: G12W (Wył = G12 standard)"
+                  - entity: input_select.alpha_taryfa
+                    name: "Taryfa"
                     icon: mdi:clock-time-eight
 
               # --- BLOK 3: BEZPIECZEŃSTWO I ZAPASY ---
@@ -1036,9 +1038,10 @@ views:
                     name: "🔔 Włącz powiadomienia PUSH"
                     icon: mdi:bell-ring
                   - entity: input_text.alpha_rce_stan_07
-                    name: "Telefon (np. device_tracker.telefon)"
+                    name: "Telefon (np. device_tracker.dummy)"
                     icon: mdi:cellphone-message
-
+# === KONIEC MODYFIKACJI ===
+# === KOTWICA DOLNA ===
 # =============================================================
 # LEGENDA ZAJĘTYCH POMOCNIKÓW (MAPOWANIE Z BLUEPRINTU)
 # =============================================================
