@@ -407,10 +407,11 @@ views:
                   in_chart: false
                   in_header: true
                 data_generator: >
-                  const d = entity.attributes.value || entity.attributes.prices;
-                  if (!d || !d.length) return [];
-                  const min = Math.min(...d.map(e => (e.rce_pln !== undefined ? e.rce_pln : (e.cen_cost !== undefined ? e.cen_cost : (e.price || 0))) / 1000));
-                  return [[new Date(String(d[0].dtime).replace(' ', 'T')).getTime(), min]];
+                  let d = entity.attributes.value || entity.attributes.prices;
+                  if (!Array.isArray(d) || !d.length) return [];
+                  let min = Math.min(...d.map(e => (e.rce_pln !== undefined ? e.rce_pln : (e.cen_cost !== undefined ? e.cen_cost : (e.price || 0))) / 1000));
+                  let tsStr = String(d[0].dtime).replace(/-/g, '/').replace('T', ' ');
+                  return [[new Date(tsStr).getTime(), min]];
               - entity: sensor.alpha_pse_jutro_2
                 name: Max Jutro
                 unit: ' zł'
@@ -419,10 +420,11 @@ views:
                   in_chart: false
                   in_header: true
                 data_generator: >
-                  const d = entity.attributes.value || entity.attributes.prices;
-                  if (!d || !d.length) return [];
-                  const max = Math.max(...d.map(e => (e.rce_pln !== undefined ? e.rce_pln : (e.cen_cost !== undefined ? e.cen_cost : (e.price || 0))) / 1000));
-                  return [[new Date(String(d[0].dtime).replace(' ', 'T')).getTime(), max]];
+                  let d = entity.attributes.value || entity.attributes.prices;
+                  if (!Array.isArray(d) || !d.length) return [];
+                  let max = Math.max(...d.map(e => (e.rce_pln !== undefined ? e.rce_pln : (e.cen_cost !== undefined ? e.cen_cost : (e.price || 0))) / 1000));
+                  let tsStr = String(d[0].dtime).replace(/-/g, '/').replace('T', ' ');
+                  return [[new Date(tsStr).getTime(), max]];
               - entity: sensor.alpha_pse_dzisiaj_2
                 name: Zarabiam / Plan
                 type: column
@@ -432,18 +434,21 @@ views:
                 show:
                   in_header: false
                 data_generator: >
-                  const d1 = entity.attributes.value || entity.attributes.prices || [];
-                  const state2 = hass.states['sensor.alpha_pse_jutro_2'];
-                  const d2 = (state2 && state2.attributes && (state2.attributes.value || state2.attributes.prices)) ? (state2.attributes.value || state2.attributes.prices) : [];
-                  const data = [...d1, ...d2];
+                  let d1 = entity.attributes.value || entity.attributes.prices;
+                  d1 = Array.isArray(d1) ? d1 : [];
+                  let state2 = hass.states['sensor.alpha_pse_jutro_2'];
+                  let d2 = state2 && state2.attributes ? (state2.attributes.value || state2.attributes.prices) : [];
+                  d2 = Array.isArray(d2) ? d2 : [];
+                  let data = d1.concat(d2);
                   if (!data.length) return [];
-                  const p = parseFloat(hass.states['input_number.alpha_rce_param_03'].state) || 0.7;
-                  return data.map((entry) => {
-                    const val = entry.rce_pln !== undefined ? entry.rce_pln : (entry.cen_cost !== undefined ? entry.cen_cost : (entry.price || 0));
-                    const c = parseFloat(val) / 1000;
-                    const tsStr = String(entry.dtime).replace(' ', 'T');
+                  let p = parseFloat(hass.states['input_number.alpha_rce_param_03'].state) || 0.7;
+                  let res = data.map((entry) => {
+                    let val = entry.rce_pln !== undefined ? entry.rce_pln : (entry.cen_cost !== undefined ? entry.cen_cost : (entry.price || 0));
+                    let c = parseFloat(val) / 1000;
+                    let tsStr = String(entry.dtime).replace(/-/g, '/').replace('T', ' ');
                     return [new Date(tsStr).getTime(), c >= p ? c : 0];
                   });
+                  return res.sort((a, b) => a[0] - b[0]);
               - entity: sensor.alpha_pse_dzisiaj_2
                 name: Ceny RCE (48h)
                 type: line
@@ -454,17 +459,20 @@ views:
                 show:
                   in_header: false
                 data_generator: >
-                  const d1 = entity.attributes.value || entity.attributes.prices || [];
-                  const state2 = hass.states['sensor.alpha_pse_jutro_2'];
-                  const d2 = (state2 && state2.attributes && (state2.attributes.value || state2.attributes.prices)) ? (state2.attributes.value || state2.attributes.prices) : [];
-                  const data = [...d1, ...d2];
+                  let d1 = entity.attributes.value || entity.attributes.prices;
+                  d1 = Array.isArray(d1) ? d1 : [];
+                  let state2 = hass.states['sensor.alpha_pse_jutro_2'];
+                  let d2 = state2 && state2.attributes ? (state2.attributes.value || state2.attributes.prices) : [];
+                  d2 = Array.isArray(d2) ? d2 : [];
+                  let data = d1.concat(d2);
                   if (!data.length) return [];
-                  return data.map((entry) => {
-                    const val = entry.rce_pln !== undefined ? entry.rce_pln : (entry.cen_cost !== undefined ? entry.cen_cost : (entry.price || 0));
-                    const c = parseFloat(val) / 1000;
-                    const tsStr = String(entry.dtime).replace(' ', 'T');
+                  let res = data.map((entry) => {
+                    let val = entry.rce_pln !== undefined ? entry.rce_pln : (entry.cen_cost !== undefined ? entry.cen_cost : (entry.price || 0));
+                    let c = parseFloat(val) / 1000;
+                    let tsStr = String(entry.dtime).replace(/-/g, '/').replace('T', ' ');
                     return [new Date(tsStr).getTime(), c];
                   });
+                  return res.sort((a, b) => a[0] - b[0]);
           - type: entities
             title: Monitor Systemu
             show_header_toggle: false
