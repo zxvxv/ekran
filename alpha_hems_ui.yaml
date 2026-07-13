@@ -410,7 +410,7 @@ views:
                   const d = entity.attributes.value || entity.attributes.prices;
                   if (!d || !d.length) return [];
                   const min = Math.min(...d.map(e => (e.rce_pln !== undefined ? e.rce_pln : (e.cen_cost !== undefined ? e.cen_cost : (e.price || 0))) / 1000));
-                  return [[new Date(String(d[0].dtime).replace(' ', 'T').replace(/-/g, '/')).getTime(), min]];
+                  return [[new Date(String(d[0].dtime).replace(' ', 'T')).getTime(), min]];
               - entity: sensor.alpha_pse_jutro_2
                 name: Max Jutro
                 unit: ' zł'
@@ -422,7 +422,7 @@ views:
                   const d = entity.attributes.value || entity.attributes.prices;
                   if (!d || !d.length) return [];
                   const max = Math.max(...d.map(e => (e.rce_pln !== undefined ? e.rce_pln : (e.cen_cost !== undefined ? e.cen_cost : (e.price || 0))) / 1000));
-                  return [[new Date(String(d[0].dtime).replace(' ', 'T').replace(/-/g, '/')).getTime(), max]];
+                  return [[new Date(String(d[0].dtime).replace(' ', 'T')).getTime(), max]];
               - entity: sensor.alpha_pse_dzisiaj_2
                 name: Zarabiam / Plan
                 type: column
@@ -441,7 +441,7 @@ views:
                   return data.map((entry) => {
                     const val = entry.rce_pln !== undefined ? entry.rce_pln : (entry.cen_cost !== undefined ? entry.cen_cost : (entry.price || 0));
                     const c = parseFloat(val) / 1000;
-                    const tsStr = String(entry.dtime).replace(' ', 'T').replace(/-/g, '/');
+                    const tsStr = String(entry.dtime).replace(' ', 'T');
                     return [new Date(tsStr).getTime(), c >= p ? c : 0];
                   });
               - entity: sensor.alpha_pse_dzisiaj_2
@@ -462,7 +462,7 @@ views:
                   return data.map((entry) => {
                     const val = entry.rce_pln !== undefined ? entry.rce_pln : (entry.cen_cost !== undefined ? entry.cen_cost : (entry.price || 0));
                     const c = parseFloat(val) / 1000;
-                    const tsStr = String(entry.dtime).replace(' ', 'T').replace(/-/g, '/');
+                    const tsStr = String(entry.dtime).replace(' ', 'T');
                     return [new Date(tsStr).getTime(), c];
                   });
           - type: entities
@@ -524,7 +524,6 @@ views:
                 name: Całkowity Zwrot (Total)
                 icon: mdi:cash-multiple
                 type: simple-entity
-
   # =============================================================
   # ZAKŁADKA 3: 🏠 DOM (Centrum Dowodzenia i Szufladki)
   # =============================================================
