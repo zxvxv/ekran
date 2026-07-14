@@ -1,8 +1,10 @@
 # =============================================================
-# ALPHA HEMS: CENTRALNY INTERFEJS UŻYTKOWNIKA (v1.40)
+# ALPHA HEMS: CENTRALNY INTERFEJS UŻYTKOWNIKA (v1.41)
 # STATUS: PRODUKCYJNY / EKSPORTOWY (Zatwierdzony Układ Własny)
 #
 # HISTORIA WERSJI:
+# - v1.41: (RCE 48H FUSION) Połączenie wykresów Giełda Dziś i Plan Jutro
+#          w jeden ciągły wykres 48h (odporny na brak danych przed 14:00).
 # - v1.40: (CONTROL CENTER & GENERIC MATRICES) Dodanie dedykowanej zakładki USTAWIENIA
 #          z pełnym mapowaniem wolnych pomocników tekstowych i flag logicznych.
 #          Wyeliminowanie suwaków na rzecz pól tekstowych (Box) oraz wdrożenie 
@@ -358,14 +360,14 @@ views:
       - type: vertical-stack
         cards:
           - type: custom:apexcharts-card
-            graph_span: 24h
+            graph_span: 48h
             update_interval: 1min
             apex_config:
               chart:
                 height: 400
             header:
               show: true
-              title: 'Alpha: Monitor Sprzedaży'
+              title: 'Alpha: Monitor Sprzedaży (48H)'
               show_states: true
               colorize_states: true
             span:
@@ -397,8 +399,34 @@ views:
                 show:
                   in_chart: false
                   in_header: true
+              - entity: sensor.alpha_pse_jutro_2
+                name: Min Jutro
+                unit: ' zł'
+                float_precision: 2
+                show:
+                  in_chart: false
+                  in_header: true
+                data_generator: >
+                  let d = entity.attributes.value || entity.attributes.prices;
+                  if (!Array.isArray(d) || !d.length) return [];
+                  let min = Math.min(...d.map(e => (e.rce_pln !== undefined ? e.rce_pln : (e.cen_cost !== undefined ? e.cen_cost : (e.price || 0))) / 1000));
+                  let tsStr = String(d[0].dtime).replace(/-/g, '/').replace('T', ' ');
+                  return [[new Date(tsStr).getTime(), min]];
+              - entity: sensor.alpha_pse_jutro_2
+                name: Max Jutro
+                unit: ' zł'
+                float_precision: 2
+                show:
+                  in_chart: false
+                  in_header: true
+                data_generator: >
+                  let d = entity.attributes.value || entity.attributes.prices;
+                  if (!Array.isArray(d) || !d.length) return [];
+                  let max = Math.max(...d.map(e => (e.rce_pln !== undefined ? e.rce_pln : (e.cen_cost !== undefined ? e.cen_cost : (e.price || 0))) / 1000));
+                  let tsStr = String(d[0].dtime).replace(/-/g, '/').replace('T', ' ');
+                  return [[new Date(tsStr).getTime(), max]];
               - entity: sensor.alpha_pse_dzisiaj_2
-                name: Zarabiam
+                name: Zarabiam / Plan
                 type: column
                 color: '#2ecc71'
                 opacity: 0.4
@@ -406,15 +434,23 @@ views:
                 show:
                   in_header: false
                 data_generator: >
-                  const data = entity.attributes.value || entity.attributes.prices;
-                  if (!data) return [];  const p = parseFloat(hass.states['input_number.alpha_rce_param_03'].state) || 0.7; return data.map((entry) => {
-                    const val = entry.rce_pln !== undefined ? entry.rce_pln : (entry.cen_cost !== undefined ? entry.cen_cost : (entry.price || 0));
-                    const c = parseFloat(val) / 1000;
-                    const tsStr = String(entry.dtime).replace(' ', 'T');
+                  let d1 = entity.attributes.value || entity.attributes.prices;
+                  d1 = Array.isArray(d1) ? d1 : [];
+                  let state2 = hass.states['sensor.alpha_pse_jutro_2'];
+                  let d2 = state2 && state2.attributes ? (state2.attributes.value || state2.attributes.prices) : [];
+                  d2 = Array.isArray(d2) ? d2 : [];
+                  let data = d1.concat(d2);
+                  if (!data.length) return [];
+                  let p = parseFloat(hass.states['input_number.alpha_rce_param_03'].state) || 0.7;
+                  let res = data.map((entry) => {
+                    let val = entry.rce_pln !== undefined ? entry.rce_pln : (entry.cen_cost !== undefined ? entry.cen_cost : (entry.price || 0));
+                    let c = parseFloat(val) / 1000;
+                    let tsStr = String(entry.dtime).replace(/-/g, '/').replace('T', ' ');
                     return [new Date(tsStr).getTime(), c >= p ? c : 0];
                   });
+                  return res.sort((a, b) => a[0] - b[0]);
               - entity: sensor.alpha_pse_dzisiaj_2
-                name: Ceny na dziś
+                name: Ceny RCE (48h)
                 type: line
                 curve: stepline
                 stroke_width: 2
@@ -423,13 +459,20 @@ views:
                 show:
                   in_header: false
                 data_generator: >
-                  const data = entity.attributes.value || entity.attributes.prices;
-                  if (!data) return []; return data.map((entry) => {
-                    const val = entry.rce_pln !== undefined ? entry.rce_pln : (entry.cen_cost !== undefined ? entry.cen_cost : (entry.price || 0));
-                    const c = parseFloat(val) / 1000;
-                    const tsStr = String(entry.dtime).replace(' ', 'T');
+                  let d1 = entity.attributes.value || entity.attributes.prices;
+                  d1 = Array.isArray(d1) ? d1 : [];
+                  let state2 = hass.states['sensor.alpha_pse_jutro_2'];
+                  let d2 = state2 && state2.attributes ? (state2.attributes.value || state2.attributes.prices) : [];
+                  d2 = Array.isArray(d2) ? d2 : [];
+                  let data = d1.concat(d2);
+                  if (!data.length) return [];
+                  let res = data.map((entry) => {
+                    let val = entry.rce_pln !== undefined ? entry.rce_pln : (entry.cen_cost !== undefined ? entry.cen_cost : (entry.price || 0));
+                    let c = parseFloat(val) / 1000;
+                    let tsStr = String(entry.dtime).replace(/-/g, '/').replace('T', ' ');
                     return [new Date(tsStr).getTime(), c];
                   });
+                  return res.sort((a, b) => a[0] - b[0]);
           - type: entities
             title: Monitor Systemu
             show_header_toggle: false
@@ -489,66 +532,9 @@ views:
                 name: Całkowity Zwrot (Total)
                 icon: mdi:cash-multiple
                 type: simple-entity
-          - type: custom:apexcharts-card
-            graph_span: 24h
-            update_interval: 1min
-            apex_config:
-              chart:
-                height: 400
-            header:
-              show: true
-              title: 'Alpha: Plan Sprzedaży - JUTRO'
-              show_states: true
-              colorize_states: true
-            span:
-              start: day
-              offset: +1d
-            series:
-              - entity: sensor.alpha_pse_jutro_2
-                name: Min
-                unit: ' zł'
-                float_precision: 2
-                show:
-                  in_chart: false
-                  in_header: true
-                data_generator: >
-                  const d = entity.attributes.value; if (!d) return []; const min = Math.min(...d.map(e => e.rce_pln / 1000)); return [[new Date(d[0].dtime.replace(/-/g, '/')).getTime(), min]];
-              - entity: sensor.alpha_pse_jutro_2
-                name: Max
-                unit: ' zł'
-                float_precision: 2
-                show:
-                  in_chart: false
-                  in_header: true
-                data_generator: >
-                  const d = entity.attributes.value; if (!d) return []; const max = Math.max(...d.map(e => e.rce_pln / 1000)); return [[new Date(d[0].dtime.replace(/-/g, '/')).getTime(), max]];
-              - entity: sensor.alpha_pse_jutro_2
-                name: Zysk (Plan)
-                type: column
-                color: '#2ecc71'
-                opacity: 0.4
-                show:
-                  in_header: false
-                data_generator: >
-                  const data = entity.attributes.value; if (!data) return []; const p = parseFloat(hass.states['input_number.alpha_rce_param_03'].state) || 0.7; return data.map((entry) => {
-                    const c = entry.rce_pln / 1000;
-                    return [new Date(entry.dtime.replace(/-/g, '/')).getTime(), c >= p ? c : 0];
-                  });
-              - entity: sensor.alpha_pse_jutro_2
-                name: Giełda Jutro
-                type: line
-                curve: stepline
-                color: '#3498db'
-                show:
-                  in_header: false
-                data_generator: >
-                  const data = entity.attributes.value; if (!data) return []; return data.map((entry) => {
-                    return [new Date(entry.dtime.replace(/-/g, '/')).getTime(), entry.rce_pln / 1000];
-                  });
-
   # =============================================================
-# ZAKŁADKA 3: 🏠 DOM (Centrum Dowodzenia i Szufladki)
-# =============================================================
+  # ZAKŁADKA 3: 🏠 DOM (Centrum Dowodzenia i Szufladki)
+  # =============================================================
   - type: panel
     path: dom
     title: DOM
@@ -585,15 +571,32 @@ views:
               {% set zimowy_beton = 10 if states('input_boolean.alpha_rce_flaga_12') == 'on' else 0 %}
               {% set hardware_low_soc = live_low_soc + zimowy_beton %}
 
-              {% set n_dzis = states('input_number.alpha_rce_param_51') | float(0) %}
-              {% set p_dzis = states('input_number.alpha_rce_param_52') | float(0) %}
-              {% set w_dzis = states('input_number.alpha_rce_param_53') | float(0) %}
+              {# DYNAMICZNE MAPOWANIE SZUFLADEK WZGLEDEM DNIA TYGODNIA #}
+              {% set d = now().weekday() %}
+              {% set d_jutro = (now() + timedelta(days=1)).weekday() %}
+              
+              {% set map_n = {0: 11, 1: 12, 2: 13, 3: 14, 4: 15, 5: 16, 6: 17} %}
+              {% set map_p = {0: 21, 1: 22, 2: 23, 3: 24, 4: 25, 5: 26, 6: 27} %}
+              {% set map_w = {0: 31, 1: 32, 2: 33, 3: 34, 4: 35, 5: 36, 6: 37} %}
+              
+              {% set n_dzis = states('input_number.alpha_rce_param_' ~ map_n[d]) | float(0) %}
+              {% set p_dzis = states('input_number.alpha_rce_param_' ~ map_p[d]) | float(0) %}
+              {% set w_dzis = states('input_number.alpha_rce_param_' ~ map_w[d]) | float(0) %}
+              
+              {% set n_jutro = states('input_number.alpha_rce_param_' ~ map_n[d_jutro]) | float(0) %}
+              {% set p_jutro = states('input_number.alpha_rce_param_' ~ map_p[d_jutro]) | float(0) %}
+              {% set w_jutro = states('input_number.alpha_rce_param_' ~ map_w[d_jutro]) | float(0) %}
 
-              {% set n_jutro = states('input_number.alpha_rce_param_57') | float(0) %}
-              {% set p_jutro = states('input_number.alpha_rce_param_58') | float(0) %}
-              {% set w_jutro = states('input_number.alpha_rce_param_59') | float(0) %}
+              {# POBRANIE POPRAWNEJ PROGNOZY PV W ZALEŻNOŚCI OD USTAWIENIA #}
+              {% if states('input_boolean.alpha_rce_flaga_14') == 'on' %}
+                {% set mnoznik = states('input_number.alpha_rce_param_46') | float(6.0) %}
+                {% set zima = 0.6 if states('input_boolean.alpha_rce_flaga_12') == 'on' else 1.0 %}
+                {% set raw_rad = state_attr('sensor.ai_raw_forecast_data', 'shortwave_radiation') | default([], true) %}
+                {% set pv_jutro = ((raw_rad[24:48] | map('float') | sum * mnoznik * zima) / 1000) | round(2) if raw_rad | length >= 48 else 0.0 %}
+              {% else %}
+                {% set pv_jutro = states('sensor.solcast_pv_forecast_prognoza_na_jutro') | float(0) %}
+              {% endif %}
 
-              {% set pv_jutro = states('input_number.alpha_rce_param_54') | float(0) %}
               {% set status_plotek = states('input_number.alpha_rce_param_20') | float(0) %}
 
               {# LOGIKA SMART MORNING #}
@@ -622,18 +625,24 @@ views:
 
               ---
 
-              ### 🧮 2. MATRYCA OBLICZEŃ PŁOTKA (docelowy_soc)
+              {% set bufor_komfortu = states('input_number.alpha_rezerwa_soc') | float(0) %}
+              {% set smart_toggle = states('input_boolean.alpha_rce_flaga_03') == 'on' %}
+              {% set aktywny_bufor = 0 if (is_sunny and smart_toggle) else bufor_komfortu %}
+
+              ### 🧮 2. MATRYCA OBLICZEŃ PŁOTKA (Baza maksymalna na start)
               {% if is_sunny %}
               > **☀️ SMART MORNING AKTYWNY (Prognoza > 140%):** Słońce jutro przejmuje obciążenie. Zapas poranny ścięty do 20% (tylko na rozruch do 7:00).
               {% else %}
               > **☁️ STANDARD (Prognoza < 140%):** Ładuję w nocy pełne zapotrzebowanie poranka + 20% bufora bezpieczeństwa.
               {% endif %}
 
-              👉 **Kalkulacja dla okresu porannego (Zabezpieczenie Poranka):**
-              {{ p_dzis }} kWh ({{ ((p_dzis / poj) * 100) | round(2) }}% SOC) × {{ mnoznik_p }} = **{{ (p_dzis * mnoznik_p) | round(2) }} kWh** ({{ (((p_dzis * mnoznik_p) / poj) * 100) | round(2) }}% SOC) + Low SOC: {{ hardware_low_soc }}% ➔ **Ostateczny wynik: {{ ((((p_dzis * mnoznik_p) / poj) * 100) + hardware_low_soc) | round(2) }}% SOC**
+              👉 **Maksymalna baza na start poranka (06:00):**
+              {{ p_dzis }} kWh ({{ ((p_dzis / poj) * 100) | round(2) }}% SOC) × {{ mnoznik_p }} = **{{ (p_dzis * mnoznik_p) | round(2) }} kWh** ({{ (((p_dzis * mnoznik_p) / poj) * 100) | round(2) }}% SOC) 
+              + Low SOC: {{ hardware_low_soc }}% + Bufor: {{ aktywny_bufor }}% + 1% ➔ **Startowy Max: {{ ((((p_dzis * mnoznik_p) / poj) * 100) + hardware_low_soc + aktywny_bufor + 1) | round(0) }}% SOC** *(Płotek maleje wraz z upływem czasu)*
 
-              👉 **Kalkulacja dla okresu wieczornego (Zabezpieczenie Wieczoru):**
-              {{ w_dzis }} kWh ({{ ((w_dzis / poj) * 100) | round(2) }}% SOC) × 1.2 = **{{ (w_dzis * 1.2) | round(2) }} kWh** ({{ (((w_dzis * 1.2) / poj) * 100) | round(2) }}% SOC) + Low SOC: {{ hardware_low_soc }}% ➔ **Ostateczny wynik: {{ ((((w_dzis * 1.2) / poj) * 100) + hardware_low_soc) | round(2) }}% SOC**
+              👉 **Maksymalna baza na start wieczoru:**
+              {{ w_dzis }} kWh ({{ ((w_dzis / poj) * 100) | round(2) }}% SOC) × 1.2 = **{{ (w_dzis * 1.2) | round(2) }} kWh** ({{ (((w_dzis * 1.2) / poj) * 100) | round(2) }}% SOC) 
+              + Low SOC: {{ hardware_low_soc }}% + Bufor: {{ aktywny_bufor }}% + 1% ➔ **Startowy Max: {{ ((((w_dzis * 1.2) / poj) * 100) + hardware_low_soc + aktywny_bufor + 1) | round(0) }}% SOC** *(Płotek maleje wraz z upływem czasu)*
 
               ---
 
@@ -730,9 +739,10 @@ views:
               - entity: input_boolean.alpha_rce_flaga_10
                 name: 🔄 WYMUŚ ALPHA SYNC / SETUP
                 icon: mdi:tools
-# =============================================================
-# KONIEC ZAKŁADKI 3
-# =============================================================
+  # =============================================================
+  # KONIEC ZAKŁADKI 3
+  # =============================================================
+
   # =============================================================
   # ZAKŁADKA 4: 🔄 PRZEPŁYW (Widok uproszczony)
   # =============================================================
