@@ -625,18 +625,24 @@ views:
 
               ---
 
-              ### 🧮 2. MATRYCA OBLICZEŃ PŁOTKA (docelowy_soc)
+              {% set bufor_komfortu = states('input_number.alpha_rezerwa_soc') | float(0) %}
+              {% set smart_toggle = states('input_boolean.alpha_rce_flaga_03') == 'on' %}
+              {% set aktywny_bufor = 0 if (is_sunny and smart_toggle) else bufor_komfortu %}
+
+              ### 🧮 2. MATRYCA OBLICZEŃ PŁOTKA (Baza maksymalna na start)
               {% if is_sunny %}
               > **☀️ SMART MORNING AKTYWNY (Prognoza > 140%):** Słońce jutro przejmuje obciążenie. Zapas poranny ścięty do 20% (tylko na rozruch do 7:00).
               {% else %}
               > **☁️ STANDARD (Prognoza < 140%):** Ładuję w nocy pełne zapotrzebowanie poranka + 20% bufora bezpieczeństwa.
               {% endif %}
 
-              👉 **Kalkulacja dla okresu porannego (Zabezpieczenie Poranka):**
-              {{ p_dzis }} kWh ({{ ((p_dzis / poj) * 100) | round(2) }}% SOC) × {{ mnoznik_p }} = **{{ (p_dzis * mnoznik_p) | round(2) }} kWh** ({{ (((p_dzis * mnoznik_p) / poj) * 100) | round(2) }}% SOC) + Low SOC: {{ hardware_low_soc }}% ➔ **Ostateczny wynik: {{ ((((p_dzis * mnoznik_p) / poj) * 100) + hardware_low_soc) | round(2) }}% SOC**
+              👉 **Maksymalna baza na start poranka (06:00):**
+              {{ p_dzis }} kWh ({{ ((p_dzis / poj) * 100) | round(2) }}% SOC) × {{ mnoznik_p }} = **{{ (p_dzis * mnoznik_p) | round(2) }} kWh** ({{ (((p_dzis * mnoznik_p) / poj) * 100) | round(2) }}% SOC) 
+              + Low SOC: {{ hardware_low_soc }}% + Bufor: {{ aktywny_bufor }}% + 1% ➔ **Startowy Max: {{ ((((p_dzis * mnoznik_p) / poj) * 100) + hardware_low_soc + aktywny_bufor + 1) | round(0) }}% SOC** *(Płotek maleje wraz z upływem czasu)*
 
-              👉 **Kalkulacja dla okresu wieczornego (Zabezpieczenie Wieczoru):**
-              {{ w_dzis }} kWh ({{ ((w_dzis / poj) * 100) | round(2) }}% SOC) × 1.2 = **{{ (w_dzis * 1.2) | round(2) }} kWh** ({{ (((w_dzis * 1.2) / poj) * 100) | round(2) }}% SOC) + Low SOC: {{ hardware_low_soc }}% ➔ **Ostateczny wynik: {{ ((((w_dzis * 1.2) / poj) * 100) + hardware_low_soc) | round(2) }}% SOC**
+              👉 **Maksymalna baza na start wieczoru:**
+              {{ w_dzis }} kWh ({{ ((w_dzis / poj) * 100) | round(2) }}% SOC) × 1.2 = **{{ (w_dzis * 1.2) | round(2) }} kWh** ({{ (((w_dzis * 1.2) / poj) * 100) | round(2) }}% SOC) 
+              + Low SOC: {{ hardware_low_soc }}% + Bufor: {{ aktywny_bufor }}% + 1% ➔ **Startowy Max: {{ ((((w_dzis * 1.2) / poj) * 100) + hardware_low_soc + aktywny_bufor + 1) | round(0) }}% SOC** *(Płotek maleje wraz z upływem czasu)*
 
               ---
 
