@@ -571,15 +571,32 @@ views:
               {% set zimowy_beton = 10 if states('input_boolean.alpha_rce_flaga_12') == 'on' else 0 %}
               {% set hardware_low_soc = live_low_soc + zimowy_beton %}
 
-              {% set n_dzis = states('input_number.alpha_rce_param_51') | float(0) %}
-              {% set p_dzis = states('input_number.alpha_rce_param_52') | float(0) %}
-              {% set w_dzis = states('input_number.alpha_rce_param_53') | float(0) %}
+              {# DYNAMICZNE MAPOWANIE SZUFLADEK WZGLEDEM DNIA TYGODNIA #}
+              {% set d = now().weekday() %}
+              {% set d_jutro = (now() + timedelta(days=1)).weekday() %}
+              
+              {% set map_n = {0: 11, 1: 12, 2: 13, 3: 14, 4: 15, 5: 16, 6: 17} %}
+              {% set map_p = {0: 21, 1: 22, 2: 23, 3: 24, 4: 25, 5: 26, 6: 27} %}
+              {% set map_w = {0: 31, 1: 32, 2: 33, 3: 34, 4: 35, 5: 36, 6: 37} %}
+              
+              {% set n_dzis = states('input_number.alpha_rce_param_' ~ map_n[d]) | float(0) %}
+              {% set p_dzis = states('input_number.alpha_rce_param_' ~ map_p[d]) | float(0) %}
+              {% set w_dzis = states('input_number.alpha_rce_param_' ~ map_w[d]) | float(0) %}
+              
+              {% set n_jutro = states('input_number.alpha_rce_param_' ~ map_n[d_jutro]) | float(0) %}
+              {% set p_jutro = states('input_number.alpha_rce_param_' ~ map_p[d_jutro]) | float(0) %}
+              {% set w_jutro = states('input_number.alpha_rce_param_' ~ map_w[d_jutro]) | float(0) %}
 
-              {% set n_jutro = states('input_number.alpha_rce_param_57') | float(0) %}
-              {% set p_jutro = states('input_number.alpha_rce_param_58') | float(0) %}
-              {% set w_jutro = states('input_number.alpha_rce_param_59') | float(0) %}
+              {# POBRANIE POPRAWNEJ PROGNOZY PV W ZALEŻNOŚCI OD USTAWIENIA #}
+              {% if states('input_boolean.alpha_rce_flaga_14') == 'on' %}
+                {% set mnoznik = states('input_number.alpha_rce_param_46') | float(6.0) %}
+                {% set zima = 0.6 if states('input_boolean.alpha_rce_flaga_12') == 'on' else 1.0 %}
+                {% set raw_rad = state_attr('sensor.ai_raw_forecast_data', 'shortwave_radiation') | default([], true) %}
+                {% set pv_jutro = ((raw_rad[24:48] | map('float') | sum * mnoznik * zima) / 1000) | round(2) if raw_rad | length >= 48 else 0.0 %}
+              {% else %}
+                {% set pv_jutro = states('sensor.solcast_pv_forecast_prognoza_na_jutro') | float(0) %}
+              {% endif %}
 
-              {% set pv_jutro = states('input_number.alpha_rce_param_54') | float(0) %}
               {% set status_plotek = states('input_number.alpha_rce_param_20') | float(0) %}
 
               {# LOGIKA SMART MORNING #}
