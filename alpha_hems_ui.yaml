@@ -450,20 +450,6 @@
               - **Sobota:** {{ states('input_number.alpha_rce_param_36') }} kWh
               - **Niedziela:** {{ states('input_number.alpha_rce_param_37') }} kWh
 
-          - type: entities
-            title: ⚡ Monitoring Napięcia Fazy
-            show_header_toggle: false
-            entities:
-              - entity: sensor.alpha_hems_siec_l1_napiecie
-                name: Faza L1
-              - entity: sensor.alpha_hems_siec_l2_napiecie
-                name: Faza L2
-              - entity: sensor.alpha_hems_siec_l3_napiecie
-                name: Faza L3
-              - type: section
-              - entity: input_boolean.alpha_rce_flaga_10
-                name: 🔄 WYMUŚ ALPHA SYNC / SETUP
-                icon: mdi:tools
   # =============================================================
   # KONIEC ZAKŁADKI 3
   # =============================================================
