@@ -1,4 +1,7 @@
-# =============================================================
+title: ALPHA HEMS
+icon: mdi:solar-power
+views:
+  # =============================================================
   # ZAKŁADKA 1: 🎛️ PRZEGLĄD (PULPIT GŁÓWNY) - v1.01 (Wersja Light)
   # ZMIANY: 
   # - Usunięto Kartę Przepływu (Sunsynk)
@@ -257,6 +260,7 @@
                 name: Całkowity Zwrot (Total)
                 icon: mdi:cash-multiple
                 type: simple-entity
+
   # =============================================================
   # ZAKŁADKA 3: 🏠 DOM (Centrum Dowodzenia i Szufladki)
   # =============================================================
@@ -550,7 +554,7 @@
           essential_load1_extra: sensor.dobowe_zuzycie_ups
           essential_load2: sensor.smart_plug_2_moc
           essential_load3: sensor.smart_plug_3_moc
-          use_timer_248: switch.sunsynk_toggle_system_timer
+          use_timer_248: switch.alpha_hems_time_of_use
           priority_load_243: sensor.alpha_hems_moc_domu_calkowita
           inverter_voltage_154: sensor.alpha_hems_siec_l1_napiecie
           load_frequency_192: sensor.alpha_hems_czestotliwosc_sieci
@@ -582,7 +586,7 @@
           battery_rated_capacity: number.alpha_hems_bateria_pojemnosc
           battery_shutdown_soc: number.alpha_hems_bateria_wylaczenie_soc
 
-# =============================================================
+  # =============================================================
   # ZAKŁADKA 5: 📊 HISTORIA 24H (Święty Graal HEMS)
   # =============================================================
   - type: panel
@@ -807,33 +811,3 @@
                   - entity: input_boolean.alpha_rce_flaga_04
                     name: "🔔 Włącz powiadomienia PUSH"
                     icon: mdi:bell-ring
-  # =============================================================
-  # KONIEC ZAKŁADKI 7
-  # =============================================================
-
-# =============================================================
-# LEGENDA ZAJĘTYCH POMOCNIKÓW (MOST INTERFEJSU v1.40)
-# =============================================================
-# Wszystkie poniższe mapowania korzystają wyłącznie z fabrycznych,
-# uniwersalnych zasobów matrycy klienta. Koniec z ułamkami i suwakami.
-#
-# --- POZYCJE DOSTĘPNE Z KLAWIATURY (Czyste Pola tekstowe - Box):
-# 1. input_text.alpha_rce_stan_06       -> Cena zakupu energii (Typ: Tekst, np. 0.49)
-# 2. input_text.alpha_rce_stan_07       -> Oczekiwany zysk minimalny (Typ: Tekst, np. 0.15)
-# 3. input_text.alpha_rce_stan_08       -> Moc sprzedaży RCE (Wpisujemy w Watach z palca, np. 6000)
-# 4. input_text.alpha_rce_stan_11       -> Encja telefonu do powiadomień (np. device_tracker.dummy)
-#
-# --- POZYCJE DOTYKOWE (Kafelki wyboru wartości tekstowych):
-# 5. input_text.alpha_rce_stan_09       -> Wybór operatora OSD (Wpisuje tekst: PGE / Tauron / Enea / Energa)
-# 6. input_text.alpha_rce_stan_10       -> Wybór taryfy głównej (Wpisuje tekst: G12 / G12W)
-#
-# --- FLAGI POWIĄZANE LOGICZNIE (Przełączane kafelkami wyboru):
-# 7. input_boolean.alpha_rce_flaga_01   -> System rozliczeń (ON = Net-Billing, OFF = Net-Metering/Opusty)
-# 8. input_boolean.alpha_rce_flaga_02   -> Tryb symulacji (ON = Symulacja aktywna, OFF = Handel giełdowy włączony)
-# 9. input_boolean.alpha_rce_flaga_03   -> Smart Bufor Komfortu (ON = Wyłącz bufor w słońce >140%, OFF = Bufor działa zawsze)
-# 10. input_boolean.alpha_rce_flaga_04  -> Powiadomienia PUSH (ON = Aktywne, OFF = Wyłączone)
-# 11. input_boolean.alpha_rce_flaga_06  -> Tryb bilansowania spoczynku (ON = Zero Export To Load, OFF = Zero Export To CT)
-#
-# --- STALE NAZWANE (Ustawienia suwakowe ze zmiennych):
-# 12. input_number.alpha_rezerwa_soc    -> Rozmiar Bufora Komfortu (%) [Oryginalna encja rezerwy]
-# =============================================================
