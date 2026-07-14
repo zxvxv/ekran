@@ -1,84 +1,356 @@
+# =============================================================
+# ALPHA HEMS: CENTRALNY INTERFEJS UŻYTKOWNIKA (v1.41)
+# STATUS: PRODUKCYJNY / EKSPORTOWY (Zatwierdzony Układ Własny)
+#
+# HISTORIA WERSJI:
+# - v1.41: (RCE 48H FUSION) Połączenie wykresów Giełda Dziś i Plan Jutro
+#          w jeden ciągły wykres 48h (odporny na brak danych przed 14:00).
+# - v1.40: (CONTROL CENTER & GENERIC MATRICES) Dodanie dedykowanej zakładki USTAWIENIA
+#          z pełnym mapowaniem wolnych pomocników tekstowych i flag logicznych.
+#          Wyeliminowanie suwaków na rzecz pól tekstowych (Box) oraz wdrożenie 
+#          dotykowych paneli wyboru opcji bez zmian w configuration.yaml.
+# - v1.39: (FROZEN METEO FIX) Usunięcie wyszukiwarki encji weather.* z karty Alpha AI. 
+#          Dashboard odczytuje teraz wyłącznie zamrożoną (o 14:00) encję poligonową.
+# - v1.37: (UNIVERSAL UI FIX) Usunięcie twardego kodowania okienka letniego (PGE) w raporcie Księgowego. 
+#          Dashboard odczytuje teraz uniwersalne ramy czasowe podane bezpośrednio przez aplikację główną.
+# - v1.35: (GRAAL HEMS) Dodanie zakładki 5 "HISTORIA 24H" z wykresem ApexCharts o podwójnej osi Y.
+# - v1.34: (UX TWEAKS) Usunięcie kafelka "Obciążenie Domu", przeniesienie 
+#          "Czas Deye" i "Dni od Balansowania" pod prognozę pogody dla lepszej spójności wizualnej.
+# - v1.33: (CRITICAL RESTORE) Przywrócenie w 100% oryginalnych wykresów ApexCharts.
+# - v1.29: (SURVIVAL CALCULATOR) Usunięcie zbędnych kart TOU, Grid Charge i Gen Charge.
+# - v1.28: (DASHBOARD REBUILD) Uporządkowanie sekcji pogodowej.
+# =============================================================
+
 title: ALPHA HEMS
 icon: mdi:solar-power
 views:
   # =============================================================
-  # ZAKŁADKA 1: 🎛️ PRZEGLĄD (PULPIT GŁÓWNY) - v1.01 (Wersja Light)
-  # ZMIANY: 
-  # - Usunięto Kartę Przepływu (Sunsynk)
-  # - Usunięto suwaki prądów ładowania
-  # - Usunięto przełącznik pogody Alpha i przyciski sterujące
-  # - Zostawiono: Raport księgowego, Czas, Dni do balansu, Zastrzyk, Solcast
+  # ZAKŁADKA 1: ⚡ DEYE (Infrastruktura i Energia)
   # =============================================================
-  - type: panel
-    path: przeglad
-    title: Przegląd
-    icon: mdi:view-dashboard
-    cards:
-      - type: vertical-stack
+  - type: sections
+    max_columns: 5
+    title: DEYE
+    path: deye-nev
+    dense_section_placement: false
+    top_margin: true
+    header:
+      layout: responsive
+      badges_position: bottom
+      badges_wrap: scroll
+    sections:
+      - type: grid
+        column_span: 2
         cards:
-          # --- SEKCJA 1: STATUS I RAPORT KSIĘGOWEGO ---
-          - type: horizontal-stack
+          - cardstyle: lite
+            wide: false
+            large_font: true
+            show_solar: true
+            show_battery: true
+            show_grid: true
+            center_no_grid: true
+            card_height: '750'
+            card_width: 100%
+            decimal_places: 2
+            decimal_places_energy: 1
+            dynamic_line_width: true
+            max_line_width: 4
+            min_line_width: 1
+            inverter:
+              three_phase: true
+              auto_scale: true
+              modern: true
+              colour: '#217cb5'
+              autarky: power
+            battery:
+              show_daily: true
+              auto_scale: true
+              show_absolute: true
+              colour: '#c01b1b'
+              charge_colour: '#435bd0'
+              dynamic_colour: true
+              linear_gradient: true
+              show_remaining_energy: true
+              energy: 47616
+              shutdown_soc: 6
+            battery2:
+              energy: 0
+              shutdown_soc: 20
+              soc_end_of_charge: 100
+              invert_power: false
+              hide_soc: false
+              colour: '#ffc0cb'
+              show_remaining_energy: true
+              remaining_energy_to_shutdown: false
+              show_absolute: false
+              auto_scale: true
+              dynamic_colour: true
+              linear_gradient: true
+              animate: true
+              path_threshold: 100
+              navigate: ''
+              invert_flow: false
+            solar:
+              show_daily: true
+              mppts: 3
+              pv1_name: S_Edge
+              auto_scale: true
+              colour: '#c9cc05'
+              pv1_max_power: 7400
+              display_mode: 2
+            load:
+              show_daily: true
+              dynamic_icon: true
+              dynamic_colour: true
+              colour: '#2cce6a'
+              show_absolute_aux: true
+              auto_scale: true
+              additional_loads: 1
+              load1_name: Gwarantowane
+              load1_icon: mdi:calendar-text
+              load2_name: Pozostało PV
+              load2_icon: mdi:solar-power-variant
+              essential_name: UPS
+            grid:
+              show_daily_buy: true
+              show_daily_sell: true
+              show_nonessential: true
+              auto_scale: true
+              colour: '#2a95cb'
+              export_colour: '#e0c124'
+            type: custom:sunsynk-power-flow-card
+            grid_options:
+              columns: full
+              rows: 1
+            entities:
+              remaining_solar: sensor.solcast_pv_forecast_pozostala_prognoza_na_dzis
+              energy_prognoza_106: sensor.solcast_pv_forecast_prognoza_na_dzisiaj
+              day_pv_energy_108: sensor.deye_inverter_daily_pv_production
+              essential_load1: sensor.deye_inverter_load_ups_power
+              essential_load1_extra: sensor.dobowe_zuzycie_ups
+              essential_load2: sensor.smart_plug_2_moc
+              essential_load3: sensor.smart_plug_3_moc
+              use_timer_248: switch.sunsynk_toggle_system_timer
+              priority_load_243: sensor.deye_inverter_load_power
+              inverter_voltage_154: sensor.deye_inverter_output_l1_voltage
+              load_frequency_192: sensor.deye_inverter_load_frequency
+              inverter_current_164: sensor.deye_inverter_output_l1_current
+              inverter_power_175: sensor.sunsynk_inverter_power
+              grid_connected_status_194: binary_sensor.sunsynk_grid_connected_status
+              inverter_status_59: sensor.sunsynk_overall_state
+              day_battery_discharge_71: sensor.deye_inverter_daily_battery_discharge
+              battery_voltage_183: sensor.deye_inverter_battery_bms_voltage
+              battery_power_190: sensor.deye_inverter_battery_power
+              battery_current_191: sensor.deye_inverter_battery_bms_current
+              grid_power_169: sensor.sunsynk_grid_power
+              day_grid_export_77: sensor.deye_inverter_daily_energy_sold
+              grid_ct_power_172: sensor.deye_inverter_grid_l1_power
+              day_load_energy_84: sensor.deye_inverter_daily_load_consumption
+              pv1_power_186: sensor.deye_inverter_pv1_power
+              pv2_power_187: sensor.deye_inverter_pv2_power
+              pv3_power_188: sensor.deye_inverter_generator_power_total
+              day_grid_import_76: sensor.deye_inverter_daily_energy_bought
+              grid_ct_power_total: sensor.deye_inverter_grid_power
+              battery_temp_182: sensor.deye_inverter_battery_temperature
+              day_aux_energy: sensor.solcast_pv_forecast_prognoza_na_dzisiaj
+              essential_power: sensor.deye_inverter_load_power
+              radiator_temp_91: sensor.deye_inverter_ac_temperature
+              dc_transformer_temp_90: sensor.magazyn_pomieszczenie_temperatura
+              solar_sell_247: switch.deye_inverter_solar_sell
+              day_battery_charge_70: sensor.deye_inverter_daily_battery_charge
+              battery_soc_184: sensor.deye_inverter_battery
+              battery_rated_capacity: number.deye_inverter_battery_capacity
+              battery_shutdown_soc: number.deye_inverter_battery_shutdown_soc_low_dc
+      - type: grid
+        cards:
+          - type: vertical-stack
             cards:
-              - type: entities
-                title: ⚡ Status Falownika
-                show_header_toggle: false
-                entities:
-                  - entity: sensor.deye_inverter_device_date_time
-                    name: Czas Urządzenia
-                    icon: mdi:clock-outline
-                  - entity: sensor.dni_od_100
-                    name: Dni od 100% (Balansowanie)
-                    icon: mdi:battery-sync
-                  - entity: button.zastrzyk_danych
-                    name: Zastrzyk Danych
-                    icon: mdi:database-import
+              - type: markdown
+                title: 🛡️ Raport Księgowego ALPHA
+                content: >
+                  {% set cap_raw = states('number.deye_inverter_battery_capacity') | float(47.0) %}
+                  {% set cap = (cap_raw * 51.2 / 1000) | round(1) if cap_raw > 150 else cap_raw | round(1) %}
+                  {% set soc = states('sensor.deye_inverter_battery_bms_soc') | float(0) %}
+                  {% set plotek = states('input_number.alpha_rce_param_20') | float(20) %}
+                  {% set wolny_soc = [soc - plotek, 0] | max %}
+                  {% set amunicja = (wolny_soc / 100) * cap %}
+                  {% set tou_state = states('switch.deye_inverter_time_of_use') %}
+                  {% set okno_dzienne = states('input_text.alpha_rce_stan_04') %}
 
-              - type: entities
-                title: 📊 Raport Księgowego
-                show_header_toggle: false
-                entities:
-                  - entity: sensor.deye_inverter_daily_energy_sold
-                    name: Sprzedaż do sieci
-                    icon: mdi:transmission-tower-export
-                  - entity: sensor.deye_inverter_daily_energy_bought
-                    name: Zakup z sieci
-                    icon: mdi:transmission-tower-import
-                  - entity: sensor.deye_inverter_daily_pv_production
-                    name: Produkcja PV
-                    icon: mdi:solar-power
-                  - entity: sensor.deye_inverter_daily_load_consumption
-                    name: Zużycie Domu
-                    icon: mdi:home-lightning-bolt
+                  ### ⚙️ Status Operacyjny
+                  {% if tou_state == 'off' %}
+                  **🔴 BYPASS AKTYWNY** (Awaryjne ssanie z sieci)
+                  {% else %}
+                  **CON PRACA NORMALNA** (Sterowanie automatyczne)
+                  {% endif %}
+                  
+                  * ☀️ Okno Dzień: **{{ okno_dzienne if okno_dzienne not in ['unknown', 'unavailable', ''] else 'Oczekiwanie...' }}**
+                  * 🌙 Okno Noc: **22:05 — 06:00**
 
-          # --- SEKCJA 2: PROGNOZA SOLCAST (7 DNI) ---
+                  ---
+
+                  ### 🔋 Bilans Przetrwania
+                  * 🎯 CEL (Płotek): **{{ plotek | int }}%**
+                  * 📦 MAGAZYN: **{{ soc | int }}%**
+
+                  {% if soc >= plotek %}
+                  > ✅ **Dom zabezpieczony:** Mamy wystarczający zapas energii na bieżący sektor.
+                  {% elif tou_state == 'off' %}
+                  > 🚨 **Ładowanie awaryjne:** Bypass aktywny. System uzupełnia braki z sieci do poziomu Płotka!
+                  {% else %}
+                  > ⏳ **Oczekiwanie:** Zapas poniżej Płotka, ale prąd z sieci jest drogi. Czekam na słońce lub okienko G12.
+                  {% endif %}
+
+                  ---
+
+                  ### 📈 Amunicja Maklera RCE
+                  💰 Wolna energia do handlu: **{{ amunicja | round(1) }} kWh**
+                  
+                  <details>
+                    <summary><i>Pokaż założenia logiki...</i></summary>
+                    <i>System automatycznie dolicza +20% fizycznej rezerwy (kWh) na nagłe obciążenia (np. włączenie piekarnika). Widoczna powyżej energia to bezpieczna nadwyżka, którą Makler może zrzucić na giełdę bez narażania Cię na nocny brak prądu.</i>
+                  </details>
+
+          - show_name: true
+            show_icon: true
+            type: button
+            entity: switch.deye_inverter_time_of_use
+            name: Główny Bypass (TOU)
+            show_state: true
+          - show_name: true
+            show_icon: true
+            type: button
+            entity: switch.deye_inverter_force_off_grid
+          - show_name: true
+            show_icon: true
+            type: button
+            entity: button.deye_inverter_sync_inverter_time
+          - show_name: true
+            show_icon: true
+            type: button
+            entity: input_boolean.alpha_rce_flaga_11
+            name: Zastrzyk Danych
+            icon: mdi:database-refresh
+      - type: grid
+        cards:
           - type: entities
-            title: ☀️ Prognoza Solcast (7 Dni)
+            entities:
+              - entity: number.deye_inverter_maximum_battery_grid_charge_current
+                name: Ład. Sieć
+              - entity: number.deye_inverter_battery_generator_charging_current
+                name: Ład Gen.
+              - entity: number.deye_inverter_maximum_battery_charge_current
+                name: Max. Ład.
+                
+          # --- PRZEŁĄCZNIK ŹRÓDŁA POGODY ---
+          - type: entities
+            title: ⚙️ Konfiguracja Pogody ALPHA
             show_header_toggle: false
             entities:
-              - entity: sensor.solcast_pv_forecast_prognoza_na_dzisiaj
-                name: Dzisiaj
-                icon: mdi:weather-sunny
-              - entity: sensor.solcast_pv_forecast_prognoza_na_jutro
-                name: Jutro
-                icon: mdi:weather-partly-cloudy
-              - entity: sensor.solcast_pv_forecast_prognoza_na_pojutrze
-                name: Pojutrze
-                icon: mdi:weather-cloudy
-              - entity: sensor.solcast_pv_forecast_prognoza_na_dzien_4
-                name: Dzień 4
-                icon: mdi:calendar-blank
-              - entity: sensor.solcast_pv_forecast_prognoza_na_dzien_5
-                name: Dzień 5
-                icon: mdi:calendar-blank
-              - entity: sensor.solcast_pv_forecast_prognoza_na_dzien_6
-                name: Dzień 6
-                icon: mdi:calendar-blank
-              - entity: sensor.solcast_pv_forecast_prognoza_na_dzien_7
-                name: Dzień 7
-                icon: mdi:calendar-blank
+              - entity: input_boolean.alpha_rce_flaga_14
+                name: "Włącz: Alpha AI, Wyłącz: Solcast"
+                icon: mdi:weather-cloudy-clock
+                
+          # --- KARTA 1: SOLCAST ---
+          - type: conditional
+            conditions:
+              - condition: state
+                entity: input_boolean.alpha_rce_flaga_14
+                state: 'off'
+            card:
+              type: entities
+              title: ☀️ Prognoza Solcast (7 dni)
+              show_header_toggle: false
+              entities:
+                - entity: sensor.solcast_pv_forecast_pozostala_prognoza_na_dzis
+                  name: Pozostało na dziś
+                  icon: mdi:solar-power
+                - type: divider
+                - entity: sensor.solcast_pv_forecast_prognoza_na_dzisiaj
+                  name: Dziś (Całkowita)
+                  icon: mdi:weather-sunny
+                - entity: sensor.solcast_pv_forecast_prognoza_na_jutro
+                  name: Jutro
+                  icon: mdi:weather-partly-cloudy
+                - entity: sensor.solcast_pv_forecast_prognoza_na_dzien_3
+                  name: Pojutrze
+                  icon: mdi:calendar-clock
+                - entity: sensor.solcast_pv_forecast_prognoza_na_dzien_4
+                  name: Za 3 dni
+                  icon: mdi:calendar-clock
+                - entity: sensor.solcast_pv_forecast_prognoza_na_dzien_5
+                  name: Za 4 dni
+                  icon: mdi:calendar-clock
+                - entity: sensor.solcast_pv_forecast_prognoza_na_dzien_6
+                  name: Za 5 dni
+                  icon: mdi:calendar-clock
+                - entity: sensor.solcast_pv_forecast_prognoza_na_dzien_7
+                  name: Za 6 dni
+                  icon: mdi:calendar-clock
+
+          # --- KARTA 2: ALPHA AI ---
+          - type: conditional
+            conditions:
+              - condition: state
+                entity: input_boolean.alpha_rce_flaga_14
+                state: 'on'
+            card:
+              type: markdown
+              title: 🧠 Prognoza Alpha AI (Open-Meteo)
+              content: >
+                {% set mnoznik = states('input_number.alpha_rce_param_46') | float(6.0) %}
+                {% set zima = 0.6 if states('input_boolean.alpha_rce_flaga_12') == 'on' else 1.0 %}
+                {% set raw_rad = state_attr('sensor.ai_raw_forecast_data', 'shortwave_radiation') | default([], true) %}
+                
+                **Zastosowany mnożnik dachu:** {{ (mnoznik * zima) | round(2) }}
+                
+                <table width="100%">
+                  <tr>
+                    <td style="padding: 8px 0;"><ha-icon icon="mdi:weather-sunny"></ha-icon> <b>Dziś:</b></td>
+                    <td align="right"><b>{{ ((raw_rad[0:24] | map('float') | sum * mnoznik * zima) / 1000) | round(1) if raw_rad | length >= 24 else 0.0 }}</b> kWh</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 8px 0;"><ha-icon icon="mdi:weather-partly-cloudy"></ha-icon> <b>Jutro:</b></td>
+                    <td align="right"><b>{{ ((raw_rad[24:48] | map('float') | sum * mnoznik * zima) / 1000) | round(1) if raw_rad | length >= 48 else 0.0 }}</b> kWh</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 8px 0;"><ha-icon icon="mdi:calendar-clock"></ha-icon> <b>Pojutrze:</b></td>
+                    <td align="right"><b>{{ ((raw_rad[48:72] | map('float') | sum * mnoznik * zima) / 1000) | round(1) if raw_rad | length >= 72 else 0.0 }}</b> kWh</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 8px 0;"><ha-icon icon="mdi:calendar-clock"></ha-icon> <b>Za 3 dni:</b></td>
+                    <td align="right"><b>{{ ((raw_rad[72:96] | map('float') | sum * mnoznik * zima) / 1000) | round(1) if raw_rad | length >= 96 else 0.0 }}</b> kWh</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 8px 0;"><ha-icon icon="mdi:calendar-clock"></ha-icon> <b>Za 4 dni:</b></td>
+                    <td align="right"><b>{{ ((raw_rad[96:120] | map('float') | sum * mnoznik * zima) / 1000) | round(1) if raw_rad | length >= 120 else 0.0 }}</b> kWh</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 8px 0;"><ha-icon icon="mdi:calendar-clock"></ha-icon> <b>Za 5 dni:</b></td>
+                    <td align="right"><b>{{ ((raw_rad[120:144] | map('float') | sum * mnoznik * zima) / 1000) | round(1) if raw_rad | length >= 144 else 0.0 }}</b> kWh</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 8px 0;"><ha-icon icon="mdi:calendar-clock"></ha-icon> <b>Za 6 dni:</b></td>
+                    <td align="right"><b>{{ ((raw_rad[144:168] | map('float') | sum * mnoznik * zima) / 1000) | round(1) if raw_rad | length >= 168 else 0.0 }}</b> kWh</td>
+                  </tr>
+                </table>
+
+          # --- KAFELKI POD POGODĄ ---
+          - type: horizontal-stack
+            cards:
+              - type: tile
+                entity: sensor.deye_inverter_device_date_time
+                name: Czas Deye
+                vertical: false
+                features_position: bottom
+              - type: tile
+                entity: input_number.alpha_rce_param_42
+                name: Dni od Balansowania
+                icon: mdi:battery-sync
+                vertical: false
+                features_position: bottom
 
   # =============================================================
-  # ZAKŁADKA 2: 🔋 BATERIE I ZARZĄDZANIE
+  # ZAKŁADKA 2: 📈 GIEŁDA (RCE IntegraSoft)
   # =============================================================
   - type: panel
     path: rce_integra
@@ -105,7 +377,7 @@ views:
               label: TERAZ
               color: '#e74c3c'
             series:
-              - entity: sensor.alpha_hems_siec_moc_calkowita
+              - entity: sensor.deye_inverter_grid_power
                 name: Moc Sieci
                 unit: ' W'
                 color: '#9b59b6'
@@ -223,7 +495,7 @@ views:
                 icon: mdi:calendar-clock
                 type: simple-entity
               - type: divider
-              - entity: sensor.alpha_hems_bateria_bms_soc
+              - entity: sensor.deye_inverter_battery_bms_soc
                 name: Aktualny SOC Magazynu
                 icon: mdi:battery-high
               - entity: input_number.alpha_rce_param_20
@@ -260,7 +532,6 @@ views:
                 name: Całkowity Zwrot (Total)
                 icon: mdi:cash-multiple
                 type: simple-entity
-
   # =============================================================
   # ZAKŁADKA 3: 🏠 DOM (Centrum Dowodzenia i Szufladki)
   # =============================================================
@@ -288,14 +559,14 @@ views:
             title: 🧠 Rentgen Decyzji (Autoscale RCE & Logika 140%)
             content: >
               {% set sensor_rce = 'sensor.alpha_pse_dzisiaj_2' %}
-              {% set cap_raw = states('number.alpha_hems_bateria_pojemnosc') | float(47.0) %}
+              {% set cap_raw = states('number.deye_inverter_battery_capacity') | float(47.0) %}
               {% set cap = (cap_raw * 51.2 / 1000) | round(1) if cap_raw > 150 else cap_raw | round(1) %}
-              {% set inv_w = states('sensor.alpha_hems_moc_znamionowa') | float(12000) %}
-              {% set moc_kw = [states('number.alpha_hems_max_moc_sprzedazy') | float(6000), inv_w] | min / 1000 %}
+              {% set inv_w = states('sensor.deye_inverter_device_rated_power') | float(12000) %}
+              {% set moc_kw = [states('number.deye_inverter_max_sell_power') | float(6000), inv_w] | min / 1000 %}
               {% set poj = states('input_number.alpha_pojemnosc_magazynu') | float(cap) %}
 
               {# AUTODETEKCJA ENCJI LOW SOC Z FALOWNIKA ORAZ FLAGI ZIMY #}
-              {% set low_soc_ent = (states.number | selectattr('entity_id', 'search', 'battery_low_soc$|shutdown_capacity$') | map(attribute='entity_id') | list | first) | default('number.alpha_hems_bateria_niski_soc') %}
+              {% set low_soc_ent = (states.number | selectattr('entity_id', 'search', 'battery_low_soc$|shutdown_capacity$') | map(attribute='entity_id') | list | first) | default('number.deye_inverter_battery_low_soc') %}
               {% set live_low_soc = states(low_soc_ent) | float(20) %}
               {% set zimowy_beton = 10 if states('input_boolean.alpha_rce_flaga_12') == 'on' else 0 %}
               {% set hardware_low_soc = live_low_soc + zimowy_beton %}
@@ -335,8 +606,8 @@ views:
               {% set mnoznik_p = 0.2 if is_sunny else 1.2 %}
 
               ### 📦 Fizyka Magazynu i Rejestry
-              * Obecny SOC: **{{ states('sensor.alpha_hems_bateria_bms_soc') | float(0) }}%** | Cel (Płotek): **{{ status_plotek }}%**
-              {% set wolny_soc = [states('sensor.alpha_hems_bateria_bms_soc') | float(0) - status_plotek, 0] | max %}
+              * Obecny SOC: **{{ states('sensor.deye_inverter_battery_bms_soc') | float(0) }}%** | Cel (Płotek): **{{ status_plotek }}%**
+              {% set wolny_soc = [states('sensor.deye_inverter_battery_bms_soc') | float(0) - status_plotek, 0] | max %}
               {% set wolna_energia = (wolny_soc / 100) * poj %}
               * Energia do zrzutu: **{{ wolna_energia | round(2) }} kWh**
               
@@ -454,6 +725,20 @@ views:
               - **Sobota:** {{ states('input_number.alpha_rce_param_36') }} kWh
               - **Niedziela:** {{ states('input_number.alpha_rce_param_37') }} kWh
 
+          - type: entities
+            title: ⚡ Monitoring Napięcia Fazy
+            show_header_toggle: false
+            entities:
+              - entity: sensor.deye_inverter_grid_l1_voltage
+                name: Faza L1
+              - entity: sensor.deye_inverter_grid_l2_voltage
+                name: Faza L2
+              - entity: sensor.deye_inverter_grid_l3_voltage
+                name: Faza L3
+              - type: section
+              - entity: input_boolean.alpha_rce_flaga_10
+                name: 🔄 WYMUŚ ALPHA SYNC / SETUP
+                icon: mdi:tools
   # =============================================================
   # KONIEC ZAKŁADKI 3
   # =============================================================
@@ -549,42 +834,42 @@ views:
         entities:
           remaining_solar: sensor.solcast_pv_forecast_pozostala_prognoza_na_dzis
           energy_prognoza_106: sensor.solcast_pv_forecast_prognoza_na_dzisiaj
-          day_pv_energy_108: sensor.alpha_hems_dobowa_produkcja_pv
-          essential_load1: sensor.alpha_hems_moc_ups
+          day_pv_energy_108: sensor.deye_inverter_daily_pv_production
+          essential_load1: sensor.deye_inverter_load_ups_power
           essential_load1_extra: sensor.dobowe_zuzycie_ups
           essential_load2: sensor.smart_plug_2_moc
           essential_load3: sensor.smart_plug_3_moc
-          use_timer_248: switch.alpha_hems_time_of_use
-          priority_load_243: sensor.alpha_hems_moc_domu_calkowita
-          inverter_voltage_154: sensor.alpha_hems_siec_l1_napiecie
-          load_frequency_192: sensor.alpha_hems_czestotliwosc_sieci
-          inverter_current_164: sensor.alpha_hems_siec_l1_prad
-          inverter_power_175: sensor.alpha_hems_moc_inwertera
-          grid_connected_status_194: binary_sensor.alpha_hems_przekaznik_sieci
-          inverter_status_59: sensor.alpha_hems_status_urzadzenia
-          day_battery_discharge_71: sensor.alpha_hems_dobowe_rozladowanie_baterii
-          battery_voltage_183: sensor.alpha_hems_bateria_bms_napiecie
-          battery_power_190: sensor.alpha_hems_bateria_moc
-          battery_current_191: sensor.alpha_hems_bateria_prad
-          grid_power_169: sensor.alpha_hems_siec_moc_calkowita
-          day_grid_export_77: sensor.alpha_hems_dobowa_sprzedaz_siec
-          grid_ct_power_172: sensor.alpha_hems_siec_l1_moc
-          day_load_energy_84: sensor.alpha_hems_dobowe_zuzycie_domu
-          pv1_power_186: sensor.alpha_hems_pv1_moc
-          pv2_power_187: sensor.alpha_hems_pv2_moc
-          pv3_power_188: sensor.alpha_hems_generator_moc
-          day_grid_import_76: sensor.alpha_hems_dobowy_zakup_siec
-          grid_ct_power_total: sensor.alpha_hems_siec_moc_calkowita
-          battery_temp_182: sensor.alpha_hems_bateria_temperatura
+          use_timer_248: switch.sunsynk_toggle_system_timer
+          priority_load_243: sensor.deye_inverter_load_power
+          inverter_voltage_154: sensor.deye_inverter_output_l1_voltage
+          load_frequency_192: sensor.deye_inverter_load_frequency
+          inverter_current_164: sensor.deye_inverter_output_l1_current
+          inverter_power_175: sensor.sunsynk_inverter_power
+          grid_connected_status_194: binary_sensor.sunsynk_grid_connected_status
+          inverter_status_59: sensor.sunsynk_overall_state
+          day_battery_discharge_71: sensor.deye_inverter_daily_battery_discharge
+          battery_voltage_183: sensor.deye_inverter_battery_bms_voltage
+          battery_power_190: sensor.deye_inverter_battery_power
+          battery_current_191: sensor.deye_inverter_battery_bms_current
+          grid_power_169: sensor.sunsynk_grid_power
+          day_grid_export_77: sensor.deye_inverter_daily_energy_sold
+          grid_ct_power_172: sensor.deye_inverter_grid_l1_power
+          day_load_energy_84: sensor.deye_inverter_daily_load_consumption
+          pv1_power_186: sensor.deye_inverter_pv1_power
+          pv2_power_187: sensor.deye_inverter_pv2_power
+          pv3_power_188: sensor.deye_inverter_generator_power_total
+          day_grid_import_76: sensor.deye_inverter_daily_energy_bought
+          grid_ct_power_total: sensor.deye_inverter_grid_power
+          battery_temp_182: sensor.deye_inverter_battery_temperature
           day_aux_energy: sensor.solcast_pv_forecast_prognoza_na_dzisiaj
-          essential_power: sensor.alpha_hems_moc_domu_calkowita
-          radiator_temp_91: sensor.alpha_hems_temperatura_ac
+          essential_power: sensor.deye_inverter_load_power
+          radiator_temp_91: sensor.deye_inverter_ac_temperature
           dc_transformer_temp_90: sensor.magazyn_pomieszczenie_temperatura
-          solar_sell_247: switch.alpha_hems_solar_sell
-          day_battery_charge_70: sensor.alpha_hems_dobowe_ladowanie_baterii
-          battery_soc_184: sensor.alpha_hems_bateria_soc
-          battery_rated_capacity: number.alpha_hems_bateria_pojemnosc
-          battery_shutdown_soc: number.alpha_hems_bateria_wylaczenie_soc
+          solar_sell_247: switch.deye_inverter_solar_sell
+          day_battery_charge_70: sensor.deye_inverter_daily_battery_charge
+          battery_soc_184: sensor.deye_inverter_battery
+          battery_rated_capacity: number.deye_inverter_battery_capacity
+          battery_shutdown_soc: number.deye_inverter_battery_shutdown_soc_low_dc
 
   # =============================================================
   # ZAKŁADKA 5: 📊 HISTORIA 24H (Święty Graal HEMS)
@@ -628,7 +913,7 @@ views:
             group_by:
               func: avg
               duration: 5m
-          - entity: sensor.sunsynk_grid_power
+          - entity: sensor.deye_inverter_grid_power
             name: Zakup z Sieci
             type: area
             color: '#e74c3c'
@@ -641,7 +926,7 @@ views:
             group_by:
               func: avg
               duration: 5m
-          - entity: sensor.sunsynk_grid_power
+          - entity: sensor.deye_inverter_grid_power
             name: Sprzedaż do Sieci
             type: area
             color: '#2ecc71'
@@ -713,7 +998,7 @@ views:
             stroke_width: 1
             yaxis_id: percent
             data_generator: >
-              let d = entity.attributes.simulation; let limit = parseFloat(hass.states['number.alpha_hems_bateria_niski_soc'].state) || 20; return (typeof d === 'string' ? JSON.parse(d) : d).map(p => [p.timestamp, limit]);
+              let d = entity.attributes.simulation; let limit = parseFloat(hass.states['number.deye_inverter_battery_low_soc'].state) || 20; return (typeof d === 'string' ? JSON.parse(d) : d).map(p => [p.timestamp, limit]);
           - entity: sensor.alpha_soc_predictive_twin
             name: Uzysk słońca
             unit: kWh
@@ -811,3 +1096,33 @@ views:
                   - entity: input_boolean.alpha_rce_flaga_04
                     name: "🔔 Włącz powiadomienia PUSH"
                     icon: mdi:bell-ring
+  # =============================================================
+  # KONIEC ZAKŁADKI 7
+  # =============================================================
+
+# =============================================================
+# LEGENDA ZAJĘTYCH POMOCNIKÓW (MOST INTERFEJSU v1.40)
+# =============================================================
+# Wszystkie poniższe mapowania korzystają wyłącznie z fabrycznych,
+# uniwersalnych zasobów matrycy klienta. Koniec z ułamkami i suwakami.
+#
+# --- POZYCJE DOSTĘPNE Z KLAWIATURY (Czyste Pola tekstowe - Box):
+# 1. input_text.alpha_rce_stan_06       -> Cena zakupu energii (Typ: Tekst, np. 0.49)
+# 2. input_text.alpha_rce_stan_07       -> Oczekiwany zysk minimalny (Typ: Tekst, np. 0.15)
+# 3. input_text.alpha_rce_stan_08       -> Moc sprzedaży RCE (Wpisujemy w Watach z palca, np. 6000)
+# 4. input_text.alpha_rce_stan_11       -> Encja telefonu do powiadomień (np. device_tracker.dummy)
+#
+# --- POZYCJE DOTYKOWE (Kafelki wyboru wartości tekstowych):
+# 5. input_text.alpha_rce_stan_09       -> Wybór operatora OSD (Wpisuje tekst: PGE / Tauron / Enea / Energa)
+# 6. input_text.alpha_rce_stan_10       -> Wybór taryfy głównej (Wpisuje tekst: G12 / G12W)
+#
+# --- FLAGI POWIĄZANE LOGICZNIE (Przełączane kafelkami wyboru):
+# 7. input_boolean.alpha_rce_flaga_01   -> System rozliczeń (ON = Net-Billing, OFF = Net-Metering/Opusty)
+# 8. input_boolean.alpha_rce_flaga_02   -> Tryb symulacji (ON = Symulacja aktywna, OFF = Handel giełdowy włączony)
+# 9. input_boolean.alpha_rce_flaga_03   -> Smart Bufor Komfortu (ON = Wyłącz bufor w słońce >140%, OFF = Bufor działa zawsze)
+# 10. input_boolean.alpha_rce_flaga_04  -> Powiadomienia PUSH (ON = Aktywne, OFF = Wyłączone)
+# 11. input_boolean.alpha_rce_flaga_06  -> Tryb bilansowania spoczynku (ON = Zero Export To Load, OFF = Zero Export To CT)
+#
+# --- STALE NAZWANE (Ustawienia suwakowe ze zmiennych):
+# 12. input_number.alpha_rezerwa_soc    -> Rozmiar Bufora Komfortu (%) [Oryginalna encja rezerwy]
+# =============================================================
