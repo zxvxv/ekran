@@ -863,7 +863,7 @@ views:
           battery_rated_capacity: number.alpha_hems_bateria_pojemnosc
           battery_shutdown_soc: number.alpha_hems_bateria_wylaczenie_soc
 
-  # =============================================================
+# =============================================================
   # ZAKŁADKA 5: 📊 HISTORIA 24H (Święty Graal HEMS)
   # =============================================================
   - type: panel
@@ -896,7 +896,7 @@ views:
             opposite: true
             decimals: 0
         series:
-          - entity: sensor.alpha_hems_moc_domu_calkowita
+          - entity: sensor.deye_inverter_load_power
             name: Zużycie Domu
             type: line
             color: '#e0e0e0'
@@ -905,7 +905,7 @@ views:
             group_by:
               func: avg
               duration: 5m
-          - entity: sensor.alpha_hems_siec_moc_calkowita
+          - entity: sensor.sunsynk_grid_power
             name: Zakup z Sieci
             type: area
             color: '#e74c3c'
@@ -918,7 +918,7 @@ views:
             group_by:
               func: avg
               duration: 5m
-          - entity: sensor.alpha_hems_siec_moc_calkowita
+          - entity: sensor.sunsynk_grid_power
             name: Sprzedaż do Sieci
             type: area
             color: '#2ecc71'
@@ -931,7 +931,7 @@ views:
             group_by:
               func: avg
               duration: 5m
-          - entity: sensor.alpha_hems_bateria_bms_soc
+          - entity: sensor.deye_inverter_battery_bms_soc
             name: SOC Magazynu
             type: line
             color: '#3498db'
