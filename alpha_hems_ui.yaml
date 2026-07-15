@@ -556,7 +556,7 @@ views:
               **Bieżąca cena RCE:** {{ states('input_number.alpha_rce_param_01') }} zł/kWh
 
           - type: markdown
-            title: 🧠 Rentgen Decyzji (Autoscale RCE & Logika 140%)
+            title: 🧠 Rentgen Decyzji (Double-Cycle & Anti-Spike Margin)
             content: >
               {% set sensor_rce = 'sensor.alpha_pse_dzisiaj_2' %}
               {% set cap_raw = states('number.deye_inverter_battery_capacity') | float(47.0) %}
@@ -570,6 +570,9 @@ views:
               {% set live_low_soc = states(low_soc_ent) | float(20) %}
               {% set zimowy_beton = 10 if states('input_boolean.alpha_rce_flaga_12') == 'on' else 0 %}
               {% set hardware_low_soc = live_low_soc + zimowy_beton %}
+              
+              {# TWARDY ZACISK (ANTI-SPIKE MARGIN) #}
+              {% set bezpieczna_podloga = hardware_low_soc + 10 %}
 
               {# DYNAMICZNE MAPOWANIE SZUFLADEK WZGLEDEM DNIA TYGODNIA #}
               {% set d = now().weekday() %}
@@ -606,7 +609,7 @@ views:
               {% set mnoznik_p = 0.2 if is_sunny else 1.2 %}
 
               ### 📦 Fizyka Magazynu i Rejestry
-              * Obecny SOC: **{{ states('sensor.deye_inverter_battery_bms_soc') | float(0) }}%** | Cel (Płotek): **{{ status_plotek }}%**
+              * Obecny SOC: **{{ states('sensor.deye_inverter_battery_bms_soc') | float(0) }}%** | Cel (Płotek): **{{ status_plotek }}%** *(Clamp na Min. {{ bezpieczna_podloga }}%)*
               {% set wolny_soc = [states('sensor.deye_inverter_battery_bms_soc') | float(0) - status_plotek, 0] | max %}
               {% set wolna_energia = (wolny_soc / 100) * poj %}
               * Energia do zrzutu: **{{ wolna_energia | round(2) }} kWh**
@@ -621,7 +624,8 @@ views:
               * Zużycie Poranek DZIŚ: **{{ p_dzis }} kWh** ➔ {{ ((p_dzis / poj) * 100) | round(2) }}% SOC
               * Zużycie Wieczór DZIŚ: **{{ w_dzis }} kWh** ➔ {{ ((w_dzis / poj) * 100) | round(2) }}% SOC
               * Prognoza Słońca na Jutro: **{{ pv_jutro }} kWh** ➔ {{ ((pv_jutro / poj) * 100) | round(2) }}% SOC
-              * Odczytana encja sprzętowa: `{{ low_soc_ent }}` ➔ **{{ live_low_soc }}% SOC** {% if zimowy_beton > 0 %}(+10% Beton Zimowy = {{ hardware_low_soc }}%){% endif %}
+              * Baza sprzętowa: `{{ low_soc_ent }}` = **{{ live_low_soc }}% SOC** {% if zimowy_beton > 0 %}(+10% Beton Zimowy){% endif %}
+              * **🛡️ Ochrona Skokowa (Anti-Spike): {{ bezpieczna_podloga }}% SOC**
 
               ---
 
@@ -629,7 +633,7 @@ views:
               {% set smart_toggle = states('input_boolean.alpha_rce_flaga_03') == 'on' %}
               {% set aktywny_bufor = 0 if (is_sunny and smart_toggle) else bufor_komfortu %}
 
-              ### 🧮 2. MATRYCA OBLICZEŃ PŁOTKA (Baza maksymalna na start)
+              ### 🧮 2. MATRYCA OBLICZEŃ PŁOTKA (Z twardym dociskiem)
               {% if is_sunny %}
               > **☀️ SMART MORNING AKTYWNY (Prognoza > 140%):** Słońce jutro przejmuje obciążenie. Zapas poranny ścięty do 20% (tylko na rozruch do 7:00).
               {% else %}
@@ -637,26 +641,49 @@ views:
               {% endif %}
 
               👉 **Maksymalna baza na start poranka (06:00):**
-              {{ p_dzis }} kWh ({{ ((p_dzis / poj) * 100) | round(2) }}% SOC) × {{ mnoznik_p }} = **{{ (p_dzis * mnoznik_p) | round(2) }} kWh** ({{ (((p_dzis * mnoznik_p) / poj) * 100) | round(2) }}% SOC) 
-              + Low SOC: {{ hardware_low_soc }}% + Bufor: {{ aktywny_bufor }}% + 1% ➔ **Startowy Max: {{ ((((p_dzis * mnoznik_p) / poj) * 100) + hardware_low_soc + aktywny_bufor + 1) | round(0) }}% SOC** *(Płotek maleje wraz z upływem czasu)*
+              {% set calc_poranek = (((p_dzis * mnoznik_p) / poj) * 100) + hardware_low_soc + aktywny_bufor + 1 %}
+              Wyliczono: {{ calc_poranek | round(0) }}% SOC ➔ **Ostateczny Płotek: {{ [calc_poranek | round(0), bezpieczna_podloga] | max }}% SOC** *(Płotek maleje wraz z upływem czasu)*
 
               👉 **Maksymalna baza na start wieczoru:**
-              {{ w_dzis }} kWh ({{ ((w_dzis / poj) * 100) | round(2) }}% SOC) × 1.2 = **{{ (w_dzis * 1.2) | round(2) }} kWh** ({{ (((w_dzis * 1.2) / poj) * 100) | round(2) }}% SOC) 
-              + Low SOC: {{ hardware_low_soc }}% + Bufor: {{ aktywny_bufor }}% + 1% ➔ **Startowy Max: {{ ((((w_dzis * 1.2) / poj) * 100) + hardware_low_soc + aktywny_bufor + 1) | round(0) }}% SOC** *(Płotek maleje wraz z upływem czasu)*
+              {% set calc_wieczor = (((w_dzis * 1.2) / poj) * 100) + hardware_low_soc + aktywny_bufor + 1 %}
+              Wyliczono: {{ calc_wieczor | round(0) }}% SOC ➔ **Ostateczny Płotek: {{ [calc_wieczor | round(0), bezpieczna_podloga] | max }}% SOC** *(Płotek maleje wraz z upływem czasu)*
 
               ---
 
-              ### 🛡️ 3. LOGIKA 140% (Smart Morning & Zrzut Letni)
-              * Łączne zapotrzebowanie JUTRA (Noc + Poranek + Wieczór): **{{ total_jutro | round(2) }} kWh**
-              * Wymagany próg produkcji PV (Suma × 1.4): {{ total_jutro | round(2) }} kWh × 1.4 = **{{ wymog_140 | round(2) }} kWh**
-              * Decyzja Mózgu: Czy Słońce Jutro ({{ pv_jutro }} kWh) ≥ Wymóg ({{ wymog_140 | round(2) }} kWh)?
-              ➔ **{{ '✅ TAK (Agresywne cięcie poranka i odblokowany zrzut)' if is_sunny else '❌ NIE (Standardowa ochrona, zrzut zablokowany)' }}**
+              ### 🛡️ 3. LOGIKA 140% & PODWÓJNY CYKL (Double-Cycle Arbitrage)
+              * Łączne zapotrzebowanie JUTRA: **{{ total_jutro | round(2) }} kWh** | Wymóg PV 140%: **{{ wymog_140 | round(2) }} kWh**
+              * Słońce Jutro ({{ pv_jutro }} kWh) ≥ Wymóg 140%? ➔ **{{ '✅ TAK (Odblokowany zrzut letni)' if is_sunny else '❌ NIE (Standardowa ochrona, zrzut zablokowany)' }}**
+              
+              {% set prices = state_attr(sensor_rce, 'value') %}
+              {% if not prices %} {% set prices = state_attr(sensor_rce, 'prices') %} {% endif %}
+              {% set ns = namespace(max_rano=-999.0, min_poludnie=999.0) %}
+              {% if prices is iterable and prices is not string and prices is not mapping %}
+                {% for p in prices %}
+                  {% set p_str = p.dtime | string %}
+                  {% set p_dt = as_datetime(p_str) %}
+                  {% if p_dt == none %} {% set p_dt = strptime(p_str, '%Y-%m-%d %H:%M:%S', strptime(p_str, '%Y-%m-%d %H:%M', none)) %} {% endif %}
+                  {% set p_ts = as_timestamp(p_dt) if p_dt != none else none %}
+                  {% if p_ts != none and p_ts >= today_at('00:00').timestamp() %}
+                    {% set p_hour = (p_ts | timestamp_custom('%H', true)) | int %}
+                    {% set val = p.rce_pln | default(p.cen_cost | default(p.price | default(0))) | float(0) / 1000 %}
+                    {% if 6 <= p_hour < 11 %}
+                      {% if val > ns.max_rano %} {% set ns.max_rano = val %} {% endif %}
+                    {% endif %}
+                    {% if 11 <= p_hour <= 14 %}
+                      {% if val < ns.min_poludnie %} {% set ns.min_poludnie = val %} {% endif %}
+                    {% endif %}
+                  {% endif %}
+                {% endfor %}
+              {% endif %}
+              {% set spread = (ns.max_rano - ns.min_poludnie) | round(2) %}
+              
+              * 📉 Max cena rano: **{{ ns.max_rano }} zł/kWh** | 📈 Min cena południe: **{{ ns.min_poludnie }} zł/kWh**
+              * Obliczony Spread (Różnica): **{{ spread }} zł/kWh**
+              * Podwójny Cykl Opłacalny (Spread >= 0.30 zł)? ➔ **{{ '✅ TAK (Zrzut uwalniany z samego rana)' if spread >= 0.30 else '❌ NIE (Różnica w cenie nie opłaca amortyzacji)' }}**
 
               ---
 
               ### 📈 Planowanie Okienek Handlowych (Autoscale RCE)
-              {% set prices = state_attr(sensor_rce, 'value') %}
-              {% if not prices %} {% set prices = state_attr(sensor_rce, 'prices') %} {% endif %}
               {% set now_ts = as_timestamp(now()) %}
               {% set h = now().hour %}
               {% set prognoza_shift = 15 if states('input_boolean.alpha_rce_flaga_12') == 'on' else 13 %}
