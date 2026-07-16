@@ -350,7 +350,7 @@ views:
                 features_position: bottom
 
   # =============================================================
-  # ZAKŁADKA 2: 📈 GIEŁDA (RCE IntegraSoft)
+  # ZAKŁADKA 2: 📈 GIEŁDA (RCE IntegraSoft) - ZGODNA Z V6.031
   # =============================================================
   - type: panel
     path: rce_integra
@@ -441,13 +441,45 @@ views:
                   d2 = Array.isArray(d2) ? d2 : [];
                   let data = d1.concat(d2);
                   if (!data.length) return [];
-                  let p = parseFloat(hass.states['input_number.alpha_rce_param_03'].state) || 0.7;
+
+                  let soc = parseFloat(hass.states['sensor.deye_inverter_battery_bms_soc']?.state) || 0;
+                  let plotek = parseFloat(hass.states['input_number.alpha_rce_param_20']?.state) || 20;
+                  let cap_raw = parseFloat(hass.states['number.deye_inverter_battery_capacity']?.state) || 47;
+                  let cap = cap_raw > 150 ? (cap_raw * 51.2 / 1000) : cap_raw;
+                  let inv_w = parseFloat(hass.states['sensor.deye_inverter_device_rated_power']?.state) || 12000;
+                  let moc_ust = parseFloat(hass.states['input_number.alpha_moc_sprzedazy']?.state) || 6000;
+                  let moc_kw = Math.min(moc_ust, inv_w) / 1000;
+
+                  let wolny_soc = Math.max(0, soc - plotek);
+                  let wolna_energia = (wolny_soc / 100) * cap;
+                  let max_slupkow = Math.ceil(wolna_energia / (moc_kw * 0.25));
+
+                  let min_prog = parseFloat(hass.states['input_number.alpha_rce_param_03']?.state) || 0.7;
+                  let now_ts = new Date().getTime();
+
+                  let future_slots = [];
+                  data.forEach((entry) => {
+                    let val = entry.rce_pln !== undefined ? entry.rce_pln : (entry.cen_cost !== undefined ? entry.cen_cost : (entry.price || 0));
+                    let c = parseFloat(val) / 1000;
+                    let tsStr = String(entry.dtime).replace(/-/g, '/').replace('T', ' ');
+                    let ts = new Date(tsStr).getTime();
+                    if (ts >= (now_ts - 900000) && c >= min_prog) {
+                      future_slots.push({ts: ts, c: c});
+                    }
+                  });
+
+                  future_slots.sort((a, b) => b.c - a.c);
+                  let active_timestamps = future_slots.slice(0, max_slupkow).map(s => s.ts);
+
                   let res = data.map((entry) => {
                     let val = entry.rce_pln !== undefined ? entry.rce_pln : (entry.cen_cost !== undefined ? entry.cen_cost : (entry.price || 0));
                     let c = parseFloat(val) / 1000;
                     let tsStr = String(entry.dtime).replace(/-/g, '/').replace('T', ' ');
-                    return [new Date(tsStr).getTime(), c >= p ? c : 0];
+                    let ts = new Date(tsStr).getTime();
+                    let is_active = active_timestamps.includes(ts);
+                    return [ts, is_active ? c : 0];
                   });
+
                   return res.sort((a, b) => a[0] - b[0]);
               - entity: sensor.alpha_pse_dzisiaj_2
                 name: Ceny RCE (48h)
@@ -532,6 +564,9 @@ views:
                 name: Całkowity Zwrot (Total)
                 icon: mdi:cash-multiple
                 type: simple-entity
+  # =============================================================
+  # KONIEC ZAKŁADKI 2
+  # =============================================================
   # =============================================================
   # ZAKŁADKA 3: 🏠 DOM (Centrum Dowodzenia i Szufladki)
   # =============================================================
