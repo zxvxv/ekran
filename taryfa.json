@@ -1,1 +1,26 @@
-{}
+{
+  "metadane": {
+    "ostatnie_sprawdzenie_skryptu": "2026-07-17T20:13:00",
+    "ostatnia_zmiana_cen": "2026-07-17T20:13:00",
+    "taryfa": "G12 / G12w",
+    "strefa": "dolina (tanie godziny)",
+    "jednostka": "PLN/kWh netto"
+  },
+  "ceny": {
+    "pge": 0.0,
+    "tauron": 0.0,
+    "enea": 0.0,
+    "energa": 0.0,
+    "eon": 0.0
+  },
+  "diagnostyka_zrodel": {
+    "pge": "Brak odczytów ze wszystkich źródeł - Pozostawiono starą cenę!",
+    "tauron": "Brak odczytów ze wszystkich źródeł - Pozostawiono starą cenę!",
+    "enea": "Brak odczytów ze wszystkich źródeł - Pozostawiono starą cenę!",
+    "energa": "Brak odczytów ze wszystkich źródeł - Pozostawiono starą cenę!",
+    "eon": "Brak odczytów ze wszystkich źródeł - Pozostawiono starą cenę!"
+  },
+  "rejestr_zmian_cen": [
+    "[2026-07-17] Utworzenie pliku bazowego"
+  ]
+}
