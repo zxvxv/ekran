@@ -1,6 +1,6 @@
 {
   "metadane": {
-    "ostatnie_sprawdzenie_skryptu": "2026-07-18T03:15:00",
+    "ostatnie_sprawdzenie_skryptu": "2026-07-18T12:56:34",
     "ostatnia_zmiana_cen": "2026-07-17T20:13:00",
     "taryfa": "G12 / G12w",
     "strefa": "dolina (tanie godziny)",
@@ -14,11 +14,11 @@
     "eon": 0.0
   },
   "diagnostyka_zrodel": {
-    "pge": "Brak odczytów ze wszystkich źródeł - Pozostawiono starą cenę!",
-    "tauron": "Brak odczytów ze wszystkich źródeł - Pozostawiono starą cenę!",
-    "enea": "Brak odczytów ze wszystkich źródeł - Pozostawiono starą cenę!",
-    "energa": "Brak odczytów ze wszystkich źródeł - Pozostawiono starą cenę!",
-    "eon": "Brak odczytów ze wszystkich źródeł - Pozostawiono starą cenę!"
+    "pge": "Brak quorum (1/2) - Pozostawiono starą cenę!",
+    "tauron": "Brak quorum (1/1) - Pozostawiono starą cenę!",
+    "enea": "Brak quorum (1/2) - Pozostawiono starą cenę!",
+    "energa": "Brak quorum (1/1) - Pozostawiono starą cenę!",
+    "eon": "Brak quorum (1/2) - Pozostawiono starą cenę!"
   },
   "rejestr_zmian_cen": [
     "[2026-07-17] Utworzenie pliku bazowego"
