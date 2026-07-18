@@ -1,24 +1,37 @@
 {
   "metadane": {
-    "ostatnie_sprawdzenie_skryptu": "2026-07-18T13:16:24",
-    "ostatnia_zmiana_cen": "2026-07-17T20:13:00",
+    "ostatnie_sprawdzenie_skryptu": "2026-07-18T13:19:07",
     "taryfa": "G12 / G12w",
     "strefa": "dolina (tanie godziny)",
-    "jednostka": "PLN/kWh netto"
+    "jednostka": "PLN/kWh netto",
+    "tryb_dzialania": "surowe_odczyty_bez_quorum"
   },
-  "ceny": {
-    "pge": 0.0,
-    "tauron": 0.0,
-    "enea": 0.0,
-    "energa": 0.0,
-    "eon": 0.0
-  },
-  "diagnostyka_zrodel": {
-    "pge": "Brak quorum (1/1) - Pozostawiono starą cenę!",
-    "tauron": "Brak quorum (1/1) - Pozostawiono starą cenę!",
-    "enea": "Brak quorum (1/1) - Pozostawiono starą cenę!",
-    "energa": "Brak quorum (1/1) - Pozostawiono starą cenę!",
-    "eon": "Brak quorum (1/1) - Pozostawiono starą cenę!"
+  "surowe_odczyty": {
+    "pge": {
+      "agregator": 0.8761,
+      "scraping": null,
+      "gemini": null
+    },
+    "tauron": {
+      "agregator": 0.8761,
+      "scraping": null,
+      "gemini": null
+    },
+    "enea": {
+      "agregator": 0.8761,
+      "scraping": null,
+      "gemini": null
+    },
+    "energa": {
+      "agregator": 0.8761,
+      "scraping": null,
+      "gemini": null
+    },
+    "eon": {
+      "agregator": 0.8761,
+      "scraping": null,
+      "gemini": null
+    }
   },
   "rejestr_zmian_cen": [
     "[2026-07-17] Utworzenie pliku bazowego"
