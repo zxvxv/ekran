@@ -1,6 +1,6 @@
 {
   "metadane": {
-    "ostatnie_sprawdzenie_skryptu": "2026-07-21T03:15:00",
+    "ostatnie_sprawdzenie_skryptu": "2026-07-22T03:15:00",
     "taryfa": "G12 / G12w",
     "strefa": "dolina (tanie godziny)",
     "jednostka": "PLN/kWh netto",
@@ -10,30 +10,35 @@
     "pge": {
       "agregator": 0.8761,
       "scraping": null,
-      "gemini": 0.4967
+      "gemini": 0.4968
     },
     "tauron": {
       "agregator": 0.8761,
       "scraping": null,
-      "gemini": 0.5203
+      "gemini": 0.5172
     },
     "enea": {
       "agregator": 0.8761,
       "scraping": null,
-      "gemini": 0.4588
+      "gemini": 0.5236
     },
     "energa": {
       "agregator": 0.8761,
       "scraping": null,
-      "gemini": 0.5073
+      "gemini": 0.4995
     },
     "eon": {
       "agregator": 0.8761,
       "scraping": null,
-      "gemini": 0.5285
+      "gemini": 0.52845
     }
   },
   "rejestr_zmian_cen": [
+    "[2026-07-22] eon: wykryto różnicę w pobranych surowych danych",
+    "[2026-07-22] energa: wykryto różnicę w pobranych surowych danych",
+    "[2026-07-22] enea: wykryto różnicę w pobranych surowych danych",
+    "[2026-07-22] tauron: wykryto różnicę w pobranych surowych danych",
+    "[2026-07-22] pge: wykryto różnicę w pobranych surowych danych",
     "[2026-07-21] eon: wykryto różnicę w pobranych surowych danych",
     "[2026-07-21] energa: wykryto różnicę w pobranych surowych danych",
     "[2026-07-21] enea: wykryto różnicę w pobranych surowych danych",
