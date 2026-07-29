@@ -4,18 +4,18 @@
 #
 # HISTORIA WERSJI:
 # - v1.41: (RCE 48H FUSION) Połączenie wykresów Giełda Dziś i Plan Jutro
-#          w jeden ciągły wykres 48h (odporny na brak danych przed 14:00).
+#         w jeden ciągły wykres 48h (odporny na brak danych przed 14:00).
 # - v1.40: (CONTROL CENTER & GENERIC MATRICES) Dodanie dedykowanej zakładki USTAWIENIA
-#          z pełnym mapowaniem wolnych pomocników tekstowych i flag logicznych.
-#          Wyeliminowanie suwaków na rzecz pól tekstowych (Box) oraz wdrożenie 
-#          dotykowych paneli wyboru opcji bez zmian w configuration.yaml.
+#         z pełnym mapowaniem wolnych pomocników tekstowych i flag logicznych.
+#         Wyeliminowanie suwaków na rzecz pól tekstowych (Box) oraz wdrożenie 
+#         dotykowych paneli wyboru opcji bez zmian w configuration.yaml.
 # - v1.39: (FROZEN METEO FIX) Usunięcie wyszukiwarki encji weather.* z karty Alpha AI. 
-#          Dashboard odczytuje teraz wyłącznie zamrożoną (o 14:00) encję poligonową.
+#         Dashboard odczytuje teraz wyłącznie zamrożoną (o 14:00) encję poligonową.
 # - v1.37: (UNIVERSAL UI FIX) Usunięcie twardego kodowania okienka letniego (PGE) w raporcie Księgowego. 
-#          Dashboard odczytuje teraz uniwersalne ramy czasowe podane bezpośrednio przez aplikację główną.
+#         Dashboard odczytuje teraz uniwersalne ramy czasowe podane bezpośrednio przez aplikację główną.
 # - v1.35: (GRAAL HEMS) Dodanie zakładki 5 "HISTORIA 24H" z wykresem ApexCharts o podwójnej osi Y.
 # - v1.34: (UX TWEAKS) Usunięcie kafelka "Obciążenie Domu", przeniesienie 
-#          "Czas Deye" i "Dni od Balansowania" pod prognozę pogody dla lepszej spójności wizualnej.
+#         "Czas Deye" i "Dni od Balansowania" pod prognozę pogody dla lepszej spójności wizualnej.
 # - v1.33: (CRITICAL RESTORE) Przywrócenie w 100% oryginalnych wykresów ApexCharts.
 # - v1.29: (SURVIVAL CALCULATOR) Usunięcie zbędnych kart TOU, Grid Charge i Gen Charge.
 # - v1.28: (DASHBOARD REBUILD) Uporządkowanie sekcji pogodowej.
@@ -241,98 +241,36 @@ views:
               - entity: number.deye_inverter_maximum_battery_charge_current
                 name: Max. Ład.
                 
-          # --- PRZEŁĄCZNIK ŹRÓDŁA POGODY ---
+          # --- KARTA 1: SOLCAST ---
           - type: entities
-            title: ⚙️ Konfiguracja Pogody ALPHA
+            title: ☀️ Prognoza Solcast (7 dni)
             show_header_toggle: false
             entities:
-              - entity: input_boolean.alpha_rce_flaga_14
-                name: "Włącz: Alpha AI, Wyłącz: Solcast"
-                icon: mdi:weather-cloudy-clock
-                
-          # --- KARTA 1: SOLCAST ---
-          - type: conditional
-            conditions:
-              - condition: state
-                entity: input_boolean.alpha_rce_flaga_14
-                state: 'off'
-            card:
-              type: entities
-              title: ☀️ Prognoza Solcast (7 dni)
-              show_header_toggle: false
-              entities:
-                - entity: sensor.solcast_pv_forecast_pozostala_prognoza_na_dzis
-                  name: Pozostało na dziś
-                  icon: mdi:solar-power
-                - type: divider
-                - entity: sensor.solcast_pv_forecast_prognoza_na_dzisiaj
-                  name: Dziś (Całkowita)
-                  icon: mdi:weather-sunny
-                - entity: sensor.solcast_pv_forecast_prognoza_na_jutro
-                  name: Jutro
-                  icon: mdi:weather-partly-cloudy
-                - entity: sensor.solcast_pv_forecast_prognoza_na_dzien_3
-                  name: Pojutrze
-                  icon: mdi:calendar-clock
-                - entity: sensor.solcast_pv_forecast_prognoza_na_dzien_4
-                  name: Za 3 dni
-                  icon: mdi:calendar-clock
-                - entity: sensor.solcast_pv_forecast_prognoza_na_dzien_5
-                  name: Za 4 dni
-                  icon: mdi:calendar-clock
-                - entity: sensor.solcast_pv_forecast_prognoza_na_dzien_6
-                  name: Za 5 dni
-                  icon: mdi:calendar-clock
-                - entity: sensor.solcast_pv_forecast_prognoza_na_dzien_7
-                  name: Za 6 dni
-                  icon: mdi:calendar-clock
-
-          # --- KARTA 2: ALPHA AI ---
-          - type: conditional
-            conditions:
-              - condition: state
-                entity: input_boolean.alpha_rce_flaga_14
-                state: 'on'
-            card:
-              type: markdown
-              title: 🧠 Prognoza Alpha AI (Open-Meteo)
-              content: >
-                {% set mnoznik = states('input_number.alpha_rce_param_46') | float(6.0) %}
-                {% set zima = 0.6 if states('input_boolean.alpha_rce_flaga_12') == 'on' else 1.0 %}
-                {% set raw_rad = state_attr('sensor.ai_raw_forecast_data', 'shortwave_radiation') | default([], true) %}
-                
-                **Zastosowany mnożnik dachu:** {{ (mnoznik * zima) | round(2) }}
-                
-                <table width="100%">
-                  <tr>
-                    <td style="padding: 8px 0;"><ha-icon icon="mdi:weather-sunny"></ha-icon> <b>Dziś:</b></td>
-                    <td align="right"><b>{{ ((raw_rad[0:24] | map('float') | sum * mnoznik * zima) / 1000) | round(1) if raw_rad | length >= 24 else 0.0 }}</b> kWh</td>
-                  </tr>
-                  <tr>
-                    <td style="padding: 8px 0;"><ha-icon icon="mdi:weather-partly-cloudy"></ha-icon> <b>Jutro:</b></td>
-                    <td align="right"><b>{{ ((raw_rad[24:48] | map('float') | sum * mnoznik * zima) / 1000) | round(1) if raw_rad | length >= 48 else 0.0 }}</b> kWh</td>
-                  </tr>
-                  <tr>
-                    <td style="padding: 8px 0;"><ha-icon icon="mdi:calendar-clock"></ha-icon> <b>Pojutrze:</b></td>
-                    <td align="right"><b>{{ ((raw_rad[48:72] | map('float') | sum * mnoznik * zima) / 1000) | round(1) if raw_rad | length >= 72 else 0.0 }}</b> kWh</td>
-                  </tr>
-                  <tr>
-                    <td style="padding: 8px 0;"><ha-icon icon="mdi:calendar-clock"></ha-icon> <b>Za 3 dni:</b></td>
-                    <td align="right"><b>{{ ((raw_rad[72:96] | map('float') | sum * mnoznik * zima) / 1000) | round(1) if raw_rad | length >= 96 else 0.0 }}</b> kWh</td>
-                  </tr>
-                  <tr>
-                    <td style="padding: 8px 0;"><ha-icon icon="mdi:calendar-clock"></ha-icon> <b>Za 4 dni:</b></td>
-                    <td align="right"><b>{{ ((raw_rad[96:120] | map('float') | sum * mnoznik * zima) / 1000) | round(1) if raw_rad | length >= 120 else 0.0 }}</b> kWh</td>
-                  </tr>
-                  <tr>
-                    <td style="padding: 8px 0;"><ha-icon icon="mdi:calendar-clock"></ha-icon> <b>Za 5 dni:</b></td>
-                    <td align="right"><b>{{ ((raw_rad[120:144] | map('float') | sum * mnoznik * zima) / 1000) | round(1) if raw_rad | length >= 144 else 0.0 }}</b> kWh</td>
-                  </tr>
-                  <tr>
-                    <td style="padding: 8px 0;"><ha-icon icon="mdi:calendar-clock"></ha-icon> <b>Za 6 dni:</b></td>
-                    <td align="right"><b>{{ ((raw_rad[144:168] | map('float') | sum * mnoznik * zima) / 1000) | round(1) if raw_rad | length >= 168 else 0.0 }}</b> kWh</td>
-                  </tr>
-                </table>
+              - entity: sensor.solcast_pv_forecast_pozostala_prognoza_na_dzis
+                name: Pozostało na dziś
+                icon: mdi:solar-power
+              - type: divider
+              - entity: sensor.solcast_pv_forecast_prognoza_na_dzisiaj
+                name: Dziś (Całkowita)
+                icon: mdi:weather-sunny
+              - entity: sensor.solcast_pv_forecast_prognoza_na_jutro
+                name: Jutro
+                icon: mdi:weather-partly-cloudy
+              - entity: sensor.solcast_pv_forecast_prognoza_na_dzien_3
+                name: Pojutrze
+                icon: mdi:calendar-clock
+              - entity: sensor.solcast_pv_forecast_prognoza_na_dzien_4
+                name: Za 3 dni
+                icon: mdi:calendar-clock
+              - entity: sensor.solcast_pv_forecast_prognoza_na_dzien_5
+                name: Za 4 dni
+                icon: mdi:calendar-clock
+              - entity: sensor.solcast_pv_forecast_prognoza_na_dzien_6
+                name: Za 5 dni
+                icon: mdi:calendar-clock
+              - entity: sensor.solcast_pv_forecast_prognoza_na_dzien_7
+                name: Za 6 dni
+                icon: mdi:calendar-clock
 
           # --- KAFELKI POD POGODĄ ---
           - type: horizontal-stack
@@ -626,16 +564,8 @@ views:
               {% set w_jutro = states('input_number.alpha_rce_param_' ~ map_w[d_jutro]) | float(0) %}
 
               {# POBRANIE POPRAWNEJ PROGNOZY PV W ZALEŻNOŚCI OD USTAWIENIA #}
-              {% if states('input_boolean.alpha_rce_flaga_14') == 'on' %}
-                {% set mnoznik = states('input_number.alpha_rce_param_46') | float(6.0) %}
-                {% set zima = 0.6 if states('input_boolean.alpha_rce_flaga_12') == 'on' else 1.0 %}
-                {% set raw_rad = state_attr('sensor.ai_raw_forecast_data', 'shortwave_radiation') | default([], true) %}
-                {% set pv_dzis = ((raw_rad[0:24] | map('float') | sum * mnoznik * zima) / 1000) | round(2) if raw_rad | length >= 24 else 0.0 %}
-                {% set pv_jutro = ((raw_rad[24:48] | map('float') | sum * mnoznik * zima) / 1000) | round(2) if raw_rad | length >= 48 else 0.0 %}
-              {% else %}
-                {% set pv_dzis = states('sensor.solcast_pv_forecast_prognoza_na_dzisiaj') | float(0) %}
-                {% set pv_jutro = states('sensor.solcast_pv_forecast_prognoza_na_jutro') | float(0) %}
-              {% endif %}
+              {% set pv_dzis = states('sensor.solcast_pv_forecast_prognoza_na_dzisiaj') | float(0) %}
+              {% set pv_jutro = states('sensor.solcast_pv_forecast_prognoza_na_jutro') | float(0) %}
 
               {% set status_plotek = states('input_number.alpha_rce_param_20') | float(0) %}
 
