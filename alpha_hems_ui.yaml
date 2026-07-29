@@ -330,7 +330,7 @@ views:
                   in_chart: false
                   in_header: true
               - entity: input_number.alpha_rce_param_03
-                name: Mój Próg
+                name: Dynamiczna Cena (Wyzwalacz)
                 unit: ' zł'
                 color: '#e67e22'
                 float_precision: 2
@@ -483,7 +483,7 @@ views:
                 icon: mdi:cash-minus
                 type: simple-entity
               - entity: input_number.alpha_rce_param_03
-                name: Próg sprzedaży (+marża)
+                name: Dynamiczna cena sprzedaży (Próg wyzwolenia)
                 icon: mdi:target
                 type: simple-entity
               - type: divider
