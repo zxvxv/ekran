@@ -189,8 +189,8 @@ views:
                   ---
 
                   ### 🔋 Bilans Przetrwania
-                  * 🎯 CEL (Płotek): **{{ plotek | int }}%**
-                  * 📦 MAGAZYN: **{{ soc | int }}%**
+                  * 🎯 CEL (Płotek): **{{ ((plotek / 100) * cap) | round(1) }} kWh** ({{ plotek | int }}%)
+                  * 📦 MAGAZYN: **{{ ((soc / 100) * cap) | round(1) }} kWh** ({{ soc | int }}%)
 
                   {% if soc >= plotek %}
                   > ✅ **Dom zabezpieczony:** Mamy wystarczający zapas energii na bieżący sektor.
@@ -464,14 +464,16 @@ views:
                 name: WAŻNA DO
                 icon: mdi:calendar-clock
                 type: simple-entity
-              - type: divider
-              - entity: sensor.deye_inverter_battery_bms_soc
-                name: Aktualny SOC Magazynu
-                icon: mdi:battery-high
-              - entity: input_number.alpha_rce_param_20
-                name: Docelowy SOC (Płotek)
-                icon: mdi:battery-clock
-                type: simple-entity
+          - type: markdown
+            content: >
+              {% set cap_raw = states('number.deye_inverter_battery_capacity') | float(47.0) %}
+              {% set cap = (cap_raw * 51.2 / 1000) | round(1) if cap_raw > 150 else cap_raw | round(1) %}
+              {% set soc = states('sensor.deye_inverter_battery_bms_soc') | float(0) %}
+              {% set plotek = states('input_number.alpha_rce_param_20') | float(0) %}
+              
+              ### 🔋 Pamięć Magazynu
+              * <ha-icon icon="mdi:battery-high"></ha-icon> **Aktualny Magazyn:** {{ ((soc / 100) * cap) | round(1) }} kWh ({{ soc | int }}%)
+              * <ha-icon icon="mdi:battery-clock"></ha-icon> **Docelowy Płotek:** {{ ((plotek / 100) * cap) | round(1) }} kWh ({{ plotek | int }}%)
           - type: entities
             title: Finanse i Zyski
             show_header_toggle: false
@@ -505,6 +507,7 @@ views:
   # =============================================================
   # KONIEC ZAKŁADKI 2
   # =============================================================
+  
   # =============================================================
   # ZAKŁADKA 3: 🏠 DOM (Centrum Dowodzenia i Szufladki)
   # =============================================================
@@ -524,7 +527,10 @@ views:
               **⚙️ Aktualny Status:** {{ states('input_text.alpha_rce_stan_03') }}
 
               ---
-              **Cel ładowania (Płotek):** {{ states('input_number.alpha_rce_param_20') }} %
+              {% set cap_raw = states('number.deye_inverter_battery_capacity') | float(47.0) %}
+              {% set cap = (cap_raw * 51.2 / 1000) | round(1) if cap_raw > 150 else cap_raw | round(1) %}
+              {% set plotek = states('input_number.alpha_rce_param_20') | float(0) %}
+              **Cel ładowania (Płotek):** {{ ((plotek / 100) * cap) | round(1) }} kWh
 
               **Bieżąca cena RCE:** {{ states('input_number.alpha_rce_param_01') }} zł/kWh
 
@@ -546,6 +552,7 @@ views:
               
               {# TWARDY ZACISK (ANTI-SPIKE MARGIN) - Low SOC * 1.1 #}
               {% set bezpieczna_podloga = (live_low_soc * 1.1) | round(0) | int + zimowy_beton %}
+              {% set bezpieczna_podloga_kwh = (bezpieczna_podloga / 100) * poj %}
 
               {# DYNAMICZNE MAPOWANIE SZUFLADEK WZGLEDEM DNIA TYGODNIA #}
               {% set d = now().weekday() %}
@@ -580,7 +587,7 @@ views:
               {% set mnoznik_p = 0.2 if is_sunny_jutro else 1.2 %}
 
               ### 📦 Fizyka Magazynu i Rejestry
-              * Obecny SOC: **{{ states('sensor.deye_inverter_battery_bms_soc') | float(0) }}%** | Cel (Płotek): **{{ status_plotek }}%**
+              * Obecny Magazyn: **{{ ((states('sensor.deye_inverter_battery_bms_soc') | float(0) / 100) * poj) | round(1) }} kWh** | Cel (Płotek): **{{ ((status_plotek / 100) * poj) | round(1) }} kWh**
               {% set wolny_soc = [states('sensor.deye_inverter_battery_bms_soc') | float(0) - status_plotek, 0] | max %}
               {% set wolna_energia = (wolny_soc / 100) * poj %}
               * Energia do zrzutu: **{{ wolna_energia | round(2) }} kWh**
@@ -592,21 +599,23 @@ views:
               ---
 
               ### 🗄️ 1. STAN PAMIĘCI REJESTRÓW (Twarde Dane)
-              * Zużycie Noc DZIŚ: **{{ n_dzis }} kWh** ➔ {{ ((n_dzis / poj) * 100) | round(2) }}% SOC
-              * Zużycie Poranek DZIŚ: **{{ p_dzis }} kWh** ➔ {{ ((p_dzis / poj) * 100) | round(2) }}% SOC
-              * Zużycie Wieczór DZIŚ: **{{ w_dzis }} kWh** ➔ {{ ((w_dzis / poj) * 100) | round(2) }}% SOC
-              * Prognoza Słońca na Dziś: **{{ pv_dzis }} kWh** ➔ {{ ((pv_dzis / poj) * 100) | round(2) }}% SOC
-              * Prognoza Słońca na Jutro: **{{ pv_jutro }} kWh** ➔ {{ ((pv_jutro / poj) * 100) | round(2) }}% SOC
-              * Odczytana encja sprzętowa: `{{ low_soc_ent }}` ➔ **{{ live_low_soc }}% SOC** {% if zimowy_beton > 0 %}(+10% Beton Zimowy = {{ hardware_low_soc }}%){% endif %}
-              * **🛡️ Ochrona Skokowa (Anti-Spike Clamp): Min. {{ bezpieczna_podloga }}% SOC**
+              * Zużycie Noc DZIŚ: **{{ n_dzis }} kWh**
+              * Zużycie Poranek DZIŚ: **{{ p_dzis }} kWh**
+              * Zużycie Wieczór DZIŚ: **{{ w_dzis }} kWh**
+              * Prognoza Słońca na Dziś: **{{ pv_dzis }} kWh**
+              * Prognoza Słońca na Jutro: **{{ pv_jutro }} kWh**
+              * Odczytana encja sprzętowa: `{{ low_soc_ent }}` ➔ **{{ ((live_low_soc / 100) * poj) | round(1) }} kWh** {% if zimowy_beton > 0 %}(+ Beton Zimowy = {{ ((hardware_low_soc / 100) * poj) | round(1) }} kWh){% endif %}
+              * **🛡️ Ochrona Skokowa (Anti-Spike Clamp): Min. {{ bezpieczna_podloga_kwh | round(1) }} kWh**
 
               ---
 
-              {% set bufor_komfortu = states('input_number.alpha_rezerwa_soc') | float(0) %}
+              {% set bufor_komfortu_kwh = (states('input_number.alpha_rezerwa_soc') | float(0) / 100) * poj %}
               {% set smart_toggle = states('input_boolean.alpha_rce_flaga_03') == 'on' %}
-              {% set aktywny_bufor = 0 if (is_sunny_jutro and smart_toggle) else bufor_komfortu %}
+              {% set aktywny_bufor_kwh = 0 if (is_sunny_jutro and smart_toggle) else bufor_komfortu_kwh %}
+              {% set hardware_low_soc_kwh = (hardware_low_soc / 100) * poj %}
+              {% set jeden_procent_kwh = (poj * 0.01) %}
 
-              ### 🧮 2. MATRYCA OBLICZEŃ PŁOTKA (docelowy_soc)
+              ### 🧮 2. MATRYCA OBLICZEŃ PŁOTKA (Docelowa Energia)
               {% if is_sunny_jutro %}
               > **☀️ SMART MORNING AKTYWNY (Prognoza > 140%):** Słońce JUTRO przejmuje obciążenie. Zapas poranny ścięty do 20% (tylko na rozruch do 7:00).
               {% else %}
@@ -614,16 +623,16 @@ views:
               {% endif %}
 
               👉 **Kalkulacja dla okresu porannego (Zabezpieczenie Poranka):**
-              {% set calc_poranek = (((p_dzis * mnoznik_p) / poj) * 100) + hardware_low_soc + aktywny_bufor + 1 %}
-              {{ p_dzis }} kWh ({{ ((p_dzis / poj) * 100) | round(2) }}% SOC) × {{ mnoznik_p }} = **{{ (p_dzis * mnoznik_p) | round(2) }} kWh** ({{ (((p_dzis * mnoznik_p) / poj) * 100) | round(2) }}% SOC)
-              + Low SOC ({{ hardware_low_soc }}%) + Bufor ({{ aktywny_bufor }}%) + 1% = Wynik tymczasowy: {{ calc_poranek | round(2) }}% SOC
-              ➔ 🛡️ Twardy docisk (Clamp): **Ostateczny wynik: {{ [calc_poranek | round(0), bezpieczna_podloga] | max }}% SOC**
+              {% set calc_poranek_kwh = (p_dzis * mnoznik_p) + hardware_low_soc_kwh + aktywny_bufor_kwh + jeden_procent_kwh %}
+              {{ p_dzis }} kWh × {{ mnoznik_p }} = **{{ (p_dzis * mnoznik_p) | round(2) }} kWh**
+              + Low SOC ({{ hardware_low_soc_kwh | round(1) }} kWh) + Bufor ({{ aktywny_bufor_kwh | round(1) }} kWh) + 1% ({{ jeden_procent_kwh | round(1) }} kWh) = Wynik tymczasowy: {{ calc_poranek_kwh | round(2) }} kWh
+              ➔ 🛡️ Twardy docisk (Clamp): **Ostateczny wynik: {{ [calc_poranek_kwh, bezpieczna_podloga_kwh] | max | round(1) }} kWh**
 
               👉 **Kalkulacja dla okresu wieczornego (Zabezpieczenie Wieczoru):**
-              {% set calc_wieczor = (((w_dzis * 1.2) / poj) * 100) + hardware_low_soc + aktywny_bufor + 1 %}
-              {{ w_dzis }} kWh ({{ ((w_dzis / poj) * 100) | round(2) }}% SOC) × 1.2 = **{{ (w_dzis * 1.2) | round(2) }} kWh** ({{ (((w_dzis * 1.2) / poj) * 100) | round(2) }}% SOC)
-              + Low SOC ({{ hardware_low_soc }}%) + Bufor ({{ aktywny_bufor }}%) + 1% = Wynik tymczasowy: {{ calc_wieczor | round(2) }}% SOC
-              ➔ 🛡️ Twardy docisk (Clamp): **Ostateczny wynik: {{ [calc_wieczor | round(0), bezpieczna_podloga] | max }}% SOC**
+              {% set calc_wieczor_kwh = (w_dzis * 1.2) + hardware_low_soc_kwh + aktywny_bufor_kwh + jeden_procent_kwh %}
+              {{ w_dzis }} kWh × 1.2 = **{{ (w_dzis * 1.2) | round(2) }} kWh**
+              + Low SOC ({{ hardware_low_soc_kwh | round(1) }} kWh) + Bufor ({{ aktywny_bufor_kwh | round(1) }} kWh) + 1% ({{ jeden_procent_kwh | round(1) }} kWh) = Wynik tymczasowy: {{ calc_wieczor_kwh | round(2) }} kWh
+              ➔ 🛡️ Twardy docisk (Clamp): **Ostateczny wynik: {{ [calc_wieczor_kwh, bezpieczna_podloga_kwh] | max | round(1) }} kWh**
 
               ---
 
