@@ -1,6 +1,6 @@
 {
   "metadane": {
-    "ostatnie_sprawdzenie_skryptu": "2026-07-29T03:15:01",
+    "ostatnie_sprawdzenie_skryptu": "2026-07-30T03:15:01",
     "taryfa": "G12 / G12w",
     "strefa": "dolina (tanie godziny)",
     "jednostka": "PLN/kWh netto",
@@ -10,30 +10,35 @@
     "pge": {
       "agregator": 0.8761,
       "scraping": null,
-      "gemini": 0.522
+      "gemini": 0.491799999
     },
     "tauron": {
       "agregator": 0.8761,
       "scraping": null,
-      "gemini": 0.45218
+      "gemini": 0.634
     },
     "enea": {
       "agregator": 0.8761,
       "scraping": null,
-      "gemini": 0.68
+      "gemini": 0.4797
     },
     "energa": {
       "agregator": 0.8761,
       "scraping": null,
-      "gemini": 0.5253
+      "gemini": 0.71538
     },
     "eon": {
       "agregator": 0.8761,
       "scraping": null,
-      "gemini": 0.51287
+      "gemini": 0.5304
     }
   },
   "rejestr_zmian_cen": [
+    "[2026-07-30] eon: wykryto różnicę w pobranych surowych danych",
+    "[2026-07-30] energa: wykryto różnicę w pobranych surowych danych",
+    "[2026-07-30] enea: wykryto różnicę w pobranych surowych danych",
+    "[2026-07-30] tauron: wykryto różnicę w pobranych surowych danych",
+    "[2026-07-30] pge: wykryto różnicę w pobranych surowych danych",
     "[2026-07-29] eon: wykryto różnicę w pobranych surowych danych",
     "[2026-07-29] energa: wykryto różnicę w pobranych surowych danych",
     "[2026-07-29] enea: wykryto różnicę w pobranych surowych danych",
@@ -78,11 +83,6 @@
     "[2026-07-20] tauron: wykryto różnicę w pobranych surowych danych",
     "[2026-07-19] eon: wykryto różnicę w pobranych surowych danych",
     "[2026-07-19] energa: wykryto różnicę w pobranych surowych danych",
-    "[2026-07-19] enea: wykryto różnicę w pobranych surowych danych",
-    "[2026-07-19] tauron: wykryto różnicę w pobranych surowych danych",
-    "[2026-07-19] pge: wykryto różnicę w pobranych surowych danych",
-    "[2026-07-19] tauron: wykryto różnicę w pobranych surowych danych",
-    "[2026-07-19] pge: wykryto różnicę w pobranych surowych danych",
-    "[2026-07-17] Utworzenie pliku bazowego"
+    "[2026-07-19] enea: wykryto różnicę w pobranych surowych danych"
   ]
 }
