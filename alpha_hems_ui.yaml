@@ -1,10 +1,12 @@
 # =============================================================
-# ALPHA HEMS: CENTRALNY INTERFEJS UŻYTKOWNIKA (v1.42)
+# ALPHA HEMS: CENTRALNY INTERFEJS UŻYTKOWNIKA (v1.43)
 # STATUS: PRODUKCYJNY / EKSPORTOWY (Zatwierdzony Układ Własny)
 #
 # HISTORIA WERSJI:
-# - v1.42: (DUPLICATE FIX) Usunięcie zduplikowanej zakładki 3 "DOM"
-#          oraz uporządkowanie struktury komentarzy.
+# - v1.43: (CAPACITY & TAB FIX) Przywrócenie Zakładki 2 (Giełda) oraz pełne
+#          wdrożenie zmiennej input_number.alpha_pojemnosc_magazynu
+#          we wszystkich kalkulacjach (Raport Księgowego, Rentgen Decyzji).
+#          Usunięcie zduplikowanej Zakładki 3 (DOM).
 # - v1.41: (RCE 48H FUSION) Połączenie wykresów Giełda Dziś i Plan Jutro
 #          w jeden ciągły wykres 48h (odporny na brak danych przed 14:00).
 # - v1.40: (CONTROL CENTER & GENERIC MATRICES) Dodanie dedykowanej zakładki USTAWIENIA
@@ -170,7 +172,8 @@ views:
                 title: 🛡️ Raport Księgowego ALPHA
                 content: >
                   {% set cap_raw = states('number.deye_inverter_battery_capacity') | float(47.0) %}
-                  {% set cap = (cap_raw * 51.2 / 1000) | round(1) if cap_raw > 150 else cap_raw | round(1) %}
+                  {% set fallback_cap = (cap_raw * 51.2 / 1000) | round(1) if cap_raw > 150 else cap_raw | round(1) %}
+                  {% set cap = states('input_number.alpha_pojemnosc_magazynu') | float(fallback_cap) %}
                   {% set soc = states('sensor.deye_inverter_battery_bms_soc') | float(0) %}
                   {% set plotek = states('input_number.alpha_rce_param_20') | float(20) %}
                   {% set wolny_soc = [soc - plotek, 0] | max %}
@@ -290,6 +293,190 @@ views:
                 features_position: bottom
 
   # =============================================================
+  # ZAKŁADKA 2: 📈 GIEŁDA (RCE IntegraSoft)
+  # =============================================================
+  - type: panel
+    path: rce_integra
+    title: RCE_IntegraSoft
+    icon: mdi:chart-line
+    cards:
+      - type: vertical-stack
+        cards:
+          - type: custom:apexcharts-card
+            graph_span: 48h
+            update_interval: 1min
+            apex_config:
+              chart:
+                height: 400
+            header:
+              show: true
+              title: 'Alpha: Monitor Sprzedaży (48H)'
+              show_states: true
+              colorize_states: true
+            span:
+              start: day
+            now:
+              show: true
+              label: TERAZ
+              color: '#e74c3c'
+            series:
+              - entity: sensor.deye_inverter_grid_power
+                name: Moc Sieci
+                unit: ' W'
+                color: '#9b59b6'
+                show:
+                  in_chart: false
+                  in_header: true
+              - entity: input_number.alpha_rce_param_01
+                name: Cena Teraz
+                unit: ' zł'
+                float_precision: 2
+                show:
+                  in_chart: false
+                  in_header: true
+              - entity: input_number.alpha_rce_param_03
+                name: Mój Próg
+                unit: ' zł'
+                color: '#e67e22'
+                float_precision: 2
+                show:
+                  in_chart: false
+                  in_header: true
+              - entity: sensor.alpha_pse_jutro_2
+                name: Min Jutro
+                unit: ' zł'
+                float_precision: 2
+                show:
+                  in_chart: false
+                  in_header: true
+                data_generator: >
+                  let d = entity.attributes.value || entity.attributes.prices;
+                  if (!Array.isArray(d) || !d.length) return [];
+                  let min = Math.min(...d.map(e => (e.rce_pln !== undefined ? e.rce_pln : (e.cen_cost !== undefined ? e.cen_cost : (e.price || 0))) / 1000));
+                  let tsStr = String(d[0].dtime).replace(/-/g, '/').replace('T', ' ');
+                  return [[new Date(tsStr).getTime(), min]];
+              - entity: sensor.alpha_pse_jutro_2
+                name: Max Jutro
+                unit: ' zł'
+                float_precision: 2
+                show:
+                  in_chart: false
+                  in_header: true
+                data_generator: >
+                  let d = entity.attributes.value || entity.attributes.prices;
+                  if (!Array.isArray(d) || !d.length) return [];
+                  let max = Math.max(...d.map(e => (e.rce_pln !== undefined ? e.rce_pln : (e.cen_cost !== undefined ? e.cen_cost : (e.price || 0))) / 1000));
+                  let tsStr = String(d[0].dtime).replace(/-/g, '/').replace('T', ' ');
+                  return [[new Date(tsStr).getTime(), max]];
+              - entity: sensor.alpha_pse_dzisiaj_2
+                name: Zarabiam / Plan
+                type: column
+                color: '#2ecc71'
+                opacity: 0.4
+                float_precision: 2
+                show:
+                  in_header: false
+                data_generator: >
+                  let d1 = entity.attributes.value || entity.attributes.prices;
+                  d1 = Array.isArray(d1) ? d1 : [];
+                  let state2 = hass.states['sensor.alpha_pse_jutro_2'];
+                  let d2 = state2 && state2.attributes ? (state2.attributes.value || state2.attributes.prices) : [];
+                  d2 = Array.isArray(d2) ? d2 : [];
+                  let data = d1.concat(d2);
+                  if (!data.length) return [];
+                  let p = parseFloat(hass.states['input_number.alpha_rce_param_03'].state) || 0.7;
+                  let res = data.map((entry) => {
+                    let val = entry.rce_pln !== undefined ? entry.rce_pln : (entry.cen_cost !== undefined ? entry.cen_cost : (entry.price || 0));
+                    let c = parseFloat(val) / 1000;
+                    let tsStr = String(entry.dtime).replace(/-/g, '/').replace('T', ' ');
+                    return [new Date(tsStr).getTime(), c >= p ? c : 0];
+                  });
+                  return res.sort((a, b) => a[0] - b[0]);
+              - entity: sensor.alpha_pse_dzisiaj_2
+                name: Ceny RCE (48h)
+                type: line
+                curve: stepline
+                stroke_width: 2
+                color: '#3498db'
+                float_precision: 2
+                show:
+                  in_header: false
+                data_generator: >
+                  let d1 = entity.attributes.value || entity.attributes.prices;
+                  d1 = Array.isArray(d1) ? d1 : [];
+                  let state2 = hass.states['sensor.alpha_pse_jutro_2'];
+                  let d2 = state2 && state2.attributes ? (state2.attributes.value || state2.attributes.prices) : [];
+                  d2 = Array.isArray(d2) ? d2 : [];
+                  let data = d1.concat(d2);
+                  if (!data.length) return [];
+                  let res = data.map((entry) => {
+                    let val = entry.rce_pln !== undefined ? entry.rce_pln : (entry.cen_cost !== undefined ? entry.cen_cost : (entry.price || 0));
+                    let c = parseFloat(val) / 1000;
+                    let tsStr = String(entry.dtime).replace(/-/g, '/').replace('T', ' ');
+                    return [new Date(tsStr).getTime(), c];
+                  });
+                  return res.sort((a, b) => a[0] - b[0]);
+          - type: entities
+            title: Monitor Systemu
+            show_header_toggle: false
+            entities:
+              - entity: input_text.alpha_rce_stan_01
+                name: DECYZJA MÓZGU
+                icon: mdi:brain
+                type: simple-entity
+              - entity: input_text.alpha_rce_stan_03
+                name: AKTUALNY STATUS
+                icon: mdi:robot-outline
+                type: simple-entity
+              - type: divider
+              - entity: input_text.alpha_rce_stan_15
+                name: STATUS LICENCJI
+                icon: mdi:shield-key
+                type: simple-entity
+              - entity: sensor.alpha_licencja_wygasa
+                name: WAŻNA DO
+                icon: mdi:calendar-clock
+                type: simple-entity
+              - type: divider
+              - entity: sensor.deye_inverter_battery_bms_soc
+                name: Aktualny SOC Magazynu
+                icon: mdi:battery-high
+              - entity: input_number.alpha_rce_param_20
+                name: Docelowy SOC (Płotek)
+                icon: mdi:battery-clock
+                type: simple-entity
+          - type: entities
+            title: Finanse i Zyski
+            show_header_toggle: false
+            entities:
+              - entity: input_number.alpha_rce_param_02
+                name: Koszt zakupu (+straty)
+                icon: mdi:cash-minus
+                type: simple-entity
+              - entity: input_number.alpha_rce_param_03
+                name: Próg sprzedaży (+marża)
+                icon: mdi:target
+                type: simple-entity
+              - type: divider
+              - entity: input_number.alpha_rce_param_05
+                name: Szacowany Zysk (Dziś)
+                icon: mdi:piggy-bank
+                type: simple-entity
+              - type: divider
+              - entity: input_number.alpha_rce_param_44
+                name: Zrealizowany (Miesiąc)
+                icon: mdi:chart-bar
+                type: simple-entity
+              - entity: input_number.alpha_rce_param_45
+                name: Zrealizowany (Rok)
+                icon: mdi:chart-line
+                type: simple-entity
+              - entity: input_number.alpha_rce_param_43
+                name: Całkowity Zwrot (Total)
+                icon: mdi:cash-multiple
+                type: simple-entity
+
+  # =============================================================
   # ZAKŁADKA 3: 🏠 DOM (Centrum Dowodzenia i Szufladki)
   # =============================================================
   - type: panel
@@ -309,7 +496,8 @@ views:
 
               ---
               {% set cap_raw = states('number.deye_inverter_battery_capacity') | float(47.0) %}
-              {% set cap = (cap_raw * 51.2 / 1000) | round(1) if cap_raw > 150 else cap_raw | round(1) %}
+              {% set fallback_cap = (cap_raw * 51.2 / 1000) | round(1) if cap_raw > 150 else cap_raw | round(1) %}
+              {% set cap = states('input_number.alpha_pojemnosc_magazynu') | float(fallback_cap) %}
               {% set plotek = states('input_number.alpha_rce_param_20') | float(0) %}
               **Cel ładowania (Płotek):** {{ ((plotek / 100) * cap) | round(1) }} kWh
 
@@ -320,10 +508,10 @@ views:
             content: >
               {% set sensor_rce = 'sensor.alpha_pse_dzisiaj_2' %}
               {% set cap_raw = states('number.deye_inverter_battery_capacity') | float(47.0) %}
-              {% set cap = (cap_raw * 51.2 / 1000) | round(1) if cap_raw > 150 else cap_raw | round(1) %}
+              {% set fallback_cap = (cap_raw * 51.2 / 1000) | round(1) if cap_raw > 150 else cap_raw | round(1) %}
+              {% set poj = states('input_number.alpha_pojemnosc_magazynu') | float(fallback_cap) %}
               {% set inv_w = states('sensor.deye_inverter_device_rated_power') | float(12000) %}
               {% set moc_kw = [states('number.deye_inverter_max_sell_power') | float(6000), inv_w] | min / 1000 %}
-              {% set poj = cap %}
 
               {# AUTODETEKCJA ENCJI LOW SOC Z FALOWNIKA ORAZ FLAGI ZIMY #}
               {% set low_soc_ent = (states.number | selectattr('entity_id', 'search', 'battery_low_soc$|shutdown_capacity$') | map(attribute='entity_id') | list | first) | default('number.deye_inverter_battery_low_soc') %}
