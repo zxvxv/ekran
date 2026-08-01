@@ -1,6 +1,6 @@
 {
   "metadane": {
-    "ostatnie_sprawdzenie_skryptu": "2026-07-31T03:15:01",
+    "ostatnie_sprawdzenie_skryptu": "2026-08-01T03:15:01",
     "taryfa": "G12 / G12w",
     "strefa": "dolina (tanie godziny)",
     "jednostka": "PLN/kWh netto",
@@ -10,22 +10,22 @@
     "pge": {
       "agregator": 0.8761,
       "scraping": null,
-      "gemini": 0.4918
+      "gemini": 0.4917
     },
     "tauron": {
       "agregator": 0.8761,
       "scraping": null,
-      "gemini": 0.7065
+      "gemini": null
     },
     "enea": {
       "agregator": 0.8761,
       "scraping": null,
-      "gemini": 0.4797
+      "gemini": 0.4588
     },
     "energa": {
       "agregator": 0.8761,
       "scraping": null,
-      "gemini": 0.7272
+      "gemini": 0.49188
     },
     "eon": {
       "agregator": 0.8761,
@@ -34,6 +34,10 @@
     }
   },
   "rejestr_zmian_cen": [
+    "[2026-08-01] energa: wykryto różnicę w pobranych surowych danych",
+    "[2026-08-01] enea: wykryto różnicę w pobranych surowych danych",
+    "[2026-08-01] tauron: wykryto różnicę w pobranych surowych danych",
+    "[2026-08-01] pge: wykryto różnicę w pobranych surowych danych",
     "[2026-07-31] eon: wykryto różnicę w pobranych surowych danych",
     "[2026-07-31] energa: wykryto różnicę w pobranych surowych danych",
     "[2026-07-31] tauron: wykryto różnicę w pobranych surowych danych",
@@ -79,10 +83,6 @@
     "[2026-07-21] eon: wykryto różnicę w pobranych surowych danych",
     "[2026-07-21] energa: wykryto różnicę w pobranych surowych danych",
     "[2026-07-21] enea: wykryto różnicę w pobranych surowych danych",
-    "[2026-07-21] tauron: wykryto różnicę w pobranych surowych danych",
-    "[2026-07-21] pge: wykryto różnicę w pobranych surowych danych",
-    "[2026-07-20] eon: wykryto różnicę w pobranych surowych danych",
-    "[2026-07-20] energa: wykryto różnicę w pobranych surowych danych",
-    "[2026-07-20] enea: wykryto różnicę w pobranych surowych danych"
+    "[2026-07-21] tauron: wykryto różnicę w pobranych surowych danych"
   ]
 }
