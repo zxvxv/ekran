@@ -1,6 +1,6 @@
 {
   "metadane": {
-    "ostatnie_sprawdzenie_skryptu": "2026-08-01T03:15:01",
+    "ostatnie_sprawdzenie_skryptu": "2026-08-02T03:15:01",
     "taryfa": "G12 / G12w",
     "strefa": "dolina (tanie godziny)",
     "jednostka": "PLN/kWh netto",
@@ -10,30 +10,35 @@
     "pge": {
       "agregator": 0.8761,
       "scraping": null,
-      "gemini": 0.4917
+      "gemini": 0.4918
     },
     "tauron": {
       "agregator": 0.8761,
       "scraping": null,
-      "gemini": null
+      "gemini": 0.5642
     },
     "enea": {
       "agregator": 0.8761,
       "scraping": null,
-      "gemini": 0.4588
+      "gemini": 0.4703
     },
     "energa": {
       "agregator": 0.8761,
       "scraping": null,
-      "gemini": 0.49188
+      "gemini": 0.47335
     },
     "eon": {
       "agregator": 0.8761,
       "scraping": null,
-      "gemini": 0.4295
+      "gemini": 0.5285
     }
   },
   "rejestr_zmian_cen": [
+    "[2026-08-02] eon: wykryto różnicę w pobranych surowych danych",
+    "[2026-08-02] energa: wykryto różnicę w pobranych surowych danych",
+    "[2026-08-02] enea: wykryto różnicę w pobranych surowych danych",
+    "[2026-08-02] tauron: wykryto różnicę w pobranych surowych danych",
+    "[2026-08-02] pge: wykryto różnicę w pobranych surowych danych",
     "[2026-08-01] energa: wykryto różnicę w pobranych surowych danych",
     "[2026-08-01] enea: wykryto różnicę w pobranych surowych danych",
     "[2026-08-01] tauron: wykryto różnicę w pobranych surowych danych",
@@ -78,11 +83,6 @@
     "[2026-07-22] eon: wykryto różnicę w pobranych surowych danych",
     "[2026-07-22] energa: wykryto różnicę w pobranych surowych danych",
     "[2026-07-22] enea: wykryto różnicę w pobranych surowych danych",
-    "[2026-07-22] tauron: wykryto różnicę w pobranych surowych danych",
-    "[2026-07-22] pge: wykryto różnicę w pobranych surowych danych",
-    "[2026-07-21] eon: wykryto różnicę w pobranych surowych danych",
-    "[2026-07-21] energa: wykryto różnicę w pobranych surowych danych",
-    "[2026-07-21] enea: wykryto różnicę w pobranych surowych danych",
-    "[2026-07-21] tauron: wykryto różnicę w pobranych surowych danych"
+    "[2026-07-22] tauron: wykryto różnicę w pobranych surowych danych"
   ]
 }
