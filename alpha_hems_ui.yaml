@@ -1044,7 +1044,7 @@ views:
                     name: "Moc sprzedaży RCE"
                     icon: mdi:transmission-tower-export
                   - entity: input_boolean.alpha_rce_flaga_01
-                    name: "Rozliczenie: Stare zasady / Net-metering Nowe zasady (Net-billing) ->> Właczone = Nowe Zasady "
+                    name: "Rozliczenie: Stare zasady / Net-metering vs Nowe zasady (Net-billing) ->> Właczone = Nowe Zasady "
                     icon: mdi:scale-balance
                   - type: section
                     label: "Taryfy i Tryby Pracy"
