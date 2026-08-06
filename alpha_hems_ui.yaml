@@ -1034,7 +1034,7 @@ views:
                 entities:
                   - type: section
                     label: "Finanse i Giełda"
-                  - entity: input_number.alpha_koszt_zakupu
+                  - entity: input_text.alpha_rce_stan_06
                     name: "Cena zakupu energii"
                     icon: mdi:cash-minus
                   - entity: input_number.alpha_zysk_minimalny
