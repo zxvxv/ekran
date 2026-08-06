@@ -1,8 +1,10 @@
 # =============================================================
-# ALPHA HEMS: CENTRALNY INTERFEJS UŻYTKOWNIKA (v1.45)
+# ALPHA HEMS: CENTRALNY INTERFEJS UŻYTKOWNIKA (v1.46)
 # STATUS: PRODUKCYJNY / EKSPORTOWY (Zatwierdzony Układ Własny)
 #
 # HISTORIA WERSJI:
+# - v1.46: (HOTFIX RCE) Usunięcie martwych rozszerzeń '_2' z encji PSE w Rentgenie i na wykresach giełdowych.
+# - v1.45: (STABLE) Poprzednia wersja bazowa.
 # - v1.44: (PREDICTIVE DUMP UI) Dodanie przełącznika "Agresywny Zrzut Poranny" 
 #          do zakładki Ustawienia. Przywrócenie brakującej Zakładki 6.
 # - v1.43: (CAPACITY & TAB FIX) Przywrócenie Zakładki 2 (Giełda) oraz pełne
@@ -344,7 +346,7 @@ views:
                 show:
                   in_chart: false
                   in_header: true
-              - entity: sensor.alpha_pse_jutro_2
+              - entity: sensor.alpha_pse_jutro
                 name: Min Jutro
                 unit: ' zł'
                 float_precision: 2
@@ -357,7 +359,7 @@ views:
                   let min = Math.min(...d.map(e => (e.rce_pln !== undefined ? e.rce_pln : (e.cen_cost !== undefined ? e.cen_cost : (e.price || 0))) / 1000));
                   let tsStr = String(d[0].dtime).replace(/-/g, '/').replace('T', ' ');
                   return [[new Date(tsStr).getTime(), min]];
-              - entity: sensor.alpha_pse_jutro_2
+              - entity: sensor.alpha_pse_jutro
                 name: Max Jutro
                 unit: ' zł'
                 float_precision: 2
@@ -370,7 +372,7 @@ views:
                   let max = Math.max(...d.map(e => (e.rce_pln !== undefined ? e.rce_pln : (e.cen_cost !== undefined ? e.cen_cost : (e.price || 0))) / 1000));
                   let tsStr = String(d[0].dtime).replace(/-/g, '/').replace('T', ' ');
                   return [[new Date(tsStr).getTime(), max]];
-              - entity: sensor.alpha_pse_dzisiaj_2
+              - entity: sensor.alpha_pse_dzisiaj
                 name: Zarabiam / Plan
                 type: column
                 color: '#2ecc71'
@@ -381,7 +383,7 @@ views:
                 data_generator: >
                   let d1 = entity.attributes.value || entity.attributes.prices;
                   d1 = Array.isArray(d1) ? d1 : [];
-                  let state2 = hass.states['sensor.alpha_pse_jutro_2'];
+                  let state2 = hass.states['sensor.alpha_pse_jutro'];
                   let d2 = state2 && state2.attributes ? (state2.attributes.value || state2.attributes.prices) : [];
                   d2 = Array.isArray(d2) ? d2 : [];
                   let data = d1.concat(d2);
@@ -394,7 +396,7 @@ views:
                     return [new Date(tsStr).getTime(), c >= p ? c : 0];
                   });
                   return res.sort((a, b) => a[0] - b[0]);
-              - entity: sensor.alpha_pse_dzisiaj_2
+              - entity: sensor.alpha_pse_dzisiaj
                 name: Ceny RCE (48h)
                 type: line
                 curve: stepline
@@ -406,7 +408,7 @@ views:
                 data_generator: >
                   let d1 = entity.attributes.value || entity.attributes.prices;
                   d1 = Array.isArray(d1) ? d1 : [];
-                  let state2 = hass.states['sensor.alpha_pse_jutro_2'];
+                  let state2 = hass.states['sensor.alpha_pse_jutro'];
                   let d2 = state2 && state2.attributes ? (state2.attributes.value || state2.attributes.prices) : [];
                   d2 = Array.isArray(d2) ? d2 : [];
                   let data = d1.concat(d2);
@@ -508,7 +510,7 @@ views:
           - type: markdown
             title: "🧠 Rentgen Decyzji (Autoscale RCE & Logika 140%)"
             content: >
-              {% set sensor_rce = 'sensor.alpha_pse_dzisiaj_2' %}
+              {% set sensor_rce = 'sensor.alpha_pse_dzisiaj' %}
               {% set cap_raw = states('number.deye_inverter_battery_capacity') | float(47.0) %}
               {% set fallback_cap = (cap_raw * 51.2 / 1000) | round(1) if cap_raw > 150 else cap_raw | round(1) %}
               {% set poj = states('input_number.alpha_pojemnosc_magazynu') | float(fallback_cap) %}
