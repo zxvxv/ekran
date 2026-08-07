@@ -33,6 +33,40 @@ title: ALPHA HEMS
 icon: mdi:solar-power
 views:
   # =============================================================
+# ALPHA HEMS: CENTRALNY INTERFEJS UŻYTKOWNIKA (v1.46)
+# STATUS: PRODUKCYJNY / EKSPORTOWY (Zatwierdzony Układ Własny)
+#
+# HISTORIA WERSJI:
+# - v1.46: (HOTFIX RCE) Usunięcie martwych rozszerzeń '_2' z encji PSE w Rentgenie i na wykresach giełdowych.
+# - v1.45: (STABLE) Poprzednia wersja bazowa.
+# - v1.44: (PREDICTIVE DUMP UI) Dodanie przełącznika "Agresywny Zrzut Poranny" 
+#          do zakładki Ustawienia. Przywrócenie brakującej Zakładki 6.
+# - v1.43: (CAPACITY & TAB FIX) Przywrócenie Zakładki 2 (Giełda) oraz pełne
+#          wdrożenie zmiennej input_number.alpha_pojemnosc_magazynu
+#          we wszystkich kalkulacjach (Raport Księgowego, Rentgen Decyzji).
+#          Usunięcie zduplikowanej Zakładki 3 (DOM).
+# - v1.41: (RCE 48H FUSION) Połączenie wykresów Giełda Dziś i Plan Jutro
+#          w jeden ciągły wykres 48h (odporny na brak danych przed 14:00).
+# - v1.40: (CONTROL CENTER & GENERIC MATRICES) Dodanie dedykowanej zakładki USTAWIENIA
+#          z pełnym mapowaniem wolnych pomocników tekstowych i flag logicznych.
+#          Wyeliminowanie suwaków na rzecz pól tekstowych (Box) oraz wdrożenie 
+#          dotykowych paneli wyboru opcji bez zmian w configuration.yaml.
+# - v1.39: (FROZEN METEO FIX) Usunięcie wyszukiwarki encji weather.* z karty Alpha AI. 
+#          Dashboard odczytuje teraz wyłącznie zamrożoną (o 14:00) encję poligonową.
+# - v1.37: (UNIVERSAL UI FIX) Usunięcie twardego kodowania okienka letniego (PGE) w raporcie Księgowego. 
+#          Dashboard odczytuje teraz uniwersalne ramy czasowe podane bezpośrednio przez aplikację główną.
+# - v1.35: (GRAAL HEMS) Dodanie zakładki 5 "HISTORIA 24H" z wykresem ApexCharts o podwójnej osi Y.
+# - v1.34: (UX TWEAKS) Usunięcie kafelka "Obciążenie Domu", przeniesienie 
+#          "Czas Deye" i "Dni od Balansowania" pod prognozę pogody dla lepszej spójności wizualnej.
+# - v1.33: (CRITICAL RESTORE) Przywrócenie w 100% oryginalnych wykresów ApexCharts.
+# - v1.29: (SURVIVAL CALCULATOR) Usunięcie zbędnych kart TOU, Grid Charge i Gen Charge.
+# - v1.28: (DASHBOARD REBUILD) Uporządkowanie sekcji pogodowej.
+# =============================================================
+
+title: ALPHA HEMS
+icon: mdi:solar-power
+views:
+  # =============================================================
   # ZAKŁADKA 1: ⚡ DEYE (Infrastruktura i Energia)
   # =============================================================
   - type: sections
@@ -295,6 +329,826 @@ views:
                 icon: mdi:battery-sync
                 vertical: false
                 features_position: bottom
+
+  # =============================================================
+  # ZAKŁADKA 2: 📈 GIEŁDA (RCE IntegraSoft)
+  # =============================================================
+  - type: panel
+    path: rce_integra
+    title: RCE_IntegraSoft
+    icon: mdi:chart-line
+    cards:
+      - type: vertical-stack
+        cards:
+          - type: custom:apexcharts-card
+            graph_span: 48h
+            update_interval: 1min
+            apex_config:
+              chart:
+                height: 400
+            header:
+              show: true
+              title: 'Alpha: Monitor Sprzedaży (48H)'
+              show_states: true
+              colorize_states: true
+            span:
+              start: day
+            now:
+              show: true
+              label: TERAZ
+              color: '#e74c3c'
+            series:
+              - entity: sensor.deye_inverter_grid_power
+                name: Moc Sieci
+                unit: ' W'
+                color: '#9b59b6'
+                show:
+                  in_chart: false
+                  in_header: true
+              - entity: input_number.alpha_rce_param_01
+                name: Cena Teraz
+                unit: ' zł'
+                float_precision: 2
+                show:
+                  in_chart: false
+                  in_header: true
+              - entity: input_number.alpha_rce_param_03
+                name: Mój Próg
+                unit: ' zł'
+                color: '#e67e22'
+                float_precision: 2
+                show:
+                  in_chart: false
+                  in_header: true
+              - entity: sensor.alpha_pse_jutro
+                name: Min Jutro
+                unit: ' zł'
+                float_precision: 2
+                show:
+                  in_chart: false
+                  in_header: true
+                data_generator: >
+                  let d = entity.attributes.value || entity.attributes.prices;
+                  if (!Array.isArray(d) || !d.length) return [];
+                  let min = Math.min(...d.map(e => (e.rce_pln !== undefined ? e.rce_pln : (e.cen_cost !== undefined ? e.cen_cost : (e.price || 0))) / 1000));
+                  let tsStr = String(d[0].dtime).replace(/-/g, '/').replace('T', ' ');
+                  return [[new Date(tsStr).getTime(), min]];
+              - entity: sensor.alpha_pse_jutro
+                name: Max Jutro
+                unit: ' zł'
+                float_precision: 2
+                show:
+                  in_chart: false
+                  in_header: true
+                data_generator: >
+                  let d = entity.attributes.value || entity.attributes.prices;
+                  if (!Array.isArray(d) || !d.length) return [];
+                  let max = Math.max(...d.map(e => (e.rce_pln !== undefined ? e.rce_pln : (e.cen_cost !== undefined ? e.cen_cost : (e.price || 0))) / 1000));
+                  let tsStr = String(d[0].dtime).replace(/-/g, '/').replace('T', ' ');
+                  return [[new Date(tsStr).getTime(), max]];
+              - entity: sensor.alpha_pse_dzisiaj
+                name: Zarabiam / Plan
+                type: column
+                color: '#2ecc71'
+                opacity: 0.4
+                float_precision: 2
+                show:
+                  in_header: false
+                data_generator: >
+                  let d1 = entity.attributes.value || entity.attributes.prices;
+                  d1 = Array.isArray(d1) ? d1 : [];
+                  let state2 = hass.states['sensor.alpha_pse_jutro'];
+                  let d2 = state2 && state2.attributes ? (state2.attributes.value || state2.attributes.prices) : [];
+                  d2 = Array.isArray(d2) ? d2 : [];
+                  let data = d1.concat(d2);
+                  if (!data.length) return [];
+                  let p = parseFloat(hass.states['input_number.alpha_rce_param_03'].state) || 0.7;
+                  let res = data.map((entry) => {
+                    let val = entry.rce_pln !== undefined ? entry.rce_pln : (entry.cen_cost !== undefined ? entry.cen_cost : (entry.price || 0));
+                    let c = parseFloat(val) / 1000;
+                    let tsStr = String(entry.dtime).replace(/-/g, '/').replace('T', ' ');
+                    return [new Date(tsStr).getTime(), c >= p ? c : 0];
+                  });
+                  return res.sort((a, b) => a[0] - b[0]);
+              - entity: sensor.alpha_pse_dzisiaj
+                name: Ceny RCE (48h)
+                type: line
+                curve: stepline
+                stroke_width: 2
+                color: '#3498db'
+                float_precision: 2
+                show:
+                  in_header: false
+                data_generator: >
+                  let d1 = entity.attributes.value || entity.attributes.prices;
+                  d1 = Array.isArray(d1) ? d1 : [];
+                  let state2 = hass.states['sensor.alpha_pse_jutro'];
+                  let d2 = state2 && state2.attributes ? (state2.attributes.value || state2.attributes.prices) : [];
+                  d2 = Array.isArray(d2) ? d2 : [];
+                  let data = d1.concat(d2);
+                  if (!data.length) return [];
+                  let res = data.map((entry) => {
+                    let val = entry.rce_pln !== undefined ? entry.rce_pln : (entry.cen_cost !== undefined ? entry.cen_cost : (entry.price || 0));
+                    let c = parseFloat(val) / 1000;
+                    let tsStr = String(entry.dtime).replace(/-/g, '/').replace('T', ' ');
+                    return [new Date(tsStr).getTime(), c];
+                  });
+                  return res.sort((a, b) => a[0] - b[0]);
+          - type: entities
+            title: Monitor Systemu
+            show_header_toggle: false
+            entities:
+              - entity: input_text.alpha_rce_stan_01
+                name: DECYZJA MÓZGU
+                icon: mdi:brain
+                type: simple-entity
+              - entity: input_text.alpha_rce_stan_03
+                name: AKTUALNY STATUS
+                icon: mdi:robot-outline
+                type: simple-entity
+              - type: divider
+              - entity: input_text.alpha_rce_stan_15
+                name: STATUS LICENCJI
+                icon: mdi:shield-key
+                type: simple-entity
+              - entity: sensor.alpha_licencja_wygasa
+                name: WAŻNA DO
+                icon: mdi:calendar-clock
+                type: simple-entity
+              - type: divider
+              - entity: sensor.deye_inverter_battery_bms_soc
+                name: Aktualny SOC Magazynu
+                icon: mdi:battery-high
+              - entity: input_number.alpha_rce_param_20
+                name: Docelowy SOC (Płotek)
+                icon: mdi:battery-clock
+                type: simple-entity
+          - type: entities
+            title: Finanse i Zyski
+            show_header_toggle: false
+            entities:
+              - entity: input_number.alpha_rce_param_02
+                name: Koszt zakupu (+straty)
+                icon: mdi:cash-minus
+                type: simple-entity
+              - entity: input_number.alpha_rce_param_03
+                name: Próg sprzedaży (+marża)
+                icon: mdi:target
+                type: simple-entity
+              - type: divider
+              - entity: input_number.alpha_rce_param_05
+                name: Szacowany Zysk (Dziś)
+                icon: mdi:piggy-bank
+                type: simple-entity
+              - type: divider
+              - entity: input_number.alpha_rce_param_44
+                name: Zrealizowany (Miesiąc)
+                icon: mdi:chart-bar
+                type: simple-entity
+              - entity: input_number.alpha_rce_param_45
+                name: Zrealizowany (Rok)
+                icon: mdi:chart-line
+                type: simple-entity
+              - entity: input_number.alpha_rce_param_43
+                name: Całkowity Zwrot (Total)
+                icon: mdi:cash-multiple
+                type: simple-entity
+
+  # =============================================================
+  # ZAKŁADKA 3: 🏠 DOM (Centrum Dowodzenia i Szufladki)
+  # =============================================================
+  - type: panel
+    path: dom
+    title: "DOM"
+    icon: mdi:home
+    cards:
+      - type: vertical-stack
+        cards:
+          - type: markdown
+            content: >
+              ## 📊 ALPHA HEMS: Status & Cel
+
+              **🧠 Decyzja Mózgu (Plan):** {{ states('input_text.alpha_rce_stan_01') }}
+              
+              **⚙️ Aktualny Status:** {{ states('input_text.alpha_rce_stan_03') }}
+
+              ---
+              {% set cap_raw = states('number.deye_inverter_battery_capacity') | float(47.0) %}
+              {% set fallback_cap = (cap_raw * 51.2 / 1000) | round(1) if cap_raw > 150 else cap_raw | round(1) %}
+              {% set cap = states('input_number.alpha_pojemnosc_magazynu') | float(fallback_cap) %}
+              {% set plotek = states('input_number.alpha_rce_param_20') | float(0) %}
+              **Cel ładowania (Płotek):** {{ ((plotek / 100) * cap) | round(1) }} kWh
+
+              **Bieżąca cena RCE:** {{ states('input_number.alpha_rce_param_01') }} zł/kWh
+
+          - type: markdown
+            title: "🧠 Rentgen Decyzji (Autoscale RCE & Logika 140%)"
+            content: >
+              {% set sensor_rce = 'sensor.alpha_pse_dzisiaj' %}
+              {% set cap_raw = states('number.deye_inverter_battery_capacity') | float(47.0) %}
+              {% set fallback_cap = (cap_raw * 51.2 / 1000) | round(1) if cap_raw > 150 else cap_raw | round(1) %}
+              {% set poj = states('input_number.alpha_pojemnosc_magazynu') | float(fallback_cap) %}
+              {% set inv_w = states('sensor.deye_inverter_device_rated_power') | float(12000) %}
+              {% set moc_kw = [states('number.deye_inverter_max_sell_power') | float(6000), inv_w] | min / 1000 %}
+
+              {# AUTODETEKCJA ENCJI LOW SOC Z FALOWNIKA ORAZ FLAGI ZIMY #}
+              {% set low_soc_ent = (states.number | selectattr('entity_id', 'search', 'battery_low_soc$|shutdown_capacity$') | map(attribute='entity_id') | list | first) | default('number.deye_inverter_battery_low_soc') %}
+              {% set live_low_soc = states(low_soc_ent) | float(20) %}
+              {% set zimowy_beton = 10 if states('input_boolean.alpha_rce_flaga_12') == 'on' else 0 %}
+              {% set hardware_low_soc = live_low_soc + zimowy_beton %}
+              
+              {# TWARDY ZACISK (ANTI-SPIKE MARGIN) - Low SOC * 1.1 #}
+              {% set bezpieczna_podloga = (live_low_soc * 1.1) | round(0) | int + zimowy_beton %}
+              {% set bezpieczna_podloga_kwh = (bezpieczna_podloga / 100) * poj %}
+
+              {# DYNAMICZNE MAPOWANIE SZUFLADEK WZGLEDEM DNIA TYGODNIA #}
+              {% set d = now().weekday() %}
+              {% set d_jutro = (now() + timedelta(days=1)).weekday() %}
+              
+              {% set map_n = {0: 11, 1: 12, 2: 13, 3: 14, 4: 15, 5: 16, 6: 17} %}
+              {% set map_p = {0: 21, 1: 22, 2: 23, 3: 24, 4: 25, 5: 26, 6: 27} %}
+              {% set map_w = {0: 31, 1: 32, 2: 33, 3: 34, 4: 35, 5: 36, 6: 37} %}
+              
+              {% set n_dzis = states('input_number.alpha_rce_param_' ~ map_n[d]) | float(0) %}
+              {% set p_dzis = states('input_number.alpha_rce_param_' ~ map_p[d]) | float(0) %}
+              {% set w_dzis = states('input_number.alpha_rce_param_' ~ map_w[d]) | float(0) %}
+              
+              {% set n_jutro = states('input_number.alpha_rce_param_' ~ map_n[d_jutro]) | float(0) %}
+              {% set p_jutro = states('input_number.alpha_rce_param_' ~ map_p[d_jutro]) | float(0) %}
+              {% set w_jutro = states('input_number.alpha_rce_param_' ~ map_w[d_jutro]) | float(0) %}
+
+              {# POBRANIE POPRAWNEJ PROGNOZY PV W ZALEŻNOŚCI OD USTAWIENIA #}
+              {% set pv_dzis = states('sensor.solcast_pv_forecast_prognoza_na_dzisiaj') | float(0) %}
+              {% set pv_jutro = states('sensor.solcast_pv_forecast_prognoza_na_jutro') | float(0) %}
+
+              {% set status_plotek = states('input_number.alpha_rce_param_20') | float(0) %}
+
+              {# LOGIKA SMART MORNING (Nocna ocena Jutra vs Dzień oceniany Dziś) #}
+              {% set total_dzis = n_dzis + p_dzis + w_dzis %}
+              {% set wymog_140_dzis = total_dzis * 1.4 %}
+              {% set is_sunny_dzis = pv_dzis >= wymog_140_dzis %}
+              
+              {% set total_jutro = n_jutro + p_jutro + w_jutro %}
+              {% set wymog_140_jutro = total_jutro * 1.4 %}
+              {% set is_sunny_jutro = pv_jutro >= wymog_140_jutro %}
+              {% set mnoznik_p = 0.2 if is_sunny_jutro else 1.2 %}
+
+              ### 📦 Fizyka Magazynu i Rejestry
+              * Obecny Magazyn: **{{ ((states('sensor.deye_inverter_battery_bms_soc') | float(0) / 100) * poj) | round(1) }} kWh** | Cel (Płotek): **{{ ((status_plotek / 100) * poj) | round(1) }} kWh**
+              {% set wolny_soc = [states('sensor.deye_inverter_battery_bms_soc') | float(0) - status_plotek, 0] | max %}
+              {% set wolna_energia = (wolny_soc / 100) * poj %}
+              * Energia do zrzutu: **{{ wolna_energia | round(2) }} kWh**
+              
+              {% set pojemnosc_slupka = moc_kw * 0.25 %}
+              {% set slupki_req = (wolna_energia / pojemnosc_slupka) | round(0, 'ceil') | int %}
+              * Falownik ({{ moc_kw }} kW) wymaga **{{ slupki_req }} słupków** do zrzutu (Pojemność słupka = {{ pojemnosc_slupka | round(2) }} kWh).
+
+              ---
+
+              ### 🗄️ 1. STAN PAMIĘCI REJESTRÓW (Twarde Dane)
+              * Zużycie Noc DZIŚ: **{{ n_dzis }} kWh**
+              * Zużycie Poranek DZIŚ: **{{ p_dzis }} kWh**
+              * Zużycie Wieczór DZIŚ: **{{ w_dzis }} kWh**
+              * Prognoza Słońca na Dziś: **{{ pv_dzis }} kWh**
+              * Prognoza Słońca na Jutro: **{{ pv_jutro }} kWh**
+              * Odczytana encja sprzętowa: `{{ low_soc_ent }}` ➔ **{{ ((live_low_soc / 100) * poj) | round(1) }} kWh** {% if zimowy_beton > 0 %}(+ Beton Zimowy = {{ ((hardware_low_soc / 100) * poj) | round(1) }} kWh){% endif %}
+              * **🛡️ Ochrona Skokowa (Anti-Spike Clamp): Min. {{ bezpieczna_podloga_kwh | round(1) }} kWh**
+
+              ---
+
+              {% set bufor_komfortu_kwh = (states('input_number.alpha_rezerwa_soc') | float(0) / 100) * poj %}
+              {% set smart_toggle = states('input_boolean.alpha_rce_flaga_03') == 'on' %}
+              {% set aktywny_bufor_kwh = 0 if (is_sunny_jutro and smart_toggle) else bufor_komfortu_kwh %}
+              {% set hardware_low_soc_kwh = (hardware_low_soc / 100) * poj %}
+              {% set jeden_procent_kwh = (poj * 0.01) %}
+
+              ### 🧮 2. MATRYCA OBLICZEŃ PŁOTKA (Docelowa Energia)
+              {% if is_sunny_jutro %}
+              > **☀️ SMART MORNING AKTYWNY (Prognoza > 140%):** Słońce JUTRO przejmuje obciążenie. Zapas poranny ścięty do 20% (tylko na rozruch do 7:00).
+              {% else %}
+              > **☁️ STANDARD (Prognoza < 140%):** Ładuję w nocy pełne zapotrzebowanie poranka + 20% bufora bezpieczeństwa na JUTRO.
+              {% endif %}
+
+              👉 **Kalkulacja dla okresu porannego (Zabezpieczenie Poranka):**
+              {% set calc_poranek_kwh = (p_dzis * mnoznik_p) + hardware_low_soc_kwh + aktywny_bufor_kwh + jeden_procent_kwh %}
+              {{ p_dzis }} kWh × {{ mnoznik_p }} = **{{ (p_dzis * mnoznik_p) | round(2) }} kWh**
+              + Low SOC ({{ hardware_low_soc_kwh | round(1) }} kWh) + Bufor ({{ aktywny_bufor_kwh | round(1) }} kWh) + 1% ({{ jeden_procent_kwh | round(1) }} kWh) = Wynik tymczasowy: {{ calc_poranek_kwh | round(2) }} kWh
+              ➔ 🛡️ Twardy docisk (Clamp): **Ostateczny wynik: {{ [calc_poranek_kwh, bezpieczna_podloga_kwh] | max | round(1) }} kWh**
+
+              👉 **Kalkulacja dla okresu wieczornego (Zabezpieczenie Wieczoru):**
+              {% set calc_wieczor_kwh = (w_dzis * 1.2) + hardware_low_soc_kwh + aktywny_bufor_kwh + jeden_procent_kwh %}
+              {{ w_dzis }} kWh × 1.2 = **{{ (w_dzis * 1.2) | round(2) }} kWh**
+              + Low SOC ({{ hardware_low_soc_kwh | round(1) }} kWh) + Bufor ({{ aktywny_bufor_kwh | round(1) }} kWh) + 1% ({{ jeden_procent_kwh | round(1) }} kWh) = Wynik tymczasowy: {{ calc_wieczor_kwh | round(2) }} kWh
+              ➔ 🛡️ Twardy docisk (Clamp): **Ostateczny wynik: {{ [calc_wieczor_kwh, bezpieczna_podloga_kwh] | max | round(1) }} kWh**
+
+              ---
+
+              ### 🛡️ 3. LOGIKA 140% & PODWÓJNY CYKL (Double-Cycle Arbitrage)
+              * Łączne zapotrzebowanie DZIŚ: **{{ total_dzis | round(2) }} kWh** | Wymóg PV 140%: **{{ wymog_140_dzis | round(2) }} kWh**
+              * Słońce Dziś ({{ pv_dzis }} kWh) ≥ Wymóg 140%? ➔ **{{ '✅ TAK (Filar 1 autoryzowany)' if is_sunny_dzis else '❌ NIE (Standardowa ochrona, zrzut zablokowany)' }}**
+              
+              {% set prices = state_attr(sensor_rce, 'value') %}
+              {% if not prices %} {% set prices = state_attr(sensor_rce, 'prices') %} {% endif %}
+              {% set ns = namespace(max_rano=-999.0, min_poludnie=999.0) %}
+              {% if prices is iterable and prices is not string and prices is not mapping %}
+                {% for p in prices %}
+                  {% set p_str = p.dtime | string %}
+                  {% set p_dt = as_datetime(p_str) %}
+                  {% if p_dt == none %} {% set p_dt = strptime(p_str, '%Y-%m-%d %H:%M:%S', strptime(p_str, '%Y-%m-%d %H:%M', none)) %} {% endif %}
+                  {% set p_ts = as_timestamp(p_dt) if p_dt != none else none %}
+                  {% if p_ts != none and p_ts >= today_at('00:00').timestamp() %}
+                    {% set p_hour = (p_ts | timestamp_custom('%H', true)) | int %}
+                    {% set val = p.rce_pln | default(p.cen_cost | default(p.price | default(0))) | float(0) / 1000 %}
+                    {% if 6 <= p_hour < 11 %}
+                      {% if val > ns.max_rano %} {% set ns.max_rano = val %} {% endif %}
+                    {% endif %}
+                    {% if 11 <= p_hour <= 14 %}
+                      {% if val < ns.min_poludnie %} {% set ns.min_poludnie = val %} {% endif %}
+                    {% endif %}
+                  {% endif %}
+                {% endfor %}
+              {% endif %}
+              {% set spread = (ns.max_rano - ns.min_poludnie) | round(2) %}
+              {% set sniper_threshold = (ns.min_poludnie + 0.20) | round(4) %}
+              
+              * 📉 Max cena rano: **{{ ns.max_rano }} zł/kWh** | 📈 Min cena południe: **{{ ns.min_poludnie }} zł/kWh**
+              * Obliczony Spread (Różnica): **{{ spread }} zł/kWh**
+              * Podwójny Cykl Opłacalny (Spread >= 0.20 zł)? ➔ **{{ '✅ TAK (Filar 2 autoryzowany)' if spread >= 0.20 else '❌ NIE (Różnica w cenie nie opłaca amortyzacji)' }}**
+              * 🎯 **Dynamiczny Celownik Snajpera (Dołek + 20 gr): {{ sniper_threshold }} zł/kWh**
+
+              ---
+
+              ### 📈 Planowanie Okienek Handlowych (Autoscale RCE)
+              {% set now_ts = as_timestamp(now()) %}
+              {% set h = now().hour %}
+              {% set prognoza_shift = 15 if states('input_boolean.alpha_rce_flaga_12') == 'on' else 13 %}
+              {% set t_aggr = 15 if states('input_boolean.alpha_rce_flaga_12') == 'on' else 13 %}
+              {% set prog = states('input_number.alpha_rce_param_03') | float(0) * 1000 %}
+              {% set ns = namespace(future_active=[], is_now=false) %}
+              {% if slupki_req > 0 and prices is iterable and prices is not string and prices is not mapping %}
+                {% for p in prices %}
+                  {% set p_ts = as_timestamp(as_datetime(p.dtime | string)) if as_datetime(p.dtime | string) != none else as_timestamp(strptime(p.dtime | string, '%Y-%m-%d %H:%M:%S', strptime(p.dtime | string, '%Y-%m-%d %H:%M', none))) %}
+                  {% if p_ts != none and p_ts >= (now_ts - 900) %}
+                    {% if (h < t_aggr and p_ts < as_timestamp(today_at('%02d:01' % t_aggr))) or (h >= prognoza_shift) %}
+                      {% set val = p.rce_pln | default(p.cen_cost | default(p.price | default(0))) | float(0) %}
+                      {% if val >= prog %}
+                        {% set ns.future_active = ns.future_active + [{'dtime': p.dtime | string, 'cena': val, 'ts': p_ts}] %}
+                      {% endif %}
+                    {% endif %}
+                  {% endif %}
+                {% endfor %}
+                {% if ns.future_active | length > 0 %}
+                  {% set top_slupki = ns.future_active | sort(attribute='cena', reverse=true) | batch(slupki_req) | first | default([]) %}
+                  **🎯 Celownik Systemu (TOP {{ slupki_req }}):**
+                  {% for b in top_slupki %}
+                    - {{ b.dtime[11:16] }} -> **{{ b.cena }}** zł/MWh
+                    {% if now_ts >= b.ts and now_ts < (b.ts + 900) %}
+                      {% set ns.is_now = true %}
+                    {% endif %}
+                  {% endfor %}
+                  **🛑 Werdykt Rentgena:** {{ '✅ Cel zablokowany: SPRZEDAŻ!' if ns.is_now else '⏳ Oczekuję na lepsze ceny.' }}
+                {% else %}
+                  **🛑 Werdykt Rentgena:** Brak opłacalnych okienek powyżej progu.
+                {% endif %}
+              {% else %}
+                **🛑 Werdykt Rentgena:** Brak wolnej energii do zrzutu lub ujemne ceny.
+              {% endif %}
+
+          - type: markdown
+            title: "🌙 Sektor Nocny (22:00-06:00)"
+            content: >
+              - **Poniedziałek:** {{ states('input_number.alpha_rce_param_11') }} kWh
+              - **Wtorek:** {{ states('input_number.alpha_rce_param_12') }} kWh
+              - **Środa:** {{ states('input_number.alpha_rce_param_13') }} kWh
+              - **Czwartek:** {{ states('input_number.alpha_rce_param_14') }} kWh
+              - **Piątek:** {{ states('input_number.alpha_rce_param_15') }} kWh
+              - **Sobota:** {{ states('input_number.alpha_rce_param_16') }} kWh
+              - **Niedziela:** {{ states('input_number.alpha_rce_param_17') }} kWh
+
+          - type: markdown
+            title: "🌅 Sektor Poranny (06:00-13:00)"
+            content: >
+              - **Poniedziałek:** {{ states('input_number.alpha_rce_param_21') }} kWh
+              - **Wtorek:** {{ states('input_number.alpha_rce_param_22') }} kWh
+              - **Środa:** {{ states('input_number.alpha_rce_param_23') }} kWh
+              - **Czwartek:** {{ states('input_number.alpha_rce_param_24') }} kWh
+              - **Piątek:** {{ states('input_number.alpha_rce_param_25') }} kWh
+              - **Sobota:** {{ states('input_number.alpha_rce_param_26') }} kWh
+              - **Niedziela:** {{ states('input_number.alpha_rce_param_27') }} kWh
+
+          - type: markdown
+            title: "🌆 Sektor Wieczorny (13:00-22:00)"
+            content: >
+              - **Poniedziałek:** {{ states('input_number.alpha_rce_param_31') }} kWh
+              - **Wtorek:** {{ states('input_number.alpha_rce_param_32') }} kWh
+              - **Środa:** {{ states('input_number.alpha_rce_param_33') }} kWh
+              - **Czwartek:** {{ states('input_number.alpha_rce_param_34') }} kWh
+              - **Piątek:** {{ states('input_number.alpha_rce_param_35') }} kWh
+              - **Sobota:** {{ states('input_number.alpha_rce_param_36') }} kWh
+              - **Niedziela:** {{ states('input_number.alpha_rce_param_37') }} kWh
+
+          - type: entities
+            title: "⚡ Monitoring Napięcia Fazy"
+            show_header_toggle: false
+            entities:
+              - entity: sensor.deye_inverter_grid_l1_voltage
+                name: "Faza L1"
+              - entity: sensor.deye_inverter_grid_l2_voltage
+                name: "Faza L2"
+              - entity: sensor.deye_inverter_grid_l3_voltage
+                name: "Faza L3"
+              - type: section
+              - entity: input_boolean.alpha_rce_flaga_10
+                name: "🔄 WYMUŚ ALPHA SYNC / SETUP"
+                icon: mdi:tools
+
+  # =============================================================
+  # ZAKŁADKA 4: 🔄 PRZEPŁYW (Widok uproszczony)
+  # =============================================================
+  - type: panel
+    path: flow-view
+    title: PRZEPŁYW
+    icon: mdi:sync
+    cards:
+      - type: custom:sunsynk-power-flow-card
+        cardstyle: lite
+        wide: false
+        large_font: true
+        show_solar: true
+        show_battery: true
+        show_grid: true
+        center_no_grid: true
+        card_height: '750'
+        card_width: 100%
+        decimal_places: 2
+        decimal_places_energy: 1
+        dynamic_line_width: true
+        max_line_width: 4
+        min_line_width: 1
+        inverter:
+          three_phase: true
+          auto_scale: true
+          modern: true
+          colour: '#217cb5'
+          autarky: power
+        battery:
+          show_daily: true
+          auto_scale: true
+          show_absolute: true
+          colour: '#c01b1b'
+          charge_colour: '#435bd0'
+          dynamic_colour: true
+          linear_gradient: true
+          show_remaining_energy: true
+          energy: 47616
+          shutdown_soc: 6
+        battery2:
+          energy: 0
+          shutdown_soc: 20
+          soc_end_of_charge: 100
+          invert_power: false
+          hide_soc: false
+          colour: '#ffc0cb'
+          show_remaining_energy: true
+          remaining_energy_to_shutdown: false
+          show_absolute: false
+          auto_scale: true
+          dynamic_colour: true
+          linear_gradient: true
+          animate: true
+          path_threshold: 100
+          navigate: ''
+          invert_flow: false
+        solar:
+          show_daily: true
+          mppts: 3
+          pv1_name: S_Edge
+          auto_scale: true
+          colour: '#c9cc05'
+          pv1_max_power: 7400
+          display_mode: 2
+        load:
+          show_daily: true
+          dynamic_icon: true
+          dynamic_colour: true
+          colour: '#2cce6a'
+          show_absolute_aux: true
+          auto_scale: true
+          additional_loads: 1
+          load1_name: Gwarantowane
+          load1_icon: mdi:calendar-text
+          load2_name: Pozostało PV
+          load2_icon: mdi:solar-power-variant
+          essential_name: UPS
+        grid:
+          show_daily_buy: true
+          show_daily_sell: true
+          show_nonessential: true
+          auto_scale: true
+          colour: '#2a95cb'
+          export_colour: '#e0c124'
+        grid_options:
+          columns: full
+          rows: 1
+        entities:
+          remaining_solar: sensor.solcast_pv_forecast_pozostala_prognoza_na_dzis
+          energy_prognoza_106: sensor.solcast_pv_forecast_prognoza_na_dzisiaj
+          day_pv_energy_108: sensor.deye_inverter_daily_pv_production
+          essential_load1: sensor.deye_inverter_load_ups_power
+          essential_load1_extra: sensor.dobowe_zuzycie_ups
+          essential_load2: sensor.smart_plug_2_moc
+          essential_load3: sensor.smart_plug_3_moc
+          use_timer_248: switch.sunsynk_toggle_system_timer
+          priority_load_243: sensor.deye_inverter_load_power
+          inverter_voltage_154: sensor.deye_inverter_output_l1_voltage
+          load_frequency_192: sensor.deye_inverter_load_frequency
+          inverter_current_164: sensor.deye_inverter_output_l1_current
+          inverter_power_175: sensor.sunsynk_inverter_power
+          grid_connected_status_194: binary_sensor.sunsynk_grid_connected_status
+          inverter_status_59: sensor.sunsynk_overall_state
+          day_battery_discharge_71: sensor.deye_inverter_daily_battery_discharge
+          battery_voltage_183: sensor.deye_inverter_battery_bms_voltage
+          battery_power_190: sensor.deye_inverter_battery_power
+          battery_current_191: sensor.deye_inverter_battery_bms_current
+          grid_power_169: sensor.sunsynk_grid_power
+          day_grid_export_77: sensor.deye_inverter_daily_energy_sold
+          grid_ct_power_172: sensor.deye_inverter_grid_l1_power
+          day_load_energy_84: sensor.deye_inverter_daily_load_consumption
+          pv1_power_186: sensor.deye_inverter_pv1_power
+          pv2_power_187: sensor.deye_inverter_pv2_power
+          pv3_power_188: sensor.deye_inverter_generator_power_total
+          day_grid_import_76: sensor.deye_inverter_daily_energy_bought
+          grid_ct_power_total: sensor.deye_inverter_grid_power
+          battery_temp_182: sensor.deye_inverter_battery_temperature
+          day_aux_energy: sensor.solcast_pv_forecast_prognoza_na_dzisiaj
+          essential_power: sensor.deye_inverter_load_power
+          radiator_temp_91: sensor.deye_inverter_ac_temperature
+          dc_transformer_temp_90: sensor.magazyn_pomieszczenie_temperatura
+          solar_sell_247: switch.deye_inverter_solar_sell
+          day_battery_charge_70: sensor.deye_inverter_daily_battery_charge
+          battery_soc_184: sensor.deye_inverter_battery
+          battery_rated_capacity: number.deye_inverter_battery_capacity
+          battery_shutdown_soc: number.deye_inverter_battery_shutdown_soc_low_dc
+
+  # =============================================================
+  # ZAKŁADKA 5: 📊 HISTORIA 24H (Święty Graal HEMS)
+  # =============================================================
+  - type: panel
+    path: historia-36h
+    title: HISTORIA 36H
+    icon: mdi:chart-timeline-variant
+    cards:
+      - type: custom:apexcharts-card
+        graph_span: 36h
+        update_interval: 1min
+        header:
+          show: true
+          title: 'Przebieg dobowy (Moc i Magazyn)'
+          show_states: true
+          colorize_states: true
+        apex_config:
+          chart:
+            height: 600
+          stroke:
+            curve: smooth
+          legend:
+            show: true
+        yaxis:
+          - id: power
+            min: 0
+            decimals: 0
+          - id: soc
+            min: 0
+            max: 100
+            opposite: true
+            decimals: 0
+        series:
+          - entity: sensor.deye_inverter_load_power
+            name: Zużycie Domu
+            type: line
+            color: '#e0e0e0'
+            stroke_width: 2
+            yaxis_id: power
+            group_by:
+              func: avg
+              duration: 5m
+          - entity: sensor.deye_inverter_grid_power
+            name: Zakup z Sieci
+            type: area
+            color: '#e74c3c'
+            opacity: 0.4
+            stroke_width: 1
+            yaxis_id: power
+            show:
+              in_header: false
+            transform: 'return (x !== null && Number(x) > 0) ? Number(x) : 0;'
+            group_by:
+              func: avg
+              duration: 5m
+          - entity: sensor.deye_inverter_grid_power
+            name: Sprzedaż do Sieci
+            type: area
+            color: '#2ecc71'
+            opacity: 0.4
+            stroke_width: 1
+            yaxis_id: power
+            show:
+              in_header: false
+            transform: 'return (x !== null && Number(x) < 0) ? Math.abs(Number(x)) : 0;'
+            group_by:
+              func: avg
+              duration: 5m
+          - entity: sensor.deye_inverter_battery_bms_soc
+            name: SOC Magazynu
+            type: line
+            color: '#3498db'
+            stroke_width: 3
+            yaxis_id: soc
+            group_by:
+              func: avg
+              duration: 5m
+
+  # =============================================================
+  # ZAKŁADKA 6: 🔮 SOC PROGNOZA (Predictive Twin)
+  # =============================================================
+  - type: panel
+    path: soc-prognoza
+    title: SOC PROGNOZA
+    icon: mdi:chart-bell-curve-cumulative
+    cards:
+      - type: custom:apexcharts-card
+        header:
+          show: true
+          title: 🔮 Predictive Twin (Baza vs Symulacja RCE)
+          show_states: true
+        graph_span: 24h
+        span:
+          start: minute
+        apex_config:
+          chart:
+            height: 900
+        all_series_config:
+          stroke_width: 3
+          curve: smooth
+        series:
+          - entity: sensor.alpha_soc_predictive_twin
+            name: SOC Baza (Bez sprzedaży)
+            unit: "%"
+            color: "#00a8ff"
+            type: area
+            opacity: 0.2
+            yaxis_id: percent
+            data_generator: >
+              let d = entity.attributes.simulation; return (typeof d === 'string' ? JSON.parse(d) : d).map(p => [p.timestamp, p.soc]);
+          - entity: sensor.alpha_soc_predictive_twin
+            name: SOC Symulacja RCE
+            unit: "%"
+            color: "#9b59b6"
+            type: line
+            stroke_width: 4
+            yaxis_id: percent
+            data_generator: >
+              let d = entity.attributes.simulation; return (typeof d === 'string' ? JSON.parse(d) : d).map(p => [p.timestamp, p.soc_sell]);
+          - entity: sensor.alpha_soc_predictive_twin
+            name: Krytyczny SOC (Deye Low)
+            unit: "%"
+            color: "#ff4500"
+            type: line
+            stroke_width: 1
+            yaxis_id: percent
+            data_generator: >
+              let d = entity.attributes.simulation; let limit = parseFloat(hass.states['number.deye_inverter_battery_low_soc'].state) || 20; return (typeof d === 'string' ? JSON.parse(d) : d).map(p => [p.timestamp, limit]);
+          - entity: sensor.alpha_soc_predictive_twin
+            name: Uzysk słońca
+            unit: kWh
+            color: "#f1c40f"
+            type: area
+            opacity: 0.3
+            yaxis_id: energy
+            data_generator: >
+              let d = entity.attributes.simulation; return (typeof d === 'string' ? JSON.parse(d) : d).map(p => [p.timestamp, p.pv]);
+          - entity: sensor.alpha_soc_predictive_twin
+            name: Pobór domu
+            unit: kWh
+            color: "#e84118"
+            type: line
+            yaxis_id: energy
+            data_generator: >
+              let d = entity.attributes.simulation; return (typeof d === 'string' ? JSON.parse(d) : d).map(p => [p.timestamp, p.cons]);
+        yaxis:
+          - id: percent
+            min: 0
+            max: 100
+            decimals: 0
+            opposite: false
+          - id: energy
+            min: 0
+            decimals: 2
+            opposite: true
+
+  # =============================================================
+  # ZAKŁADKA 7: ⚙️ USTAWIENIA (Centrum Dowodzenia v1.43)
+  # =============================================================
+  - type: panel
+    path: ustawienia
+    title: USTAWIENIA
+    icon: mdi:cog
+    cards:
+      - type: vertical-stack
+        cards:
+          - type: markdown
+            title: "🛠️ Centrum Dowodzenia ALPHA v1.43"
+            content: "Konfiguracja parametrów pracy systemu bezpośrednio z interfejsu."
+
+          - type: grid
+            columns: 2
+            cards:
+              # --- KOLUMNA 1: FINANSE, TARYFY I GIEŁDA ---
+              - type: entities
+                title: "💰 Handel i Parametry Sieci"
+                show_header_toggle: false
+                entities:
+                  - type: section
+                    label: "Finanse i Giełda"
+                  - entity: input_text.alpha_rce_stan_06
+                    name: "Cena zakupu energii"
+                    icon: mdi:cash-minus
+                  - entity: input_number.alpha_zysk_minimalny
+                    name: "Oczekiwany zysk minimalny"
+                    icon: mdi:chart-line-variant
+                  - entity: input_number.alpha_moc_sprzedazy
+                    name: "Moc sprzedaży RCE"
+                    icon: mdi:transmission-tower-export
+                  - entity: input_boolean.alpha_rce_flaga_01
+                    name: "Rozliczenie: Stare zasady / Net-metering vs Nowe zasady (Net-billing) ->> Właczone = Nowe Zasady "
+                    icon: mdi:scale-balance
+                  - type: section
+                    label: "Taryfy i Tryby Pracy"
+                  - entity: input_select.alpha_tryb_bilansowania
+                    name: "Tryb Spoczynku"
+                    icon: mdi:home-lightning-bolt
+                  - entity: input_select.alpha_osd
+                    name: "Operator OSD"
+                    icon: mdi:factory
+                  - entity: input_select.alpha_taryfa
+                    name: "Taryfa"
+                    icon: mdi:clock-time-eight
+
+              # --- KOLUMNA 2: ZAPASY, SYSTEM I KOMUNIKACJA ---
+              - type: entities
+                title: "🛡️ Bezpieczeństwo i System"
+                show_header_toggle: false
+                entities:
+                  - type: section
+                    label: "Zarządzanie Zapasem"
+                  - entity: input_number.alpha_rezerwa_soc
+                    name: "Rozmiar Bufora Komfortu (%)"
+                    icon: mdi:battery-plus
+                  - entity: input_boolean.alpha_rce_flaga_03
+                    name: "☀️ Wyłącz Bufor w słoneczne dni (>140%)"
+                    icon: mdi:weather-sunny
+                  - entity: input_boolean.alpha_rce_flaga_05
+                    name: "🚀 Agresywny Zrzut Poranny (Włączony = Czasowa Ochrona SOC na 18:00)"
+                    icon: mdi:rocket-launch
+                  - type: section
+                    label: "System i Komunikacja"
+                  - entity: input_boolean.alpha_rce_flaga_02
+                    name: "🛡️ TRYB SYMULACJI (Blokada handlu)"
+                    icon: mdi:shield-lock
+                  - entity: input_boolean.alpha_rce_flaga_04
+                    name: "🔔 Włącz powiadomienia PUSH"
+                    icon: mdi:bell-ring
+# =============================================================
+# KONIEC ZAKŁADKI 7
+# =============================================================
+
+# =============================================================
+# LEGENDA ZAJĘTYCH POMOCNIKÓW (MOST INTERFEJSU v1.40)
+# =============================================================
+# Wszystkie poniższe mapowania korzystają wyłącznie z fabrycznych,
+# uniwersalnych zasobów matrycy klienta. Koniec z ułamkami i suwakami.
+#
+# --- POZYCJE DOSTĘPNE Z KLAWIATURY (Czyste Pola tekstowe - Box):
+# 1. input_text.alpha_rce_stan_06       -> Cena zakupu energii (Typ: Tekst, np. 0.49)
+# 2. input_text.alpha_rce_stan_07       -> Oczekiwany zysk minimalny (Typ: Tekst, np. 0.15)
+# 3. input_text.alpha_rce_stan_08       -> Moc sprzedaży RCE (Wpisujemy w Watach z palca, np. 6000)
+# 4. input_text.alpha_rce_stan_11       -> Encja telefonu do powiadomień (np. device_tracker.dummy)
+#
+# --- POZYCJE DOTYKOWE (Kafelki wyboru wartości tekstowych):
+# 5. input_text.alpha_rce_stan_09       -> Wybór operatora OSD (Wpisuje tekst: PGE / Tauron / Enea / Energa)
+# 6. input_text.alpha_rce_stan_10       -> Wybór taryfy głównej (Wpisuje tekst: G12 / G12W)
+#
+# --- FLAGI POWIĄZANE LOGICZNIE (Przełączane kafelkami wyboru):
+# 7. input_boolean.alpha_rce_flaga_01   -> System rozliczeń (ON = Net-Billing, OFF = Net-Metering/Opusty)
+# 8. input_boolean.alpha_rce_flaga_02   -> Tryb symulacji (ON = Symulacja aktywna, OFF = Handel giełdowy włączony)
+# 9. input_boolean.alpha_rce_flaga_03   -> Smart Bufor Komfortu (ON = Wyłącz bufor w słońce >140%, OFF = Bufor działa zawsze)
+# 10. input_boolean.alpha_rce_flaga_04  -> Powiadomienia PUSH (ON = Aktywne, OFF = Wyłączone)
+# 11. input_boolean.alpha_rce_flaga_05  -> Agresywny Zrzut Poranny (ON = Czasowa Ochrona SOC, OFF = Konserwatywna Ochrona Nocna)
+# 12. input_boolean.alpha_rce_flaga_06  -> Tryb bilansowania spoczynku (ON = Zero Export To Load, OFF = Zero Export To CT)
+#
+# --- STALE NAZWANE (Ustawienia suwakowe ze zmiennych):
+# 13. input_number.alpha_rezerwa_soc    -> Rozmiar Bufora Komfortu (%) [Oryginalna encja rezerwy]
+# =============================================================
 
   # =============================================================
   # ZAKŁADKA 2: 📈 GIEŁDA (RCE IntegraSoft)
