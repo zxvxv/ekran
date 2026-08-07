@@ -49,7 +49,8 @@ views:
       - type: grid
         column_span: 2
         cards:
-          - cardstyle: lite
+          - type: custom:sunsynk-power-flow-card
+            cardstyle: lite
             wide: false
             large_font: true
             show_solar: true
@@ -125,7 +126,6 @@ views:
               auto_scale: true
               colour: '#2a95cb'
               export_colour: '#e0c124'
-            type: custom:sunsynk-power-flow-card
             grid_options:
               columns: full
               rows: 1
