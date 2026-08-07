@@ -33,40 +33,6 @@ title: ALPHA HEMS
 icon: mdi:solar-power
 views:
   # =============================================================
-# ALPHA HEMS: CENTRALNY INTERFEJS UŻYTKOWNIKA (v1.46)
-# STATUS: PRODUKCYJNY / EKSPORTOWY (Zatwierdzony Układ Własny)
-#
-# HISTORIA WERSJI:
-# - v1.46: (HOTFIX RCE) Usunięcie martwych rozszerzeń '_2' z encji PSE w Rentgenie i na wykresach giełdowych.
-# - v1.45: (STABLE) Poprzednia wersja bazowa.
-# - v1.44: (PREDICTIVE DUMP UI) Dodanie przełącznika "Agresywny Zrzut Poranny" 
-#          do zakładki Ustawienia. Przywrócenie brakującej Zakładki 6.
-# - v1.43: (CAPACITY & TAB FIX) Przywrócenie Zakładki 2 (Giełda) oraz pełne
-#          wdrożenie zmiennej input_number.alpha_pojemnosc_magazynu
-#          we wszystkich kalkulacjach (Raport Księgowego, Rentgen Decyzji).
-#          Usunięcie zduplikowanej Zakładki 3 (DOM).
-# - v1.41: (RCE 48H FUSION) Połączenie wykresów Giełda Dziś i Plan Jutro
-#          w jeden ciągły wykres 48h (odporny na brak danych przed 14:00).
-# - v1.40: (CONTROL CENTER & GENERIC MATRICES) Dodanie dedykowanej zakładki USTAWIENIA
-#          z pełnym mapowaniem wolnych pomocników tekstowych i flag logicznych.
-#          Wyeliminowanie suwaków na rzecz pól tekstowych (Box) oraz wdrożenie 
-#          dotykowych paneli wyboru opcji bez zmian w configuration.yaml.
-# - v1.39: (FROZEN METEO FIX) Usunięcie wyszukiwarki encji weather.* z karty Alpha AI. 
-#          Dashboard odczytuje teraz wyłącznie zamrożoną (o 14:00) encję poligonową.
-# - v1.37: (UNIVERSAL UI FIX) Usunięcie twardego kodowania okienka letniego (PGE) w raporcie Księgowego. 
-#          Dashboard odczytuje teraz uniwersalne ramy czasowe podane bezpośrednio przez aplikację główną.
-# - v1.35: (GRAAL HEMS) Dodanie zakładki 5 "HISTORIA 24H" z wykresem ApexCharts o podwójnej osi Y.
-# - v1.34: (UX TWEAKS) Usunięcie kafelka "Obciążenie Domu", przeniesienie 
-#          "Czas Deye" i "Dni od Balansowania" pod prognozę pogody dla lepszej spójności wizualnej.
-# - v1.33: (CRITICAL RESTORE) Przywrócenie w 100% oryginalnych wykresów ApexCharts.
-# - v1.29: (SURVIVAL CALCULATOR) Usunięcie zbędnych kart TOU, Grid Charge i Gen Charge.
-# - v1.28: (DASHBOARD REBUILD) Uporządkowanie sekcji pogodowej.
-# =============================================================
-
-title: ALPHA HEMS
-icon: mdi:solar-power
-views:
-  # =============================================================
   # ZAKŁADKA 1: ⚡ DEYE (Infrastruktura i Energia)
   # =============================================================
   - type: sections
