@@ -1,6 +1,3 @@
-# =============================================================
-# === CZĘŚĆ 1 - KOTWICA GÓRNA (INICJALIZACJA I SENSORYKA) ===
-# =============================================================
 blueprint:
   name: "ALPHA HEMS v8.012 (PREDICTIVE DUMP & DEEP SPLIT)"
   description: >
@@ -266,7 +263,6 @@ variables:
 
   v_is_dst: "{{ v_osd == 'PGE' and now().month >= 4 and now().month <= 9 }}"
   
-  # === TWARDY ZAMEK TARYFOWY (Zamiast pływającego RCE) ===
   v_start_ladowania_raw: >
     {% if v_osd == 'PGE' %}
       {{ 15 if v_is_dst else 13 }}
@@ -414,7 +410,6 @@ variables:
     {% elif v_use_hal == 'true' or v_use_hal == true %} sensor.alpha_hems_moc_domu_calkowita
     {% else %} sensor.{{ prefix }}_load_power {% endif %}
 
-  # --- BLOKADA ENCJI TOU DLA ZEWNĘTRZNYCH INWERTERÓW ---
   tou1_s: >
     {% if v_integration == 'Solar Assistant' %} {{ states.select | rejectattr('entity_id', 'search', esp_prefix) | selectattr('entity_id', 'search', '_time_point_1$') | map(attribute='entity_id') | first | default('select.brak_encji') }}
     {% elif v_use_hal == 'true' or v_use_hal == true %} time.brak_encji
@@ -608,16 +603,7 @@ variables:
   cons_w_jutro: >
     {% set val = states(sz_wie_jutro) | float(0) %}
     {{ val if val > 0 else (in_daily_cons | float * 0.45) | round(1) }}
-# =============================================================
-# === KONIEC CZĘŚCI 1 ===
-# =============================================================
-# =============================================================
-# === POCZĄTEK CZĘŚCI 2 (MÓZG RCE I AGRESYWNY ZRZUT PORANNY) ===
-# v8.009
-# Zmiany:
-# - Ostateczna naprawa pętli price_now oraz v_plan_sprzedazy. Wyeliminowano błąd przesunięcia strefy czasowej UTC (UTC bug), który powodował cenę 0.00 zł i blokował zrzut.
-# - Poprawka formatowania czasu dla Solcast.
-# =============================================================
+
   v_real_cost: >
     {% set cost = v_cost_energy_fixed | float(0) %}
     {% set eff = v_batt_efficiency | float(85) / 100 %}
@@ -650,7 +636,6 @@ variables:
     {% endif %}
     {{ not ns.found }}
 
-  # POBIERANIE SŁOŃCA (Wyłącznie Solcast)
   v_pv_dzis: "{{ states('sensor.solcast_pv_forecast_prognoza_na_dzisiaj') | float(0) }}"
   v_prognoza_pv_jutro: "{{ states('sensor.solcast_pv_forecast_prognoza_na_jutro') | float(0) if now().hour >= v_t_prognoza_shift else states('sensor.solcast_pv_forecast_prognoza_na_dzisiaj') | float(0) }}"
   
@@ -832,9 +817,6 @@ variables:
     {% set soc_zabezpieczenia = ((energia_z_zapasem / cap) * 100) | round(0) | int + bufor_komfortu + 1 %}
     {{ [soc_zabezpieczenia + v_swap_min_soc | int, 100] | min }}
 
-  # =============================================================
-  # MODUŁ: DOUBLE-CYCLE SNIPER & PREDICTIVE DUMP
-  # =============================================================
   v_morning_spread_ok: >
     {% set prices = state_attr(v_rce_sensor, 'value') %}
     {% if not prices %} {% set prices = state_attr(v_rce_sensor, 'prices') %} {% endif %}
@@ -887,7 +869,6 @@ variables:
     {% endif %}
     {{ (ns.min_poludnie + 0.20) | round(4) }}
 
-  # --- MIDNIGHT SNIPER & PREDICTIVE DUMP FLAG ---
   v_midnight_sniper_active: >
     {% set dzienne_zapotrzebowanie = cons_n_jutro | float(0) + cons_p_jutro | float(0) + cons_w_jutro | float(0) %}
     {% set wymagane_slonce = dzienne_zapotrzebowanie * 1.4 %}
@@ -1215,9 +1196,6 @@ variables:
     {% set safe_current = [req_current | int(0), c_night_start | int(0)] | min %}
     {{ [safe_current, c_night_throttle | int(0)] | max if missing_soc > 0 else c_night_throttle | int(0) }}
 
-  # =============================================================
-  # WERYFIKACJA SYSTEMU I STATUS DASHBOARDU (Z DEEP SCANEM)
-  # =============================================================
   v_status_systemu: >
     {% set offg = (v_is_offgrid == 'true' or v_is_offgrid == true) %}
     {% set symulacja = v_sim | string | lower %}
@@ -1260,9 +1238,6 @@ variables:
       🔴 BRAK LICENCJI (Zablokowano)
     {% endif %}
 
-  # =============================================================
-  # SILNIK 1: BYPASS ŁADOWANIA (OCHRONA PŁOTKA I BLOKADA PORANKA)
-  # =============================================================
   v_chce_ladowac: >
     {% set h = now().hour %}
     {% set is_cheap_night = (h >= 22 or h < 6) %}
@@ -1293,7 +1268,8 @@ variables:
     {% else %}
       {{ 'true' if (is_cheap or force_charge or is_balancing) else 'false' }}
     {% endif %}
-    triggers:
+
+triggers:
   - platform: time_pattern
     minutes: "/1"
   - platform: time
@@ -1330,9 +1306,6 @@ variables:
   - platform: homeassistant
     event: start
 action:
-  # =============================================================
-  # DETEKCJA AWARII SIECI (TARCZA BLACKOUTOWA) - MINUTE LOOP
-  # =============================================================
   - if:
       - condition: template
         value_template: >
@@ -1366,9 +1339,6 @@ action:
                   title: "✅ ALPHA HEMS: SIEĆ PRZYWRÓCONA"
                   message: "Napięcie sieci stabilne. Tarcza Blackoutowa opuszczona, powrót do standardowej logiki."
 
-  # =============================================================
-  # PRE-EMPTIVE WAKE-UP (WYBUDZANIE CHMURY TUYA)
-  # =============================================================
   - if:
       - condition: template
         value_template: >
@@ -1385,9 +1355,6 @@ action:
             target: { entity_id: "{{ v_ev_sensor }}" }
             continue_on_error: true
 
-  # =============================================================
-  # BRAMKA BEZPIECZEŃSTWA (DEEP SCAN I OCHRONA PRZED RACE CONDITION)
-  # =============================================================
   - if:
       - condition: template
         value_template: >
@@ -1397,7 +1364,6 @@ action:
           {% elif trigger.id is defined and trigger.id in ['setup_trigger', 'reset_trigger'] %} true
           {% else %} false {% endif %}
     then:
-      # JEDNORAZOWY STARTOWY OPÓŹNIACZ (RACE CONDITION FIX)
       - action: persistent_notification.create
         data:
           title: "⏳ ALPHA HEMS: Inicjalizacja Modbus"
@@ -1407,7 +1373,6 @@ action:
         timeout: "00:03:00"
         continue_on_timeout: true
 
-  # BEZWZGLĘDNA BLOKADA PĘTLI DECYZYJNEJ (DZIAŁA PRZY KAŻDYM PRZEBIEGU)
   - if:
       - condition: template
         value_template: >
@@ -1422,7 +1387,6 @@ action:
         data: { value: "{{ v_status_systemu }}" }
       - stop: "BŁĄD STRUKTURY: Brak komunikacji Modbus lub brakuje encji wykonawczej (Literówka). Pętla zatrzymana."
 
-  # INICJALIZACJA I POWIADOMIENIE O ZDROWYM STANIE
   - if:
       - condition: template
         value_template: >
@@ -1459,9 +1423,6 @@ action:
               title: "🔔 ALPHA HEMS: Sygnał Życia"
               message: "Pancerka v8.012 gotowa. Modbus połączony, struktura zweryfikowana w 100%. EEPROM chroniony."
 
-  # =============================================================
-  # MODUŁ AUTO-KALIBRACJI (NAPRAWA POJEMNOŚCI DLA DASHBOARDU)
-  # =============================================================
   - if:
       - condition: template
         value_template: "{{ states('input_number.alpha_pojemnosc_magazynu') | float(-1) != (cap | float) }}"
@@ -1471,9 +1432,6 @@ action:
         data: { value: "{{ cap }}" }
         continue_on_error: true
 
-  # =============================================================
-  # MODUŁ ALPHA SYNC (BETONOWANIE PAMIĘCI TOU)
-  # =============================================================
   - if:
       - condition: template
         value_template: >
@@ -1586,9 +1544,6 @@ action:
             target: { entity_id: input_boolean.alpha_rce_flaga_10 }
             continue_on_error: true
 
-  # =============================================================
-  # AUTONOMICZNY ZEGARMISTRZ TARYF (Self-Healing Time Sync)
-  # =============================================================
   - if:
       - condition: template
         value_template: >
@@ -1651,9 +1606,6 @@ action:
                 data: { time: "{{ v_tou5_start }}:00" }
                 continue_on_error: true
 
-  # =============================================================
-  # MODUŁ: AUTONAPRAWA OKIENEK TOU SOC (Strażnik Ochrony EEPROM)
-  # =============================================================
   - if:
       - condition: template
         value_template: >
@@ -1726,15 +1678,7 @@ action:
               - action: number.set_value
                 target: { entity_id: "{{ tou6_soc }}" }
                 data: { value: "{{ v_target_soc }}" }
-# =============================================================
-# === KONIEC CZĘŚCI 3 ===
-# =============================================================
-# =============================================================
-# === POCZĄTEK CZĘŚCI 4 (Księgowość, Wykonawca, Finał) ===
-# =============================================================
-  # =============================================================
-  # MODUŁ ZASTRZYKU DANYCH (RESET SZUFLADEK - COLD START / VAULT)
-  # =============================================================
+
   - if:
       - condition: template
         value_template: >
@@ -1843,9 +1787,6 @@ action:
         target: { entity_id: input_boolean.alpha_rce_flaga_11 }
         continue_on_error: true
 
-  # =============================================================
-  # MODUŁ LICENCJONOWANIA (HWID SYNC)
-  # =============================================================
   - variables:
       raw_offset: "{{ states('sensor.bms_communication_offset') | float(-1) }}"
       curr_szufladka: "{{ states('input_number.alpha_rce_param_65') | float(-99999) }}"
@@ -1880,9 +1821,6 @@ action:
         {% else %} 🔴 BRAK (System Zablokowany) {% endif %}
     continue_on_error: true
 
-  # =============================================================
-  # PUSH WYNIKÓW RCE DO INTERFEJSU
-  # =============================================================
   - action: input_number.set_value
     target: { entity_id: input_number.alpha_rce_param_01 }
     data: { value: "{{ price_now | float(0) }}" }
@@ -1917,9 +1855,6 @@ action:
       value: >
         Jutro Cel 140%: {{ ((cons_n_jutro | float(0) + cons_p_jutro | float(0) + cons_w_jutro | float(0)) * 1.4) | round(1) }} kWh | Słońce: {{ v_prognoza_pv_jutro | float(0) }} kWh
 
-  # =============================================================
-  # MODUŁ SNAJPERA MAX SOC
-  # =============================================================
   - variables:
       v_max_soc_dzis: "{{ states('input_number.alpha_rce_param_41') | float(0) }}"
   - if:
@@ -1931,9 +1866,6 @@ action:
         data: { value: "{{ current_soc }}" }
         continue_on_error: true
 
-  # =============================================================
-  # MODUŁ VOLTAGE GUARD
-  # =============================================================
   - if:
       - condition: template
         value_template: "{{ in_vg_2 | length > 5 }}"
@@ -1982,9 +1914,6 @@ action:
               - action: homeassistant.turn_off
                 target: { entity_id: "{{ in_vg_1 }}" }
 
-  # =============================================================
-  # MODUŁ EV SMART CHARGING (DYNAMICZNA HISTEREZA I BYPASS)
-  # =============================================================
   - if:
       - condition: template
         value_template: "{{ v_ev_switch | length > 5 }}"
@@ -2081,9 +2010,6 @@ action:
                         target: { entity_id: "{{ v_ev_switch }}" }
                         continue_on_error: true
 
-  # =============================================================
-  # KASKADA PRĄDU ŁADOWANIA Z SIECI I KAGANIEC (Zero Export Ochrona)
-  # =============================================================
   - choose:
       - conditions:
           - condition: template
@@ -2163,9 +2089,6 @@ action:
                 data: { value: "{{ v_new_day_current }}" }
                 continue_on_error: true
 
-  # =============================================================
-  # SILNIK 2: AKCJE RCE I MAKLER
-  # =============================================================
   - choose:
       - conditions: "{{ v_sim }}"
         sequence:
@@ -2275,9 +2198,6 @@ action:
                 data: { value: "{{ v_dynamic_sell_power }}" }
                 continue_on_error: true
 
-  # =============================================================
-  # SILNIK 3: TWARDY STRAŻNIK EXPORTU PV (Odcięcie Guzika Solar Sell)
-  # =============================================================
   - if:
       - condition: template
         value_template: "{{ solar_sell_ent != 'switch.brak_encji' }}"
@@ -2307,9 +2227,6 @@ action:
                 target: { entity_id: "{{ solar_sell_ent }}" }
                 continue_on_error: true
 
-  # =============================================================
-  # MODUŁ: SMART NIGHT BALANCING
-  # =============================================================
   - variables:
       v_is_balancing: "{{ states('input_number.alpha_rce_param_42') | float(0) >= 21 }}"
       v_dance_window: "{{ now().hour >= 22 or now().hour < 6 }}"
@@ -2326,7 +2243,6 @@ action:
           {% else %} false {% endif %}
     then:
       - choose:
-          # 1. ROZPOCZĘCIE WYGRZEWANIA 1.5H
           - conditions:
               - condition: template
                 value_template: "{{ v_is_balancing and v_dance_window and current_soc >= 99 and v_dance_flag_state == 'off' }}"
@@ -2338,7 +2254,6 @@ action:
                   title: "🔋 ALPHA HEMS: Balansowanie Rozpoczęte"
                   message: "Osiągnięto górny limit SOC. Utrzymuję ten stan łagodnym prądem przez 1.5h, aby wyrównać cele."
 
-          # 2. ZAKOŃCZENIE WYGRZEWANIA LUB TIMEOUT
           - conditions:
               - condition: template
                 value_template: "{{ v_is_balancing and v_dance_flag_state == 'on' and (v_dance_flag_time >= 90 or v_dance_timeout or not v_dance_window) }}"
@@ -2354,9 +2269,6 @@ action:
                   title: "✅ ALPHA HEMS: Balansowanie Zakończone"
                   message: "Zakończono wygrzewanie cel. Wracam do wyliczonych wartości Płotka."
 
-  # =============================================================
-  # REJESTRATORY ZUŻYCIA Z ODCIĘCIEM EV (SZUFLADKI Z ZEGARMISTRZEM PGE)
-  # =============================================================
   - choose:
       - conditions:
           - condition: template
@@ -2544,7 +2456,6 @@ action:
                 target: { entity_id: input_number.alpha_rce_param_54 }
                 data: { value: "{{ ev_now }}" }
 
-          # KALIBRACJA ALPHA AI
           - variables:
               rad_ai_radar: >
                 {% set ns = namespace(entity='sensor.ai_raw_forecast_data') %}
@@ -2578,7 +2489,6 @@ action:
               value: "{{ nowy_mnoznik }}"
             continue_on_error: true
 
-          # KSIĘGOWOŚĆ: RESETY OKRESOWE (Miesiąc i Rok)
           - variables:
               jutro_dzien: "{{ (now() + timedelta(days=1)).day }}"
               jutro_miesiac: "{{ (now() + timedelta(days=1)).month }}"
@@ -2599,7 +2509,6 @@ action:
                     data: { value: 0 }
                     continue_on_error: true
                     
-          # AKTUALIZACJA SKARBCA (ZAPIS DO input_text.alpha_rce_stan_14)
           - action: input_text.set_value
             target: { entity_id: input_text.alpha_rce_stan_14 }
             data:
@@ -2630,9 +2539,6 @@ action:
                 {{ d | to_json }}
             continue_on_error: true
 
-  # =============================================================
-  # MODUŁ KSIĘGOWY (PROFIT TRACKER) & AUTONAPRAWA
-  # =============================================================
   - if:
       - condition: template
         value_template: >
@@ -2693,7 +2599,6 @@ action:
             data: { value: "{{ (v_zysk_rok + v_zysk_minuta) | round(3) }}" }
             continue_on_error: true
             
-      # AUTONAPRAWA LICZNIKA BALANSERA
       - variables:
           v_param_42_raw: "{{ states('input_number.alpha_rce_param_42') | float(0) }}"
       - if:
@@ -2733,9 +2638,6 @@ action:
             data: { value: 0 } 
             continue_on_error: true
 
-  # =============================================================
-  # MODUŁ: SMART RELAY (INTELIGENTNE PRZEKAŹNIKI Z HISTEREZĄ 2%)
-  # =============================================================
   - if:
       - condition: template
         value_template: >
@@ -2744,7 +2646,6 @@ action:
           {% elif trigger.platform is defined and trigger.platform == 'time_pattern' %} true
           {% else %} false {% endif %}
     then:
-      # --- PRZEKAŹNIK 1 ---
       - if:
           - condition: template
             value_template: "{{ v_r1_on and v_r1_dev | length > 5 }}"
@@ -2769,7 +2670,6 @@ action:
                     target: { entity_id: "{{ v_r1_dev }}" }
                     continue_on_error: true
 
-      # --- PRZEKAŹNIK 2 ---
       - if:
           - condition: template
             value_template: "{{ v_r2_on and v_r2_dev | length > 5 }}"
@@ -2802,7 +2702,6 @@ action:
           {% set is_charging = states(tou_switch_ent) == 'off' %}
           {% set podloga = v_swap_min_soc | float(20) %}
           {% set sufit = docelowy_soc | float(100) %}
-          {# Jeśli jesteśmy poniżej podłogi, ładuj bezwzględnie. Inaczej ładuj, aż osiągniesz sufit, uwzględniając histerezę startową. #}
           {{ offg or (chce_lad and (current_soc <= podloga or (not is_charging and current_soc < (sufit - 1)) or (is_charging and current_soc < sufit))) }}
     then:
       - if:
@@ -2823,6 +2722,3 @@ action:
           - action: switch.turn_on
             target: { entity_id: "{{ tou_switch_ent }}" }
             continue_on_error: true
-# =============================================================
-# === KONIEC CZĘŚCI 4 ===
-# =============================================================
