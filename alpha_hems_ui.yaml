@@ -1,2724 +1,1099 @@
-blueprint:
-  name: "ALPHA HEMS v8.012 (PREDICTIVE DUMP & DEEP SPLIT)"
-  description: >
-    🚀 ALPHA HEMS v8.012 🚀
-    
-    W PEŁNI AUTONOMICZNY SYSTEM ZARZĄDZANIA ENERGIĄ.
-    
-    HISTORIA ZMIAN:
-    - v8.012: (ZERO EXPORT FIX) Poprawka w module księgowym dla trybu 'Zero Export to Load'. Ignorowanie sztywnego '0' z encji przekładnika CT i wymuszenie pobierania mocy prosto z portu Grid do poprawnego naliczania zysków RCE.
-    - v8.011: (PREDICTIVE DUMP) Wdrożenie "Agresywnego Zrzutu Porannego" z 15% marginesem błędu dla Solcastu (Autoryzowane przez Flagę 05). Kod podzielony na 4 logiczne sekcje dla optymalizacji limitów i bezpieczeństwa.
-    - v7.06: (LOGIC ALIGNMENT FIX) Synchronizacja mózgu HEMS z Rentgenem. Skrypt weryfikuje warunek 140% w oparciu o zsumowane szufladki dobowe i całkowitą prognozę Słońca na dany dzień.
-    - v7.05: (CLEAN CORE) Usunięcie zmiennej "v_max_grid" z wyzwalaczy (triggers). Logika Tarczy Blackoutowej przeniesiona bezpiecznie do głównej pętli.
+# =============================================================
+# ALPHA HEMS: CENTRALNY INTERFEJS UŻYTKOWNIKA (v1.46)
+# STATUS: PRODUKCYJNY / EKSPORTOWY (Zatwierdzony Układ Własny)
+#
+# HISTORIA WERSJI:
+# - v1.46: (HOTFIX RCE) Usunięcie martwych rozszerzeń '_2' z encji PSE w Rentgenie i na wykresach giełdowych. UI lampki słońca.
+# - v1.45: (STABLE) Poprzednia wersja bazowa.
+# - v1.44: (PREDICTIVE DUMP UI) Dodanie przełącznika "Agresywny Zrzut Poranny" 
+#          do zakładki Ustawienia. Przywrócenie brakującej Zakładki 6.
+# - v1.43: (CAPACITY & TAB FIX) Przywrócenie Zakładki 2 (Giełda) oraz pełne
+#          wdrożenie zmiennej input_number.alpha_pojemnosc_magazynu
+#          we wszystkich kalkulacjach (Raport Księgowego, Rentgen Decyzji).
+#          Usunięcie zduplikowanej Zakładki 3 (DOM).
+# - v1.41: (RCE 48H FUSION) Połączenie wykresów Giełda Dziś i Plan Jutro
+#          w jeden ciągły wykres 48h (odporny na brak danych przed 14:00).
+# - v1.40: (CONTROL CENTER & GENERIC MATRICES) Dodanie dedykowanej zakładki USTAWIENIA
+#          z pełnym mapowaniem wolnych pomocników tekstowych i flag logicznych.
+#          Wyeliminowanie suwaków na rzecz pól tekstowych (Box) oraz wdrożenie 
+#          dotykowych paneli wyboru opcji bez zmian w configuration.yaml.
+# - v1.39: (FROZEN METEO FIX) Usunięcie wyszukiwarki encji weather.* z karty Alpha AI. 
+#          Dashboard odczytuje teraz wyłącznie zamrożoną (o 14:00) encję poligonową.
+# - v1.37: (UNIVERSAL UI FIX) Usunięcie twardego kodowania okienka letniego (PGE) w raporcie Księgowego. 
+#          Dashboard odczytuje teraz uniwersalne ramy czasowe podane bezpośrednio przez aplikację główną.
+# - v1.35: (GRAAL HEMS) Dodanie zakładki 5 "HISTORIA 24H" z wykresem ApexCharts o podwójnej osi Y.
+# - v1.34: (UX TWEAKS) Usunięcie kafelka "Obciążenie Domu", przeniesienie 
+#          "Czas Deye" i "Dni od Balansowania" pod prognozę pogody dla lepszej spójności wizualnej.
+# - v1.33: (CRITICAL RESTORE) Przywrócenie w 100% oryginalnych wykresów ApexCharts.
+# - v1.29: (SURVIVAL CALCULATOR) Usunięcie zbędnych kart TOU, Grid Charge i Gen Charge.
+# - v1.28: (DASHBOARD REBUILD) Uporządkowanie sekcji pogodowej.
+# =============================================================
 
-  domain: automation
-
-  input:
-    in_inverter_brand:
-      name: "🔌 Profil Inwertera (Hardware Radar)"
-      default: "Autodetekcja (Domyślnie)"
-      selector:
-        select:
-          options:
-            - "Autodetekcja (Domyślnie)"
-            - "Deye"
-            - "Flex 3L"
-            - "Niestandardowy (Tłumacz ALPHA)"
-
-    in_integration_type:
-      name: "⚙️ TYP INTEGRACJI (Silnik)"
-      default: "ESP32 (Standard)"
-      selector:
-        select:
-          options:
-            - ESP32 (Standard)
-            - Solar Assistant
-
-    in_rce_sensor:
-      name: "💰 Sensor Cen RCE"
-      default: sensor.alpha_pse_dzisiaj_2
-      selector:
-        entity:
-          domain: sensor
-
-    in_ev_switch:
-      name: "🚗 Przełącznik Ładowarki EV"
-      default: ""
-      selector:
-        entity:
-          domain:
-            - switch
-            - outlet
-            - input_boolean
-
-    in_ev_daily_energy_sensor:
-      name: "📊 Licznik energii ładowarki EV (Total kWh)"
-      default: ""
-      selector:
-        entity:
-          domain: sensor
-
-    in_ev_mode:
-      name: "🚗 Tryb Pracy Ładowarki EV"
-      default: "Wyłączony"
-      selector:
-        select:
-          options:
-            - "Wyłączony"
-            - "Tylko Słońce (Nadwyżki)"
-            - "Automatyczny (Słońce + Noc G12)"
-
-    in_ev_dynamic_start:
-      name: "🚗 Dynamiczny start (Nadwyżki z Szufladek)"
-      default: false
-      selector:
-        boolean: {}
-
-    in_ev_start_soc:
-      name: "🚗 Ręczny próg startu ładowania z nadwyżek (%)"
-      default: 90
-      selector:
-        number:
-          min: 50
-          max: 100
-          step: 5
-          mode: slider
-          
-    in_ev_vg:
-      name: "🚗 Użyj EV do zbijania napięcia (>250.0V)"
-      default: false
-      selector:
-        boolean: {}
-
-    in_ev_soc_sensor:
-      name: "🚗 Sensor SOC Samochodu (%) [Dla funkcji Grid-Lock]"
-      default: ""
-      selector:
-        entity:
-          domain: sensor
-
-    in_ev_capacity:
-      name: "🚗 Pojemność Baterii EV (kWh)"
-      default: 50
-      selector:
-        number:
-          min: 10
-          max: 150
-          step: 1
-          mode: box
-
-    in_ev_target_soc:
-      name: "🚗 Docelowy poziom naładowania EV (%)"
-      default: 80
-      selector:
-        number:
-          min: 50
-          max: 100
-          step: 5
-          mode: slider
-
-    in_daily_consumption:
-      name: "📊 Średnie dobowe zużycie energii (kWh) [Startowe]"
-      default: 22
-      selector:
-        number:
-          min: 0
-          max: 100
-          step: 1
-          unit_of_measurement: kWh
-          mode: box
-
-    in_vg_stage1_dev:
-      name: "⚡ Ochrona Sieci: Stopień I (> 250.0V)"
-      default: ""
-      selector:
-        entity:
-          domain:
-            - switch
-            - light
-            - input_boolean
-
-    in_vg_stage2_dev:
-      name: "⚡ Ochrona Sieci: Stopień II (> 251.5V)"
-      default: ""
-      selector:
-        entity:
-          domain:
-            - switch
-            - light
-            - input_boolean
-        
-    in_notify_target:
-      name: "📱 Wybierz telefon"
-      default: "device_tracker.dummy"
-      selector:
-        entity:
-          integration: mobile_app
-          domain: device_tracker
-
-    in_relay1_active:
-      name: "🔌 Przekaźnik 1: Aktywacja"
-      default: false
-      selector:
-        boolean: {}
-
-    in_relay1_dev:
-      name: "🔌 Przekaźnik 1: Urządzenie"
-      default: ""
-      selector:
-        entity:
-          domain:
-            - switch
-            - input_boolean
-            - outlet
-
-    in_relay1_soc:
-      name: "🔌 Przekaźnik 1: Próg włączenia (SOC %)"
-      default: 90
-      selector:
-        number:
-          min: 50
-          max: 100
-          step: 1
-          mode: slider
-
-    in_relay2_active:
-      name: "🔌 Przekaźnik 2: Aktywacja"
-      default: false
-      selector:
-        boolean: {}
-
-    in_relay2_dev:
-      name: "🔌 Przekaźnik 2: Urządzenie"
-      default: ""
-      selector:
-        entity:
-          domain:
-            - switch
-            - input_boolean
-            - outlet
-
-    in_relay2_soc:
-      name: "🔌 Przekaźnik 2: Próg włączenia (SOC %)"
-      default: 95
-      selector:
-        number:
-          min: 50
-          max: 100
-          step: 1
-          mode: slider
-
-mode: queued
-max: 3
-
-variables:
+title: ALPHA HEMS
+icon: mdi:solar-power
+views:
   # =============================================================
-  # BEZPOŚREDNIE CZYTANIE Z DASHBOARDU (JEDNA KIEROWNICA)
+  # ZAKŁADKA 1: ⚡ DEYE (Infrastruktura i Energia)
   # =============================================================
-  v_idle_mode: "{{ states('input_select.alpha_tryb_bilansowania') }}"
-  v_net_billing: "{{ states('input_boolean.alpha_rce_flaga_01') == 'on' }}"
-  v_cost_energy_fixed: "{{ states('input_number.alpha_koszt_zakupu') | float(0.49) }}"
-  v_min_profit: "{{ states('input_number.alpha_zysk_minimalny') | float(0.15) }}"
-  v_sell_power_w: "{{ states('input_number.alpha_moc_sprzedazy') | float(6000) }}"
-  v_sell_power: "{{ v_sell_power_w }}"
-  v_osd: "{{ states('input_select.alpha_osd') }}"
-  v_tariff: "{{ states('input_select.alpha_taryfa') }}"
-  v_sim: "{{ states('input_boolean.alpha_rce_flaga_02') == 'on' }}"
-  v_comfort_buffer: "{{ states('input_number.alpha_rezerwa_soc') | float(10) }}"
-  v_comfort_buffer_smart: "{{ states('input_boolean.alpha_rce_flaga_03') == 'on' }}"
-  v_notify_on: "{{ states('input_boolean.alpha_rce_flaga_04') == 'on' }}"
-  v_batt_efficiency: 85
+  - type: sections
+    max_columns: 5
+    title: DEYE
+    path: deye-nev
+    dense_section_placement: false
+    top_margin: true
+    header:
+      layout: responsive
+      badges_position: bottom
+      badges_wrap: scroll
+    sections:
+      - type: grid
+        column_span: 2
+        cards:
+          - type: custom:sunsynk-power-flow-card
+            cardstyle: lite
+            wide: false
+            large_font: true
+            show_solar: true
+            show_battery: true
+            show_grid: true
+            center_no_grid: true
+            card_height: '750'
+            card_width: 100%
+            decimal_places: 2
+            decimal_places_energy: 1
+            dynamic_line_width: true
+            max_line_width: 4
+            min_line_width: 1
+            inverter:
+              three_phase: true
+              auto_scale: true
+              modern: true
+              colour: '#217cb5'
+              autarky: power
+            battery:
+              show_daily: true
+              auto_scale: true
+              show_absolute: true
+              colour: '#c01b1b'
+              charge_colour: '#435bd0'
+              dynamic_colour: true
+              linear_gradient: true
+              show_remaining_energy: true
+              energy: 47616
+              shutdown_soc: 6
+            battery2:
+              energy: 0
+              shutdown_soc: 20
+              soc_end_of_charge: 100
+              invert_power: false
+              hide_soc: false
+              colour: '#ffc0cb'
+              show_remaining_energy: true
+              remaining_energy_to_shutdown: false
+              show_absolute: false
+              auto_scale: true
+              dynamic_colour: true
+              linear_gradient: true
+              animate: true
+              path_threshold: 100
+              navigate: ''
+              invert_flow: false
+            solar:
+              show_daily: true
+              mppts: 3
+              pv1_name: S_Edge
+              auto_scale: true
+              colour: '#c9cc05'
+              pv1_max_power: 7400
+              display_mode: 2
+            load:
+              show_daily: true
+              dynamic_icon: true
+              dynamic_colour: true
+              colour: '#2cce6a'
+              show_absolute_aux: true
+              auto_scale: true
+              additional_loads: 1
+              load1_name: Gwarantowane
+              load1_icon: mdi:calendar-text
+              load2_name: Pozostało PV
+              load2_icon: mdi:solar-power-variant
+              essential_name: UPS
+            grid:
+              show_daily_buy: true
+              show_daily_sell: true
+              show_nonessential: true
+              auto_scale: true
+              colour: '#2a95cb'
+              export_colour: '#e0c124'
+            grid_options:
+              columns: full
+              rows: 1
+            entities:
+              remaining_solar: sensor.solcast_pv_forecast_pozostala_prognoza_na_dzis
+              energy_prognoza_106: sensor.solcast_pv_forecast_prognoza_na_dzisiaj
+              day_pv_energy_108: sensor.deye_inverter_daily_pv_production
+              essential_load1: sensor.deye_inverter_load_ups_power
+              essential_load1_extra: sensor.dobowe_zuzycie_ups
+              essential_load2: sensor.smart_plug_2_moc
+              essential_load3: sensor.smart_plug_3_moc
+              use_timer_248: switch.sunsynk_toggle_system_timer
+              priority_load_243: sensor.deye_inverter_load_power
+              inverter_voltage_154: sensor.deye_inverter_output_l1_voltage
+              load_frequency_192: sensor.deye_inverter_load_frequency
+              inverter_current_164: sensor.deye_inverter_output_l1_current
+              inverter_power_175: sensor.sunsynk_inverter_power
+              grid_connected_status_194: binary_sensor.sunsynk_grid_connected_status
+              inverter_status_59: sensor.sunsynk_overall_state
+              day_battery_discharge_71: sensor.deye_inverter_daily_battery_discharge
+              battery_voltage_183: sensor.deye_inverter_battery_bms_voltage
+              battery_power_190: sensor.deye_inverter_battery_power
+              battery_current_191: sensor.deye_inverter_battery_bms_current
+              grid_power_169: sensor.sunsynk_grid_power
+              day_grid_export_77: sensor.deye_inverter_daily_energy_sold
+              grid_ct_power_172: sensor.deye_inverter_grid_l1_power
+              day_load_energy_84: sensor.deye_inverter_daily_load_consumption
+              pv1_power_186: sensor.deye_inverter_pv1_power
+              pv2_power_187: sensor.deye_inverter_pv2_power
+              pv3_power_188: sensor.deye_inverter_generator_power_total
+              day_grid_import_76: sensor.deye_inverter_daily_energy_bought
+              grid_ct_power_total: sensor.deye_inverter_grid_power
+              battery_temp_182: sensor.deye_inverter_battery_temperature
+              day_aux_energy: sensor.solcast_pv_forecast_prognoza_na_dzisiaj
+              essential_power: sensor.deye_inverter_load_power
+              radiator_temp_91: sensor.deye_inverter_ac_temperature
+              dc_transformer_temp_90: sensor.magazyn_pomieszczenie_temperatura
+              solar_sell_247: switch.deye_inverter_solar_sell
+              day_battery_charge_70: sensor.deye_inverter_daily_battery_charge
+              battery_soc_184: sensor.deye_inverter_battery
+              battery_rated_capacity: number.deye_inverter_battery_capacity
+              battery_shutdown_soc: number.deye_inverter_battery_shutdown_soc_low_dc
+      - type: grid
+        cards:
+          - type: vertical-stack
+            cards:
+              - type: markdown
+                title: 🛡️ Raport Księgowego ALPHA
+                content: >
+                  {% set cap_raw = states('number.deye_inverter_battery_capacity') | float(47.0) %}
+                  {% set fallback_cap = (cap_raw * 51.2 / 1000) | round(1) if cap_raw > 150 else cap_raw | round(1) %}
+                  {% set cap = states('input_number.alpha_pojemnosc_magazynu') | float(fallback_cap) %}
+                  {% set soc = states('sensor.deye_inverter_battery_bms_soc') | float(0) %}
+                  {% set plotek = states('input_number.alpha_rce_param_20') | float(20) %}
+                  {% set wolny_soc = [soc - plotek, 0] | max %}
+                  {% set amunicja = (wolny_soc / 100) * cap %}
+                  {% set tou_state = states('switch.deye_inverter_time_of_use') %}
+                  {% set okno_dzienne = states('input_text.alpha_rce_stan_04') %}
 
-  v_notify_device: !input in_notify_target
-  v_rce_sensor: !input in_rce_sensor
-  v_integration: !input in_integration_type
-  
-  v_r1_on: !input in_relay1_active
-  v_r1_dev: !input in_relay1_dev
-  v_r1_soc: !input in_relay1_soc
+                  {# --- KALKULACJA POKRYCIA SŁONECZNEGO (UKRYTA) --- #}
+                  {% set d = now().weekday() %}
+                  {% set map_n = {0: 11, 1: 12, 2: 13, 3: 14, 4: 15, 5: 16, 6: 17} %}
+                  {% set map_p = {0: 21, 1: 22, 2: 23, 3: 24, 4: 25, 5: 26, 6: 27} %}
+                  {% set map_w = {0: 31, 1: 32, 2: 33, 3: 34, 4: 35, 5: 36, 6: 37} %}
+                  {% set n_dzis = states('input_number.alpha_rce_param_' ~ map_n[d]) | float(0) %}
+                  {% set p_dzis = states('input_number.alpha_rce_param_' ~ map_p[d]) | float(0) %}
+                  {% set w_dzis = states('input_number.alpha_rce_param_' ~ map_w[d]) | float(0) %}
+                  {% set total_dzis = n_dzis + p_dzis + w_dzis %}
+                  {% set pv_dzis = states('sensor.solcast_pv_forecast_prognoza_na_dzisiaj') | float(0) %}
+                  {% set is_sunny_dzis = pv_dzis >= (total_dzis * 1.4) %}
 
-  v_r2_on: !input in_relay2_active
-  v_r2_dev: !input in_relay2_dev
-  v_r2_soc: !input in_relay2_soc
-  
-  v_ev_switch: !input in_ev_switch
-  v_ev_sensor: !input in_ev_daily_energy_sensor
-  v_ev_mode: !input in_ev_mode
-  v_ev_dynamic_start: !input in_ev_dynamic_start
-  v_ev_start_soc: !input in_ev_start_soc
-  v_ev_vg: !input in_ev_vg
-  
-  v_ev_soc_sensor: !input in_ev_soc_sensor
-  v_ev_capacity_raw: !input in_ev_capacity
-  v_ev_capacity: "{{ v_ev_capacity_raw | float(50) }}"
-  v_ev_target_raw: !input in_ev_target_soc
-  v_ev_target: "{{ v_ev_target_raw | float(80) }}"
+                  ### ⚙️ Status Operacyjny
+                  {% if tou_state == 'off' %}
+                  **🔴 BYPASS AKTYWNY** (Awaryjne ssanie z sieci)
+                  {% else %}
+                  **🟢 PRACA NORMALNA** (Sterowanie automatyczne)
+                  {% endif %}
+                  
+                  * ☀️ Okno Dzień: **{{ okno_dzienne if okno_dzienne not in ['unknown', 'unavailable', ''] else 'Oczekiwanie...' }}**
+                  * 🌙 Okno Noc: **22:05 — 06:00**
+                  * 🌞 Zasilanie ze Słońca: **{{ '🟢 Zabezpieczone' if is_sunny_dzis else '🔴 Brak pokrycia' }}**
 
-  v_solcast_risk: true
-  v_solcast_threshold: 20.0
-  is_aggr_trading_active: false
-  
-  in_daily_cons_raw: !input in_daily_consumption
-  in_daily_cons: "{{ in_daily_cons_raw | float(22) }}"
+                  ---
 
-  v_is_dst: "{{ v_osd == 'PGE' and now().month >= 4 and now().month <= 9 }}"
-  
-  v_start_ladowania_raw: >
-    {% if v_osd == 'PGE' %}
-      {{ 15 if v_is_dst else 13 }}
-    {% elif v_osd == 'Tauron' %}
-      13
-    {% elif v_osd == 'Enea' %}
-      13
-    {% elif v_osd == 'Energa' %}
-      13
-    {% else %}
-      13
-    {% endif %}
-  v_start_ladowania: "{{ v_start_ladowania_raw | int(13) }}"
+                  ### 🔋 Bilans Przetrwania
+                  * 🎯 CEL (Płotek): **{{ ((plotek / 100) * cap) | round(1) }} kWh** ({{ plotek | int }}%)
+                  * 📦 MAGAZYN: **{{ ((soc / 100) * cap) | round(1) }} kWh** ({{ soc | int }}%)
 
-  v_tou4_start: "{{ '15:05' if v_is_dst else '13:05' }}"
-  v_tou5_start: "{{ '16:55' if v_is_dst else '14:55' }}"
-  
-  v_t_prognoza_shift: "{{ 15 if v_is_dst else 13 }}"
-  v_t_aggr_start_h: "{{ v_start_ladowania }}"
-  v_t_aggr_end_h: "{{ v_start_ladowania + 1 }}"
-  v_t_clean_h: "{{ '16:00' if v_is_dst else '14:00' }}"
+                  {% if soc >= plotek %}
+                  > ✅ **Dom zabezpieczony:** Mamy wystarczający zapas energii na bieżący sektor.
+                  {% elif tou_state == 'off' %}
+                  > 🚨 **Ładowanie awaryjne:** Bypass aktywny. System uzupełnia braki z sieci do poziomu Płotka!
+                  {% else %}
+                  > ⏳ **Oczekiwanie:** Zapas poniżej Płotka, ale prąd z sieci jest drogi. Czekam na słońce lub okienko G12.
+                  {% endif %}
 
-  # =============================================================
-  # HARDWARE RADAR (Hybrydowa Autodetekcja i Tłumacz ALPHA)
-  # =============================================================
-  v_brand_input: !input in_inverter_brand
-  esp_prefix: >
-    {% if v_brand_input == 'Deye' %}
-      deye_inverter
-    {% elif v_brand_input == 'Flex 3L' %}
-      hackman_flex3l
-    {% elif v_brand_input == 'Niestandardowy (Tłumacz ALPHA)' %}
-      alpha_hems
-    {% else %}
-      {% if states('sensor.deye_inverter_battery_bms_soc') not in ['unknown', 'unavailable', 'none', ''] %}
-        deye_inverter
-      {% elif states('sensor.flex_3l_battery_bms_soc') not in ['unknown', 'unavailable', 'none', ''] %}
-        flex_3l
-      {% elif states('sensor.hackman_flex3l_battery_bms_soc') not in ['unknown', 'unavailable', 'none', ''] %}
-        hackman_flex3l
-      {% else %}
-        alpha_hems
-      {% endif %}
-    {% endif %}
+                  ---
 
-  v_use_hal: "{{ esp_prefix == 'alpha_hems' }}"
+                  ### 📈 Amunicja Maklera RCE
+                  💰 Wolna energia do handlu: **{{ amunicja | round(1) }} kWh**
+                  
+                  <details>
+                    <summary><i>Pokaż założenia logiki...</i></summary>
+                    <i>System automatycznie dolicza +20% fizycznej rezerwy (kWh) na nagłe obciążenia (np. włączenie piekarnika). Widoczna powyżej energia to bezpieczna nadwyżka, którą Makler może zrzucić na giełdę bez narażania Cię na nocny brak prądu.</i>
+                  </details>
 
-  raw_soc_sensor: "{{ states.sensor | rejectattr('entity_id', 'search', esp_prefix) | selectattr('entity_id', 'search', '_state_of_charge$') | map(attribute='entity_id') | first | default('sensor.brak_encji_soc') }}"
-  prefix: >
-    {% if v_integration == 'Solar Assistant' %}
-      {{ raw_soc_sensor.split('.')[1] | replace('_state_of_charge', '') if raw_soc_sensor != 'sensor.brak_encji_soc' else 'brak_prefixu' }}
-    {% else %}
-      {{ esp_prefix }}
-    {% endif %}
+          - show_name: true
+            show_icon: true
+            type: button
+            entity: switch.deye_inverter_time_of_use
+            name: Główny Bypass (TOU)
+            show_state: true
+          - show_name: true
+            show_icon: true
+            type: button
+            entity: switch.deye_inverter_force_off_grid
+          - show_name: true
+            show_icon: true
+            type: button
+            entity: button.deye_inverter_sync_inverter_time
+          - show_name: true
+            show_icon: true
+            type: button
+            entity: input_boolean.alpha_rce_flaga_11
+            name: Zastrzyk Danych
+            icon: mdi:database-refresh
+      - type: grid
+        cards:
+          - type: entities
+            entities:
+              - entity: number.deye_inverter_maximum_battery_grid_charge_current
+                name: Ład. Sieć
+              - entity: number.deye_inverter_battery_generator_charging_current
+                name: Ład Gen.
+              - entity: number.deye_inverter_maximum_battery_charge_current
+                name: Max. Ład.
+                
+          # --- KARTA 1: SOLCAST ---
+          - type: entities
+            title: ☀️ Prognoza Solcast (7 dni)
+            show_header_toggle: false
+            entities:
+              - entity: sensor.solcast_pv_forecast_pozostala_prognoza_na_dzis
+                name: Pozostało na dziś
+                icon: mdi:solar-power
+              - type: divider
+              - entity: sensor.solcast_pv_forecast_prognoza_na_dzisiaj
+                name: Dziś (Całkowita)
+                icon: mdi:weather-sunny
+              - entity: sensor.solcast_pv_forecast_prognoza_na_jutro
+                name: Jutro
+                icon: mdi:weather-partly-cloudy
+              - entity: sensor.solcast_pv_forecast_prognoza_na_dzien_3
+                name: Pojutrze
+                icon: mdi:calendar-clock
+              - entity: sensor.solcast_pv_forecast_prognoza_na_dzien_4
+                name: Za 3 dni
+                icon: mdi:calendar-clock
+              - entity: sensor.solcast_pv_forecast_prognoza_na_dzien_5
+                name: Za 4 dni
+                icon: mdi:calendar-clock
+              - entity: sensor.solcast_pv_forecast_prognoza_na_dzien_6
+                name: Za 5 dni
+                icon: mdi:calendar-clock
+              - entity: sensor.solcast_pv_forecast_prognoza_na_dzien_7
+                name: Za 6 dni
+                icon: mdi:calendar-clock
+
+          # --- KAFELKI POD POGODĄ ---
+          - type: horizontal-stack
+            cards:
+              - type: tile
+                entity: sensor.deye_inverter_device_date_time
+                name: Czas Deye
+                vertical: false
+                features_position: bottom
+              - type: tile
+                entity: input_number.alpha_rce_param_42
+                name: Dni od Balansowania
+                icon: mdi:battery-sync
+                vertical: false
+                features_position: bottom
 
   # =============================================================
-  # KASKADOWE MAPOWANIE ENCJI Z OBRONĄ PRZED BŁĘDAMI
+  # ZAKŁADKA 2: 📈 GIEŁDA (RCE IntegraSoft)
   # =============================================================
-  low_soc_ent: >
-    {% if v_integration == 'Solar Assistant' %} {{ states.number | rejectattr('entity_id', 'search', esp_prefix) | selectattr('entity_id', 'search', '_shutdown_capacity$') | map(attribute='entity_id') | first | default('number.brak_encji') }}
-    {% elif v_use_hal == 'true' or v_use_hal == true %} number.alpha_hems_bateria_niski_soc
-    {% else %} number.{{ prefix }}_battery_low_soc {% endif %}
-  v_low_soc: "{{ states(low_soc_ent) | float(20) }}"
-  v_swap_min_soc: "{{ v_low_soc | int }}"
+  - type: panel
+    path: rce_integra
+    title: RCE_IntegraSoft
+    icon: mdi:chart-line
+    cards:
+      - type: vertical-stack
+        cards:
+          - type: custom:apexcharts-card
+            graph_span: 48h
+            update_interval: 1min
+            apex_config:
+              chart:
+                height: 400
+            header:
+              show: true
+              title: 'Alpha: Monitor Sprzedaży (48H)'
+              show_states: true
+              colorize_states: true
+            span:
+              start: day
+            now:
+              show: true
+              label: TERAZ
+              color: '#e74c3c'
+            series:
+              - entity: sensor.deye_inverter_grid_power
+                name: Moc Sieci
+                unit: ' W'
+                color: '#9b59b6'
+                show:
+                  in_chart: false
+                  in_header: true
+              - entity: input_number.alpha_rce_param_01
+                name: Cena Teraz
+                unit: ' zł'
+                float_precision: 2
+                show:
+                  in_chart: false
+                  in_header: true
+              - entity: input_number.alpha_rce_param_03
+                name: Mój Próg
+                unit: ' zł'
+                color: '#e67e22'
+                float_precision: 2
+                show:
+                  in_chart: false
+                  in_header: true
+              - entity: sensor.alpha_pse_jutro
+                name: Min Jutro
+                unit: ' zł'
+                float_precision: 2
+                show:
+                  in_chart: false
+                  in_header: true
+                data_generator: >
+                  let d = entity.attributes.value || entity.attributes.prices;
+                  if (!Array.isArray(d) || !d.length) return [];
+                  let min = Math.min(...d.map(e => (e.rce_pln !== undefined ? e.rce_pln : (e.cen_cost !== undefined ? e.cen_cost : (e.price || 0))) / 1000));
+                  let tsStr = String(d[0].dtime).replace(/-/g, '/').replace('T', ' ');
+                  return [[new Date(tsStr).getTime(), min]];
+              - entity: sensor.alpha_pse_jutro
+                name: Max Jutro
+                unit: ' zł'
+                float_precision: 2
+                show:
+                  in_chart: false
+                  in_header: true
+                data_generator: >
+                  let d = entity.attributes.value || entity.attributes.prices;
+                  if (!Array.isArray(d) || !d.length) return [];
+                  let max = Math.max(...d.map(e => (e.rce_pln !== undefined ? e.rce_pln : (e.cen_cost !== undefined ? e.cen_cost : (e.price || 0))) / 1000));
+                  let tsStr = String(d[0].dtime).replace(/-/g, '/').replace('T', ' ');
+                  return [[new Date(tsStr).getTime(), max]];
+              - entity: sensor.alpha_pse_dzisiaj
+                name: Zarabiam / Plan
+                type: column
+                color: '#2ecc71'
+                opacity: 0.4
+                float_precision: 2
+                show:
+                  in_header: false
+                data_generator: >
+                  let d1 = entity.attributes.value || entity.attributes.prices;
+                  d1 = Array.isArray(d1) ? d1 : [];
+                  let state2 = hass.states['sensor.alpha_pse_jutro'];
+                  let d2 = state2 && state2.attributes ? (state2.attributes.value || state2.attributes.prices) : [];
+                  d2 = Array.isArray(d2) ? d2 : [];
+                  let data = d1.concat(d2);
+                  if (!data.length) return [];
+                  let p = parseFloat(hass.states['input_number.alpha_rce_param_03'].state) || 0.7;
+                  let res = data.map((entry) => {
+                    let val = entry.rce_pln !== undefined ? entry.rce_pln : (entry.cen_cost !== undefined ? entry.cen_cost : (entry.price || 0));
+                    let c = parseFloat(val) / 1000;
+                    let tsStr = String(entry.dtime).replace(/-/g, '/').replace('T', ' ');
+                    return [new Date(tsStr).getTime(), c >= p ? c : 0];
+                  });
+                  return res.sort((a, b) => a[0] - b[0]);
+              - entity: sensor.alpha_pse_dzisiaj
+                name: Ceny RCE (48h)
+                type: line
+                curve: stepline
+                stroke_width: 2
+                color: '#3498db'
+                float_precision: 2
+                show:
+                  in_header: false
+                data_generator: >
+                  let d1 = entity.attributes.value || entity.attributes.prices;
+                  d1 = Array.isArray(d1) ? d1 : [];
+                  let state2 = hass.states['sensor.alpha_pse_jutro'];
+                  let d2 = state2 && state2.attributes ? (state2.attributes.value || state2.attributes.prices) : [];
+                  d2 = Array.isArray(d2) ? d2 : [];
+                  let data = d1.concat(d2);
+                  if (!data.length) return [];
+                  let res = data.map((entry) => {
+                    let val = entry.rce_pln !== undefined ? entry.rce_pln : (entry.cen_cost !== undefined ? entry.cen_cost : (entry.price || 0));
+                    let c = parseFloat(val) / 1000;
+                    let tsStr = String(entry.dtime).replace(/-/g, '/').replace('T', ' ');
+                    return [new Date(tsStr).getTime(), c];
+                  });
+                  return res.sort((a, b) => a[0] - b[0]);
+          - type: entities
+            title: Monitor Systemu
+            show_header_toggle: false
+            entities:
+              - entity: input_text.alpha_rce_stan_01
+                name: DECYZJA MÓZGU
+                icon: mdi:brain
+                type: simple-entity
+              - entity: input_text.alpha_rce_stan_03
+                name: AKTUALNY STATUS
+                icon: mdi:robot-outline
+                type: simple-entity
+              - type: divider
+              - entity: input_text.alpha_rce_stan_15
+                name: STATUS LICENCJI
+                icon: mdi:shield-key
+                type: simple-entity
+              - entity: sensor.alpha_licencja_wygasa
+                name: WAŻNA DO
+                icon: mdi:calendar-clock
+                type: simple-entity
+              - type: divider
+              - entity: sensor.deye_inverter_battery_bms_soc
+                name: Aktualny SOC Magazynu
+                icon: mdi:battery-high
+              - entity: input_number.alpha_rce_param_20
+                name: Docelowy SOC (Płotek)
+                icon: mdi:battery-clock
+                type: simple-entity
+          - type: entities
+            title: Finanse i Zyski
+            show_header_toggle: false
+            entities:
+              - entity: input_number.alpha_rce_param_02
+                name: Koszt zakupu (+straty)
+                icon: mdi:cash-minus
+                type: simple-entity
+              - entity: input_number.alpha_rce_param_03
+                name: Próg sprzedaży (+marża)
+                icon: mdi:target
+                type: simple-entity
+              - type: divider
+              - entity: input_number.alpha_rce_param_05
+                name: Szacowany Zysk (Dziś)
+                icon: mdi:piggy-bank
+                type: simple-entity
+              - type: divider
+              - entity: input_number.alpha_rce_param_44
+                name: Zrealizowany (Miesiąc)
+                icon: mdi:chart-bar
+                type: simple-entity
+              - entity: input_number.alpha_rce_param_45
+                name: Zrealizowany (Rok)
+                icon: mdi:chart-line
+                type: simple-entity
+              - entity: input_number.alpha_rce_param_43
+                name: Całkowity Zwrot (Total)
+                icon: mdi:cash-multiple
+                type: simple-entity
 
-  in_vg_1: !input in_vg_stage1_dev
-  in_vg_2: !input in_vg_stage2_dev
-  v_max_grid: >
-    {% if v_use_hal == 'true' or v_use_hal == true %}
-      {{ [states('sensor.alpha_hems_siec_l1_napiecie') | float(230),
-          states('sensor.alpha_hems_siec_l2_napiecie') | float(230),
-          states('sensor.alpha_hems_siec_l3_napiecie') | float(230)] | max }}
-    {% else %}
-      {{ [states('sensor.' ~ prefix ~ '_grid_l1_voltage') | float(230),
-          states('sensor.' ~ prefix ~ '_grid_l2_voltage') | float(230),
-          states('sensor.' ~ prefix ~ '_grid_l3_voltage') | float(230)] | max }}
-    {% endif %}
+  # =============================================================
+  # ZAKŁADKA 3: 🏠 DOM (Centrum Dowodzenia i Szufladki)
+  # =============================================================
+  - type: panel
+    path: dom
+    title: "DOM"
+    icon: mdi:home
+    cards:
+      - type: vertical-stack
+        cards:
+          - type: markdown
+            content: >
+              ## 📊 ALPHA HEMS: Status & Cel
 
-  v_force_offgrid_ent: >
-    {% if v_use_hal == 'true' or v_use_hal == true %} switch.alpha_hems_force_off_grid
-    {% else %} switch.{{ prefix }}_force_off_grid {% endif %}
-  v_is_offgrid: "{{ states(v_force_offgrid_ent) == 'on' or states('input_boolean.alpha_rce_flaga_15') == 'on' }}"
+              **🧠 Decyzja Mózgu (Plan):** {{ states('input_text.alpha_rce_stan_01') }}
+              
+              **⚙️ Aktualny Status:** {{ states('input_text.alpha_rce_stan_03') }}
 
-  s_soc: >
-    {% if v_integration == 'Solar Assistant' %} sensor.{{ prefix }}_state_of_charge
-    {% elif v_use_hal == 'true' or v_use_hal == true %} sensor.alpha_hems_bateria_bms_soc
-    {% else %} sensor.{{ prefix }}_battery_bms_soc {% endif %}
-  s_volt: >
-    {% if v_integration == 'Solar Assistant' %} sensor.{{ prefix }}_voltage
-    {% elif v_use_hal == 'true' or v_use_hal == true %} sensor.alpha_hems_bateria_bms_napiecie
-    {% else %} sensor.{{ prefix }}_battery_bms_voltage {% endif %}
-  s_bms_current: >
-    {% if v_integration == 'Solar Assistant' %} sensor.{{ prefix }}_battery_current
-    {% elif v_use_hal == 'true' or v_use_hal == true %} sensor.alpha_hems_bateria_prad
-    {% else %} sensor.{{ prefix }}_battery_bms_current {% endif %}
-  s_temp: >
-    {% if v_integration == 'Solar Assistant' %} sensor.{{ prefix }}_battery_temperature
-    {% elif v_use_hal == 'true' or v_use_hal == true %} sensor.alpha_hems_bateria_temperatura
-    {% else %} sensor.{{ prefix }}_battery_temperature {% endif %}
-  s_rated_power: >
-    {% if v_integration == 'Solar Assistant' %} sensor.{{ prefix }}_device_rated_power
-    {% elif v_use_hal == 'true' or v_use_hal == true %} sensor.brak_encji_moc_znamionowa
-    {% else %} sensor.{{ prefix }}_device_rated_power {% endif %}
+              ---
+              {% set cap_raw = states('number.deye_inverter_battery_capacity') | float(47.0) %}
+              {% set fallback_cap = (cap_raw * 51.2 / 1000) | round(1) if cap_raw > 150 else cap_raw | round(1) %}
+              {% set cap = states('input_number.alpha_pojemnosc_magazynu') | float(fallback_cap) %}
+              {% set plotek = states('input_number.alpha_rce_param_20') | float(0) %}
+              **Cel ładowania (Płotek):** {{ ((plotek / 100) * cap) | round(1) }} kWh
 
-  curr_ent: >
-    {% if v_integration == 'Solar Assistant' %} {{ states.number | rejectattr('entity_id', 'search', esp_prefix) | selectattr('entity_id', 'search', '_max_charge_current$') | map(attribute='entity_id') | first | default('number.brak_encji') }}
-    {% elif v_use_hal == 'true' or v_use_hal == true %} number.alpha_hems_max_prad_ladowania
-    {% else %} number.{{ prefix }}_maximum_battery_charge_current {% endif %}
-  discharge_ent: >
-    {% if v_integration == 'Solar Assistant' %} {{ states.number | rejectattr('entity_id', 'search', esp_prefix) | selectattr('entity_id', 'search', '_max_discharge_current$') | map(attribute='entity_id') | first | default('number.brak_encji') }}
-    {% elif v_use_hal == 'true' or v_use_hal == true %} number.alpha_hems_max_prad_rozladowania
-    {% else %} number.{{ prefix }}_maximum_battery_discharge_current {% endif %}
-  sell_power_ent: >
-    {% if v_integration == 'Solar Assistant' %} {{ states.number | rejectattr('entity_id', 'search', esp_prefix) | selectattr('entity_id', 'search', '_max_sell_power$') | map(attribute='entity_id') | first | default('number.brak_encji') }}
-    {% elif v_use_hal == 'true' or v_use_hal == true %} number.alpha_hems_max_moc_sprzedazy
-    {% else %} number.{{ prefix }}_max_sell_power {% endif %}
-  work_mode_ent: >
-    {% if v_integration == 'Solar Assistant' %} {{ states.select | rejectattr('entity_id', 'search', esp_prefix) | selectattr('entity_id', 'search', '_work_mode$') | map(attribute='entity_id') | first | default('select.brak_encji') }}
-    {% elif v_use_hal == 'true' or v_use_hal == true %} select.alpha_hems_system_work_mode
-    {% else %} select.{{ prefix }}_system_work_mode {% endif %}
-  tou_switch_ent: >
-    {% if v_integration == 'Solar Assistant' %} {{ states.switch | rejectattr('entity_id', 'search', esp_prefix) | selectattr('entity_id', 'search', '_use_timer$') | map(attribute='entity_id') | first | default('switch.brak_encji') }}
-    {% elif v_use_hal == 'true' or v_use_hal == true %} switch.alpha_hems_time_of_use
-    {% else %} switch.{{ prefix }}_time_of_use {% endif %}
-  solar_sell_ent: >
-    {% if v_integration == 'Solar Assistant' %} switch.brak_encji
-    {% elif v_use_hal == 'true' or v_use_hal == true %} switch.alpha_hems_solar_sell
-    {% else %} switch.{{ prefix }}_solar_sell {% endif %}
+              **Bieżąca cena RCE:** {{ states('input_number.alpha_rce_param_01') }} zł/kWh
 
-  tou_sell_all_ent: >
-    {% if v_integration == 'Solar Assistant' %} switch.brak_encji
-    {% elif v_use_hal == 'true' or v_use_hal == true %} switch.alpha_hems_time_of_use_all_sell
-    {% else %} switch.{{ prefix }}_time_of_use_all_sell {% endif %}
+          - type: markdown
+            title: "🧠 Rentgen Decyzji (Autoscale RCE & Logika 140%)"
+            content: >
+              {% set sensor_rce = 'sensor.alpha_pse_dzisiaj' %}
+              {% set cap_raw = states('number.deye_inverter_battery_capacity') | float(47.0) %}
+              {% set fallback_cap = (cap_raw * 51.2 / 1000) | round(1) if cap_raw > 150 else cap_raw | round(1) %}
+              {% set poj = states('input_number.alpha_pojemnosc_magazynu') | float(fallback_cap) %}
+              {% set inv_w = states('sensor.deye_inverter_device_rated_power') | float(12000) %}
+              {% set moc_kw = [states('number.deye_inverter_max_sell_power') | float(6000), inv_w] | min / 1000 %}
 
-  ext_ct_ent: >
-    {% if v_integration == 'Solar Assistant' %} sensor.{{ prefix }}_grid_power_ct
-    {% elif v_use_hal == 'true' or v_use_hal == true %} sensor.alpha_hems_siec_moc_calkowita
-    {% else %} sensor.{{ prefix }}_external_ct_power {% endif %}
-  int_ct_ent: >
-    {% if v_integration == 'Solar Assistant' %} sensor.{{ prefix }}_grid_power_ld
-    {% elif v_use_hal == 'true' or v_use_hal == true %} sensor.brak_encji_int_ct
-    {% else %} sensor.{{ prefix }}_internal_ct_power {% endif %}
-  load_ent: >
-    {% if v_integration == 'Solar Assistant' %} sensor.{{ prefix }}_load_power_essential
-    {% elif v_use_hal == 'true' or v_use_hal == true %} sensor.alpha_hems_moc_domu_calkowita
-    {% else %} sensor.{{ prefix }}_load_power {% endif %}
+              {# AUTODETEKCJA ENCJI LOW SOC Z FALOWNIKA ORAZ FLAGI ZIMY #}
+              {% set low_soc_ent = (states.number | selectattr('entity_id', 'search', 'battery_low_soc$|shutdown_capacity$') | map(attribute='entity_id') | list | first) | default('number.deye_inverter_battery_low_soc') %}
+              {% set live_low_soc = states(low_soc_ent) | float(20) %}
+              {% set zimowy_beton = 10 if states('input_boolean.alpha_rce_flaga_12') == 'on' else 0 %}
+              {% set hardware_low_soc = live_low_soc + zimowy_beton %}
+              
+              {# TWARDY ZACISK (ANTI-SPIKE MARGIN) - Low SOC * 1.1 #}
+              {% set bezpieczna_podloga = (live_low_soc * 1.1) | round(0) | int + zimowy_beton %}
+              {% set bezpieczna_podloga_kwh = (bezpieczna_podloga / 100) * poj %}
 
-  tou1_s: >
-    {% if v_integration == 'Solar Assistant' %} {{ states.select | rejectattr('entity_id', 'search', esp_prefix) | selectattr('entity_id', 'search', '_time_point_1$') | map(attribute='entity_id') | first | default('select.brak_encji') }}
-    {% elif v_use_hal == 'true' or v_use_hal == true %} time.brak_encji
-    {% else %} time.{{ prefix }}_time_of_use_1_start {% endif %}
-  tou1_soc: >
-    {% if v_integration == 'Solar Assistant' %} {{ states.number | rejectattr('entity_id', 'search', esp_prefix) | selectattr('entity_id', 'search', '_capacity_point_1$') | map(attribute='entity_id') | first | default('number.brak_encji') }}
-    {% elif v_use_hal == 'true' or v_use_hal == true %} number.brak_encji
-    {% else %} number.{{ prefix }}_time_of_use_1_soc {% endif %}
-  tou1_grid: >
-    {% if v_integration == 'Solar Assistant' %} {{ states.switch | rejectattr('entity_id', 'search', esp_prefix) | selectattr('entity_id', 'search', '_grid_charge_point_1$') | map(attribute='entity_id') | first | default('switch.brak_encji') }}
-    {% elif v_use_hal == 'true' or v_use_hal == true %} switch.brak_encji
-    {% else %} switch.{{ prefix }}_time_of_use_1_grid_charge {% endif %}
-  tou1_gen: >
-    {% if v_integration == 'Solar Assistant' %} {{ states.switch | rejectattr('entity_id', 'search', esp_prefix) | selectattr('entity_id', 'search', '_gen_charge_point_1$') | map(attribute='entity_id') | first | default('switch.brak_encji') }}
-    {% elif v_use_hal == 'true' or v_use_hal == true %} switch.brak_encji
-    {% else %} switch.{{ prefix }}_time_of_use_1_gen_charge {% endif %}
+              {# DYNAMICZNE MAPOWANIE SZUFLADEK WZGLEDEM DNIA TYGODNIA #}
+              {% set d = now().weekday() %}
+              {% set d_jutro = (now() + timedelta(days=1)).weekday() %}
+              
+              {% set map_n = {0: 11, 1: 12, 2: 13, 3: 14, 4: 15, 5: 16, 6: 17} %}
+              {% set map_p = {0: 21, 1: 22, 2: 23, 3: 24, 4: 25, 5: 26, 6: 27} %}
+              {% set map_w = {0: 31, 1: 32, 2: 33, 3: 34, 4: 35, 5: 36, 6: 37} %}
+              
+              {% set n_dzis = states('input_number.alpha_rce_param_' ~ map_n[d]) | float(0) %}
+              {% set p_dzis = states('input_number.alpha_rce_param_' ~ map_p[d]) | float(0) %}
+              {% set w_dzis = states('input_number.alpha_rce_param_' ~ map_w[d]) | float(0) %}
+              
+              {% set n_jutro = states('input_number.alpha_rce_param_' ~ map_n[d_jutro]) | float(0) %}
+              {% set p_jutro = states('input_number.alpha_rce_param_' ~ map_p[d_jutro]) | float(0) %}
+              {% set w_jutro = states('input_number.alpha_rce_param_' ~ map_w[d_jutro]) | float(0) %}
 
-  tou2_s: >
-    {% if v_integration == 'Solar Assistant' %} {{ states.select | rejectattr('entity_id', 'search', esp_prefix) | selectattr('entity_id', 'search', '_time_point_2$') | map(attribute='entity_id') | first | default('select.brak_encji') }}
-    {% elif v_use_hal == 'true' or v_use_hal == true %} time.brak_encji
-    {% else %} time.{{ prefix }}_time_of_use_2_start {% endif %}
-  tou2_soc: >
-    {% if v_integration == 'Solar Assistant' %} {{ states.number | rejectattr('entity_id', 'search', esp_prefix) | selectattr('entity_id', 'search', '_capacity_point_2$') | map(attribute='entity_id') | first | default('number.brak_encji') }}
-    {% elif v_use_hal == 'true' or v_use_hal == true %} number.brak_encji
-    {% else %} number.{{ prefix }}_time_of_use_2_soc {% endif %}
-  tou2_grid: >
-    {% if v_integration == 'Solar Assistant' %} {{ states.switch | rejectattr('entity_id', 'search', esp_prefix) | selectattr('entity_id', 'search', '_grid_charge_point_2$') | map(attribute='entity_id') | first | default('switch.brak_encji') }}
-    {% elif v_use_hal == 'true' or v_use_hal == true %} switch.brak_encji
-    {% else %} switch.{{ prefix }}_time_of_use_2_grid_charge {% endif %}
-  tou2_gen: >
-    {% if v_integration == 'Solar Assistant' %} {{ states.switch | rejectattr('entity_id', 'search', esp_prefix) | selectattr('entity_id', 'search', '_gen_charge_point_2$') | map(attribute='entity_id') | first | default('switch.brak_encji') }}
-    {% elif v_use_hal == 'true' or v_use_hal == true %} switch.brak_encji
-    {% else %} switch.{{ prefix }}_time_of_use_2_gen_charge {% endif %}
+              {# POBRANIE POPRAWNEJ PROGNOZY PV W ZALEŻNOŚCI OD USTAWIENIA #}
+              {% set pv_dzis = states('sensor.solcast_pv_forecast_prognoza_na_dzisiaj') | float(0) %}
+              {% set pv_jutro = states('sensor.solcast_pv_forecast_prognoza_na_jutro') | float(0) %}
 
-  tou3_s: >
-    {% if v_integration == 'Solar Assistant' %} {{ states.select | rejectattr('entity_id', 'search', esp_prefix) | selectattr('entity_id', 'search', '_time_point_3$') | map(attribute='entity_id') | first | default('select.brak_encji') }}
-    {% elif v_use_hal == 'true' or v_use_hal == true %} time.brak_encji
-    {% else %} time.{{ prefix }}_time_of_use_3_start {% endif %}
-  tou3_soc: >
-    {% if v_integration == 'Solar Assistant' %} {{ states.number | rejectattr('entity_id', 'search', esp_prefix) | selectattr('entity_id', 'search', '_capacity_point_3$') | map(attribute='entity_id') | first | default('number.brak_encji') }}
-    {% elif v_use_hal == 'true' or v_use_hal == true %} number.brak_encji
-    {% else %} number.{{ prefix }}_time_of_use_3_soc {% endif %}
-  tou3_grid: >
-    {% if v_integration == 'Solar Assistant' %} {{ states.switch | rejectattr('entity_id', 'search', esp_prefix) | selectattr('entity_id', 'search', '_grid_charge_point_3$') | map(attribute='entity_id') | first | default('switch.brak_encji') }}
-    {% elif v_use_hal == 'true' or v_use_hal == true %} switch.brak_encji
-    {% else %} switch.{{ prefix }}_time_of_use_3_grid_charge {% endif %}
-  tou3_gen: >
-    {% if v_integration == 'Solar Assistant' %} {{ states.switch | rejectattr('entity_id', 'search', esp_prefix) | selectattr('entity_id', 'search', '_gen_charge_point_3$') | map(attribute='entity_id') | first | default('switch.brak_encji') }}
-    {% elif v_use_hal == 'true' or v_use_hal == true %} switch.brak_encji
-    {% else %} switch.{{ prefix }}_time_of_use_3_gen_charge {% endif %}
+              {% set status_plotek = states('input_number.alpha_rce_param_20') | float(0) %}
 
-  tou4_s: >
-    {% if v_integration == 'Solar Assistant' %} {{ states.select | rejectattr('entity_id', 'search', esp_prefix) | selectattr('entity_id', 'search', '_time_point_4$') | map(attribute='entity_id') | first | default('select.brak_encji') }}
-    {% elif v_use_hal == 'true' or v_use_hal == true %} time.brak_encji
-    {% else %} time.{{ prefix }}_time_of_use_4_start {% endif %}
-  tou4_soc: >
-    {% if v_integration == 'Solar Assistant' %} {{ states.number | rejectattr('entity_id', 'search', esp_prefix) | selectattr('entity_id', 'search', '_capacity_point_4$') | map(attribute='entity_id') | first | default('number.brak_encji') }}
-    {% elif v_use_hal == 'true' or v_use_hal == true %} number.brak_encji
-    {% else %} number.{{ prefix }}_time_of_use_4_soc {% endif %}
-  tou4_grid: >
-    {% if v_integration == 'Solar Assistant' %} {{ states.switch | rejectattr('entity_id', 'search', esp_prefix) | selectattr('entity_id', 'search', '_grid_charge_point_4$') | map(attribute='entity_id') | first | default('switch.brak_encji') }}
-    {% elif v_use_hal == 'true' or v_use_hal == true %} switch.brak_encji
-    {% else %} switch.{{ prefix }}_time_of_use_4_grid_charge {% endif %}
-  tou4_gen: >
-    {% if v_integration == 'Solar Assistant' %} {{ states.switch | rejectattr('entity_id', 'search', esp_prefix) | selectattr('entity_id', 'search', '_gen_charge_point_4$') | map(attribute='entity_id') | first | default('switch.brak_encji') }}
-    {% elif v_use_hal == 'true' or v_use_hal == true %} switch.brak_encji
-    {% else %} switch.{{ prefix }}_time_of_use_4_gen_charge {% endif %}
+              {# LOGIKA SMART MORNING (Nocna ocena Jutra vs Dzień oceniany Dziś) #}
+              {% set total_dzis = n_dzis + p_dzis + w_dzis %}
+              {% set wymog_140_dzis = total_dzis * 1.4 %}
+              {% set is_sunny_dzis = pv_dzis >= wymog_140_dzis %}
+              
+              {% set total_jutro = n_jutro + p_jutro + w_jutro %}
+              {% set wymog_140_jutro = total_jutro * 1.4 %}
+              {% set is_sunny_jutro = pv_jutro >= wymog_140_jutro %}
+              {% set mnoznik_p = 0.2 if is_sunny_jutro else 1.2 %}
 
-  tou5_s: >
-    {% if v_integration == 'Solar Assistant' %} {{ states.select | rejectattr('entity_id', 'search', esp_prefix) | selectattr('entity_id', 'search', '_time_point_5$') | map(attribute='entity_id') | first | default('select.brak_encji') }}
-    {% elif v_use_hal == 'true' or v_use_hal == true %} time.brak_encji
-    {% else %} time.{{ prefix }}_time_of_use_5_start {% endif %}
-  tou5_soc: >
-    {% if v_integration == 'Solar Assistant' %} {{ states.number | rejectattr('entity_id', 'search', esp_prefix) | selectattr('entity_id', 'search', '_capacity_point_5$') | map(attribute='entity_id') | first | default('number.brak_encji') }}
-    {% elif v_use_hal == 'true' or v_use_hal == true %} number.brak_encji
-    {% else %} number.{{ prefix }}_time_of_use_5_soc {% endif %}
-  tou5_grid: >
-    {% if v_integration == 'Solar Assistant' %} {{ states.switch | rejectattr('entity_id', 'search', esp_prefix) | selectattr('entity_id', 'search', '_grid_charge_point_5$') | map(attribute='entity_id') | first | default('switch.brak_encji') }}
-    {% elif v_use_hal == 'true' or v_use_hal == true %} switch.brak_encji
-    {% else %} switch.{{ prefix }}_time_of_use_5_grid_charge {% endif %}
-  tou5_gen: >
-    {% if v_integration == 'Solar Assistant' %} {{ states.switch | rejectattr('entity_id', 'search', esp_prefix) | selectattr('entity_id', 'search', '_gen_charge_point_5$') | map(attribute='entity_id') | first | default('switch.brak_encji') }}
-    {% elif v_use_hal == 'true' or v_use_hal == true %} switch.brak_encji
-    {% else %} switch.{{ prefix }}_time_of_use_5_gen_charge {% endif %}
+              ### 📦 Fizyka Magazynu i Rejestry
+              * Obecny Magazyn: **{{ ((states('sensor.deye_inverter_battery_bms_soc') | float(0) / 100) * poj) | round(1) }} kWh** | Cel (Płotek): **{{ ((status_plotek / 100) * poj) | round(1) }} kWh**
+              {% set wolny_soc = [states('sensor.deye_inverter_battery_bms_soc') | float(0) - status_plotek, 0] | max %}
+              {% set wolna_energia = (wolny_soc / 100) * poj %}
+              * Energia do zrzutu: **{{ wolna_energia | round(2) }} kWh**
+              
+              {% set pojemnosc_slupka = moc_kw * 0.25 %}
+              {% set slupki_req = (wolna_energia / pojemnosc_slupka) | round(0, 'ceil') | int %}
+              * Falownik ({{ moc_kw }} kW) wymaga **{{ slupki_req }} słupków** do zrzutu (Pojemność słupka = {{ pojemnosc_slupka | round(2) }} kWh).
 
-  tou6_s: >
-    {% if v_integration == 'Solar Assistant' %} {{ states.select | rejectattr('entity_id', 'search', esp_prefix) | selectattr('entity_id', 'search', '_time_point_6$') | map(attribute='entity_id') | first | default('select.brak_encji') }}
-    {% elif v_use_hal == 'true' or v_use_hal == true %} time.brak_encji
-    {% else %} time.{{ prefix }}_time_of_use_6_start {% endif %}
-  tou6_soc: >
-    {% if v_integration == 'Solar Assistant' %} {{ states.number | rejectattr('entity_id', 'search', esp_prefix) | selectattr('entity_id', 'search', '_capacity_point_6$') | map(attribute='entity_id') | first | default('number.brak_encji') }}
-    {% elif v_use_hal == 'true' or v_use_hal == true %} number.brak_encji
-    {% else %} number.{{ prefix }}_time_of_use_6_soc {% endif %}
-  tou6_grid: >
-    {% if v_integration == 'Solar Assistant' %} {{ states.switch | rejectattr('entity_id', 'search', esp_prefix) | selectattr('entity_id', 'search', '_grid_charge_point_6$') | map(attribute='entity_id') | first | default('switch.brak_encji') }}
-    {% elif v_use_hal == 'true' or v_use_hal == true %} switch.brak_encji
-    {% else %} switch.{{ prefix }}_time_of_use_6_grid_charge {% endif %}
-  tou6_gen: >
-    {% if v_integration == 'Solar Assistant' %} {{ states.switch | rejectattr('entity_id', 'search', esp_prefix) | selectattr('entity_id', 'search', '_gen_charge_point_6$') | map(attribute='entity_id') | first | default('switch.brak_encji') }}
-    {% elif v_use_hal == 'true' or v_use_hal == true %} switch.brak_encji
-    {% else %} switch.{{ prefix }}_time_of_use_6_gen_charge {% endif %}
+              ---
 
-  current_soc: "{{ states(s_soc) | float(0) }}"
-  cap: >
-    {% if v_use_hal == 'true' or v_use_hal == true %}
-      {% set rc = states('number.alpha_hems_bateria_pojemnosc') | float(47.0) %}
-    {% else %}
-      {% set rc = states('number.' ~ prefix ~ '_battery_capacity') | float(47.0) %}
-    {% endif %}
-    {{ (rc * 51.2 / 1000) | round(1) if rc > 150 else rc | round(1) }}
+              ### 🗄️ 1. STAN PAMIĘCI REJESTRÓW (Twarde Dane)
+              * Zużycie Noc DZIŚ: **{{ n_dzis }} kWh**
+              * Zużycie Poranek DZIŚ: **{{ p_dzis }} kWh**
+              * Zużycie Wieczór DZIŚ: **{{ w_dzis }} kWh**
+              * Prognoza Słońca na Dziś: **{{ pv_dzis }} kWh**
+              * Prognoza Słońca na Jutro: **{{ pv_jutro }} kWh**
+              * Odczytana encja sprzętowa: `{{ low_soc_ent }}` ➔ **{{ ((live_low_soc / 100) * poj) | round(1) }} kWh** {% if zimowy_beton > 0 %}(+ Beton Zimowy = {{ ((hardware_low_soc / 100) * poj) | round(1) }} kWh){% endif %}
+              * **🛡️ Ochrona Skokowa (Anti-Spike Clamp): Min. {{ bezpieczna_podloga_kwh | round(1) }} kWh**
 
-  is_winter_mode: "{{ states('input_boolean.alpha_rce_flaga_12') == 'on' }}"
+              ---
 
-  sz_noc: >
-    {% set d = (now() + timedelta(hours=3)).weekday() %}
-    {% if d == 0 %} input_number.alpha_rce_param_11
-    {% elif d == 1 %} input_number.alpha_rce_param_12
-    {% elif d == 2 %} input_number.alpha_rce_param_13
-    {% elif d == 3 %} input_number.alpha_rce_param_14
-    {% elif d == 4 %} input_number.alpha_rce_param_15
-    {% elif d == 5 %} input_number.alpha_rce_param_16
-    {% else %} input_number.alpha_rce_param_17 {% endif %}
+              {% set bufor_komfortu_kwh = (states('input_number.alpha_rezerwa_soc') | float(0) / 100) * poj %}
+              {% set smart_toggle = states('input_boolean.alpha_rce_flaga_03') == 'on' %}
+              {% set aktywny_bufor_kwh = 0 if (is_sunny_jutro and smart_toggle) else bufor_komfortu_kwh %}
+              {% set hardware_low_soc_kwh = (hardware_low_soc / 100) * poj %}
+              {% set jeden_procent_kwh = (poj * 0.01) %}
 
-  cons_n: >
-    {% set val = states(sz_noc) | float(0) %}
-    {{ val if val > 0 else (in_daily_cons | float * 0.25) | round(1) }}
-
-  sz_por: >
-    {% set d = now().weekday() %}
-    {% if d == 0 %} input_number.alpha_rce_param_21
-    {% elif d == 1 %} input_number.alpha_rce_param_22
-    {% elif d == 2 %} input_number.alpha_rce_param_23
-    {% elif d == 3 %} input_number.alpha_rce_param_24
-    {% elif d == 4 %} input_number.alpha_rce_param_25
-    {% elif d == 5 %} input_number.alpha_rce_param_26
-    {% else %} input_number.alpha_rce_param_27 {% endif %}
-
-  cons_p: >
-    {% set val = states(sz_por) | float(0) %}
-    {{ val if val > 0 else (in_daily_cons | float * 0.3) | round(1) }}
-
-  sz_wie: >
-    {% set d = now().weekday() %}
-    {% if d == 0 %} input_number.alpha_rce_param_31
-    {% elif d == 1 %} input_number.alpha_rce_param_32
-    {% elif d == 2 %} input_number.alpha_rce_param_33
-    {% elif d == 3 %} input_number.alpha_rce_param_34
-    {% elif d == 4 %} input_number.alpha_rce_param_35
-    {% elif d == 5 %} input_number.alpha_rce_param_36
-    {% else %} input_number.alpha_rce_param_37 {% endif %}
-
-  cons_w: >
-    {% set val = states(sz_wie) | float(0) %}
-    {{ val if val > 0 else (in_daily_cons | float * 0.45) | round(1) }}
-
-  sz_noc_jutro: >
-    {% set d_jutro = (now() + timedelta(days=1)).weekday() %}
-    {% if d_jutro == 0 %} input_number.alpha_rce_param_11
-    {% elif d_jutro == 1 %} input_number.alpha_rce_param_12
-    {% elif d_jutro == 2 %} input_number.alpha_rce_param_13
-    {% elif d_jutro == 3 %} input_number.alpha_rce_param_14
-    {% elif d_jutro == 4 %} input_number.alpha_rce_param_15
-    {% elif d_jutro == 5 %} input_number.alpha_rce_param_16
-    {% else %} input_number.alpha_rce_param_17 {% endif %}
-  cons_n_jutro: >
-    {% set val = states(sz_noc_jutro) | float(0) %}
-    {{ val if val > 0 else (in_daily_cons | float * 0.25) | round(1) }}
-
-  sz_por_jutro: >
-    {% set d_jutro = (now() + timedelta(days=1)).weekday() %}
-    {% if d_jutro == 0 %} input_number.alpha_rce_param_21
-    {% elif d_jutro == 1 %} input_number.alpha_rce_param_22
-    {% elif d_jutro == 2 %} input_number.alpha_rce_param_23
-    {% elif d_jutro == 3 %} input_number.alpha_rce_param_24
-    {% elif d_jutro == 4 %} input_number.alpha_rce_param_25
-    {% elif d_jutro == 5 %} input_number.alpha_rce_param_26
-    {% else %} input_number.alpha_rce_param_27 {% endif %}
-  cons_p_jutro: >
-    {% set val = states(sz_por_jutro) | float(0) %}
-    {{ val if val > 0 else (in_daily_cons | float * 0.3) | round(1) }}
-
-  sz_wie_jutro: >
-    {% set d_jutro = (now() + timedelta(days=1)).weekday() %}
-    {% if d_jutro == 0 %} input_number.alpha_rce_param_31
-    {% elif d_jutro == 1 %} input_number.alpha_rce_param_32
-    {% elif d_jutro == 2 %} input_number.alpha_rce_param_33
-    {% elif d_jutro == 3 %} input_number.alpha_rce_param_34
-    {% elif d_jutro == 4 %} input_number.alpha_rce_param_35
-    {% elif d_jutro == 5 %} input_number.alpha_rce_param_36
-    {% else %} input_number.alpha_rce_param_37 {% endif %}
-  cons_w_jutro: >
-    {% set val = states(sz_wie_jutro) | float(0) %}
-    {{ val if val > 0 else (in_daily_cons | float * 0.45) | round(1) }}
-
-  v_real_cost: >
-    {% set cost = v_cost_energy_fixed | float(0) %}
-    {% set eff = v_batt_efficiency | float(85) / 100 %}
-    {{ (cost / eff) | round(2) if eff > 0 else cost }}
-
-  v_prog_opacalnosci_bazowy: "{{ (v_real_cost | float(0) + v_min_profit | float(0)) | round(2) }}"
-
-  v_brak_okienek: >
-    {% set prices = state_attr(v_rce_sensor, 'value') %}
-    {% if not prices %} {% set prices = state_attr(v_rce_sensor, 'prices') %} {% endif %}
-    {% set prog = v_prog_opacalnosci_bazowy | float(0) * 1000 %}
-    {% set now_ts = as_timestamp(now()) %}
-    {% set ns = namespace(found=false) %}
-    {% if prices is iterable and prices is not string and prices is not mapping %}
-      {% for p in prices %}
-        {% set p_str = p.dtime | string %}
-        {% set p_ts = as_timestamp(p_str) %}
-        {% if p_ts == none %}
-          {% set p_dt = as_datetime(p_str) %}
-          {% if p_dt == none %} {% set p_dt = strptime(p_str, '%Y-%m-%d %H:%M:%S', strptime(p_str, '%Y-%m-%d %H:%M', none)) %} {% endif %}
-          {% set p_ts = as_timestamp(p_dt | string) if p_dt != none else none %}
-        {% endif %}
-        {% if p_ts != none and p_ts >= now_ts %}
-          {% set val = p.rce_pln | default(p.cen_cost | default(p.price | default(0))) | float(0) %}
-          {% if val >= prog %}
-            {% set ns.found = true %}
-          {% endif %}
-        {% endif %}
-      {% endfor %}
-    {% endif %}
-    {{ not ns.found }}
-
-  v_pv_dzis: "{{ states('sensor.solcast_pv_forecast_prognoza_na_dzisiaj') | float(0) }}"
-  v_prognoza_pv_jutro: "{{ states('sensor.solcast_pv_forecast_prognoza_na_jutro') | float(0) if now().hour >= v_t_prognoza_shift else states('sensor.solcast_pv_forecast_prognoza_na_dzisiaj') | float(0) }}"
-  
-  v_ev_dynamic_limit: >
-    {% if v_prognoza_pv_jutro >= (v_solcast_threshold | float(20)) %}
-      {% set wymog_kwh = cons_w | float %}
-    {% else %}
-      {% set wymog_kwh = cons_w | float + cons_p | float %}
-    {% endif %}
-    {% set wymog_soc = ((wymog_kwh / cap) * 100) | round(0) | int + v_swap_min_soc | int + 1 %}
-    {{ [wymog_soc, 100] | min | int }}
-
-  v_ev_soc: "{{ states(v_ev_soc_sensor) | float(100) if v_ev_soc_sensor != '' else 100 }}"
-  v_ev_missing_kwh: "{{ [0, (v_ev_target - v_ev_soc) / 100 * v_ev_capacity / 0.85] | max }}"
-  v_available_soc: "{{ [0, current_soc - (v_swap_min_soc | float)] | max }}"
-  v_available_kwh: "{{ (v_available_soc / 100) * cap }}"
-  
-  v_ev_grid_lock: >
-    {% if v_ev_switch != '' and states(v_ev_switch) == 'on' and (now().hour >= 22 or now().hour < 6) and v_ev_soc_sensor != '' %}
-      {% set symulacja = v_sim | string | lower %}
-      {% set net_billing = v_net_billing | string | lower %}
-      {% set has_profit = (v_brak_okienek == 'False' or v_brak_okienek == false) and net_billing == 'true' and symulacja == 'false' %}
-      {% set sunny_tomorrow = v_prognoza_pv_jutro >= (v_solcast_threshold | float(20)) %}
-      {% if has_profit %}
-        true 
-      {% elif sunny_tomorrow %}
-        {% if v_ev_missing_kwh > v_available_kwh %}
-          true
-        {% else %}
-          false
-        {% endif %}
-      {% else %}
-        true
-      {% endif %}
-    {% else %}
-      false
-    {% endif %}
-
-  target_night_base: >
-    {% set h = now().hour %}
-    {% set m = now().minute %}
-    {% set current_time_hours = h + (m / 60.0) %}
-    {% set start_h = v_start_ladowania | int %}
-    {% set dzienne_zapotrzebowanie = cons_n_jutro | float(0) + cons_p_jutro | float(0) + cons_w_jutro | float(0) %}
-    
-    {% set prognoza_slonca = v_prognoza_pv_jutro | float(0) %}
-    {% set strefa_zielona = prognoza_slonca >= (dzienne_zapotrzebowanie * 1.4) %}
-    {% set strefa_zolta = prognoza_slonca >= (dzienne_zapotrzebowanie * 0.8) and not strefa_zielona %}
-    
-    {% set smart_toggle = (v_comfort_buffer_smart == true or v_comfort_buffer_smart == 'true') %}
-    {% set bufor_komfortu = 0 if (strefa_zielona and smart_toggle) else (v_comfort_buffer | int(0)) %}
-    
-    {% if h >= 22 or h < 6 %}
-      {% if h >= 22 %}
-        {% set zostalo_nocy_h = 24.0 - current_time_hours + 6.0 %}
-      {% else %}
-        {% set zostalo_nocy_h = 6.0 - current_time_hours %}
-      {% endif %}
-      
-      {% set noc_kwh = cons_n_jutro | float(0) * (zostalo_nocy_h / 8.0) %}
-      
-      {% if strefa_zielona %}
-        {% set rano_kwh = cons_p_jutro | float(0) * 0.2 %}
-        {% set energia_z_zapasem = (noc_kwh + rano_kwh) * 1.2 %}
-      {% elif strefa_zolta %}
-        {% set forecast = state_attr('sensor.solcast_pv_forecast_prognoza_na_jutro' if h >= v_t_prognoza_shift else 'sensor.solcast_pv_forecast_prognoza_na_dzisiaj', 'detailedForecast') %}
-        {% set ns = namespace(pv_do_startu=0.0) %}
-        {% if forecast is iterable and forecast is not string and forecast is not mapping %}
-          {% for f in forecast %}
-            {% set f_str = f.period_start | string %}
-            {% set f_dt = as_datetime(f_str) %}
-            {% if f_dt != none %}
-              {% set f_dt_local = f_dt | as_local if f_dt.tzinfo != none else f_dt %}
-              {% set f_h = f_dt_local.hour | float + (f_dt_local.minute / 60.0) %}
-              {% if f_h >= 6.0 and f_h < start_h %}
-                {% set ns.pv_do_startu = ns.pv_do_startu + ((f.pv_estimate | float(0)) / 2.0) %}
+              ### 🧮 2. MATRYCA OBLICZEŃ PŁOTKA (Docelowa Energia)
+              {% if is_sunny_jutro %}
+              > **☀️ SMART MORNING AKTYWNY (Prognoza > 140%):** Słońce JUTRO przejmuje obciążenie. Zapas poranny ścięty do 20% (tylko na rozruch do 7:00).
+              {% else %}
+              > **☁️ STANDARD (Prognoza < 140%):** Ładuję w nocy pełne zapotrzebowanie poranka + 20% bufora bezpieczeństwa na JUTRO.
               {% endif %}
-            {% endif %}
-          {% endfor %}
-        {% endif %}
-        {% set zuz_poranek = cons_p_jutro | float(0) %}
-        {% set deficyt_poranka = [zuz_poranek - ns.pv_do_startu, 0.0] | max %}
-        {% set rano_z_zapasem = deficyt_poranka * 1.2 %}
-        {% set energia_z_zapasem = noc_kwh + rano_z_zapasem %}
-      {% else %}
-        {% set rano_kwh = cons_p_jutro | float(0) %}
-        {% set energia_z_zapasem = (noc_kwh + rano_kwh) * 1.2 %}
-      {% endif %}
-      
-      {% set soc = ((energia_z_zapasem / cap) * 100) | round(0) | int + v_swap_min_soc | int + bufor_komfortu + 1 %}
-      {{ [soc, 100] | min | int }}
-      
-    {% elif h >= 6 and h < start_h %}
-      {% set caly_poranek_h = [start_h - 6.0, 1.0] | max %}
-      {% set zostalo_poranka_h = [start_h - current_time_hours, 0.0] | max %}
-      
-      {% if strefa_zielona %}
-        {{ (v_swap_min_soc | int) + bufor_komfortu }}
-      {% elif strefa_zolta %}
-        {% set forecast = state_attr('sensor.solcast_pv_forecast_prognoza_na_dzisiaj', 'detailedForecast') %}
-        {% set ns = namespace(pv_do_startu=0.0) %}
-        {% if forecast is iterable and forecast is not string and forecast is not mapping %}
-          {% for f in forecast %}
-            {% set f_str = f.period_start | string %}
-            {% set f_dt = as_datetime(f_str) %}
-            {% if f_dt != none %}
-              {% set f_dt_local = f_dt | as_local if f_dt.tzinfo != none else f_dt %}
-              {% set f_h = f_dt_local.hour | float + (f_dt_local.minute / 60.0) %}
-              {% if f_h >= current_time_hours and f_h < start_h %}
-                {% set ns.pv_do_startu = ns.pv_do_startu + ((f.pv_estimate | float(0)) / 2.0) %}
-              {% endif %}
-            {% endif %}
-          {% endfor %}
-        {% endif %}
-        {% set req_kwh = cons_p | float(0) * (zostalo_poranka_h / caly_poranek_h) %}
-        {% set deficyt = [req_kwh - ns.pv_do_startu, 0.0] | max %}
-        {% set rano_z_zapasem = deficyt * 1.2 %}
-        {% set energia_z_zapasem = rano_z_zapasem %}
-        {% set soc = ((energia_z_zapasem / cap) * 100) | round(0) | int + v_swap_min_soc | int + bufor_komfortu + 1 %}
-        {{ [soc, 100] | min | int }}
-      {% else %}
-        {% set req_kwh = cons_p | float(0) * (zostalo_poranka_h / caly_poranek_h) %}
-        {% set energia_z_zapasem = req_kwh * 1.2 %}
-        {% set soc = ((energia_z_zapasem / cap) * 100) | round(0) | int + v_swap_min_soc | int + bufor_komfortu + 1 %}
-        {{ [soc, 100] | min | int }}
-      {% endif %}
-    {% else %}
-      {{ (v_swap_min_soc | int) + bufor_komfortu }}
-    {% endif %}
 
-  target_night: >
-    {% if v_ev_grid_lock == 'true' or v_ev_grid_lock == true %}
-      {{ [current_soc | int, target_night_base | int] | max }}
-    {% else %}
-      {{ target_night_base | int }}
-    {% endif %}
+              👉 **Kalkulacja dla okresu porannego (Zabezpieczenie Poranka):**
+              {% set calc_poranek_kwh = (p_dzis * mnoznik_p) + hardware_low_soc_kwh + aktywny_bufor_kwh + jeden_procent_kwh %}
+              {{ p_dzis }} kWh × {{ mnoznik_p }} = **{{ (p_dzis * mnoznik_p) | round(2) }} kWh**
+              + Low SOC ({{ hardware_low_soc_kwh | round(1) }} kWh) + Bufor ({{ aktywny_bufor_kwh | round(1) }} kWh) + 1% ({{ jeden_procent_kwh | round(1) }} kWh) = Wynik tymczasowy: {{ calc_poranek_kwh | round(2) }} kWh
+              ➔ 🛡️ Twardy docisk (Clamp): **Ostateczny wynik: {{ [calc_poranek_kwh, bezpieczna_podloga_kwh] | max | round(1) }} kWh**
 
-  target_evening: >
-    {% set h = now().hour %}
-    {% set m = now().minute %}
-    {% set current_time_hours = h + (m / 60.0) %}
-    {% set end_cheap = (v_start_ladowania | int) + 4 %}
-    {% set dzienne_zapotrzebowanie = cons_n_jutro | float(0) + cons_p_jutro | float(0) + cons_w_jutro | float(0) %}
-    {% set wymagane_slonce = dzienne_zapotrzebowanie * 1.4 %}
-    {% set sunny = v_prognoza_pv_jutro | float(0) >= wymagane_slonce %}
-    {% set smart_toggle = (v_comfort_buffer_smart == true or v_comfort_buffer_smart == 'true') %}
-    {% set bufor_komfortu = 0 if (sunny and smart_toggle) else (v_comfort_buffer | int(0)) %}
-    
-    {% if current_time_hours >= end_cheap and current_time_hours < 22 %}
-      {% set caly_wieczor_h = 22.0 - end_cheap %}
-      {% set temp_zostalo = [(22.0 - current_time_hours), caly_wieczor_h] | min %}
-      {% set zostalo_wieczoru_h = [temp_zostalo, 0.0] | max %}
-      {% set req_kwh = cons_w | float(0) * (zostalo_wieczoru_h / caly_wieczor_h) %}
-    {% elif current_time_hours < end_cheap %}
-      {% set req_kwh = cons_w | float(0) %}
-    {% else %}
-      {% set req_kwh = 0.0 %}
-    {% endif %}
-    {% set energia_z_zapasem = req_kwh * 1.2 %}
-    {% set soc = ((energia_z_zapasem / cap) * 100) | round(0) | int + v_swap_min_soc | int + bufor_komfortu + 1 %}
-    {{ [soc, 100] | min | int }}
+              👉 **Kalkulacja dla okresu wieczornego (Zabezpieczenie Wieczoru):**
+              {% set calc_wieczor_kwh = (w_dzis * 1.2) + hardware_low_soc_kwh + aktywny_bufor_kwh + jeden_procent_kwh %}
+              {{ w_dzis }} kWh × 1.2 = **{{ (w_dzis * 1.2) | round(2) }} kWh**
+              + Low SOC ({{ hardware_low_soc_kwh | round(1) }} kWh) + Bufor ({{ aktywny_bufor_kwh | round(1) }} kWh) + 1% ({{ jeden_procent_kwh | round(1) }} kWh) = Wynik tymczasowy: {{ calc_wieczor_kwh | round(2) }} kWh
+              ➔ 🛡️ Twardy docisk (Clamp): **Ostateczny wynik: {{ [calc_wieczor_kwh, bezpieczna_podloga_kwh] | max | round(1) }} kWh**
 
-  target_dump_evening: >
-    {% set h = now().hour %}
-    {% set m = now().minute %}
-    {% set current_time_hours = h + (m / 60.0) %}
-    {% set end_cheap = (v_start_ladowania | int) + 4 %}
-    {% set caly_wieczor_h = 22.0 - end_cheap %}
-    {% set temp_zostalo = [(22.0 - current_time_hours), caly_wieczor_h] | min %}
-    {% set zostalo_wieczoru_h = [temp_zostalo, 0.0] | max %}
-    {% set srodek_wieczoru_kwh = (cons_w | float(0) / caly_wieczor_h) * zostalo_wieczoru_h %}
-    {% set energia_do_rana_kwh = srodek_wieczoru_kwh + cons_n_jutro | float(0) %}
-    {% set energia_z_zapasem = energia_do_rana_kwh * 1.2 %}
-    {% set dzienne_zapotrzebowanie = cons_n_jutro | float(0) + cons_p_jutro | float(0) + cons_w_jutro | float(0) %}
-    {% set wymagane_slonce = dzienne_zapotrzebowanie * 1.4 %}
-    {% set sunny = v_prognoza_pv_jutro | float(0) >= wymagane_slonce %}
-    {% set smart_toggle = (v_comfort_buffer_smart == true or v_comfort_buffer_smart == 'true') %}
-    {% set bufor_komfortu = 0 if (sunny and smart_toggle) else (v_comfort_buffer | int(0)) %}
-    {% set soc_zabezpieczenia = ((energia_z_zapasem / cap) * 100) | round(0) | int + bufor_komfortu + 1 %}
-    {{ [soc_zabezpieczenia + v_swap_min_soc | int, 100] | min }}
+              ---
 
-  v_morning_spread_ok: >
-    {% set prices = state_attr(v_rce_sensor, 'value') %}
-    {% if not prices %} {% set prices = state_attr(v_rce_sensor, 'prices') %} {% endif %}
-    {% set ns = namespace(max_rano=-999.0, min_poludnie=999.0) %}
-    {% if prices is iterable and prices is not string and prices is not mapping %}
-      {% for p in prices %}
-        {% set p_str = p.dtime | string %}
-        {% set p_ts = as_timestamp(p_str) %}
-        {% if p_ts == none %}
-          {% set p_dt = as_datetime(p_str) %}
-          {% if p_dt == none %} {% set p_dt = strptime(p_str, '%Y-%m-%d %H:%M:%S', strptime(p_str, '%Y-%m-%d %H:%M', none)) %} {% endif %}
-          {% set p_ts = as_timestamp(p_dt | string) if p_dt != none else none %}
-        {% endif %}
-        {% if p_ts != none and p_ts >= today_at('00:00').timestamp() %}
-          {% set p_hour = (p_ts | timestamp_custom('%H', true)) | int %}
-          {% set val = p.rce_pln | default(p.cen_cost | default(p.price | default(0))) | float(0) / 1000 %}
-          {% if 6 <= p_hour < 11 %}
-            {% if val > ns.max_rano %} {% set ns.max_rano = val %} {% endif %}
-          {% endif %}
-          {% if 11 <= p_hour <= 14 %}
-            {% if val < ns.min_poludnie %} {% set ns.min_poludnie = val %} {% endif %}
-          {% endif %}
-        {% endif %}
-      {% endfor %}
-    {% endif %}
-    {% set spread = ns.max_rano - ns.min_poludnie %}
-    {{ 'true' if spread >= 0.20 else 'false' }}
-
-  v_sniper_threshold: >
-    {% set prices = state_attr(v_rce_sensor, 'value') %}
-    {% if not prices %} {% set prices = state_attr(v_rce_sensor, 'prices') %} {% endif %}
-    {% set ns = namespace(min_poludnie=999.0) %}
-    {% if prices is iterable and prices is not string and prices is not mapping %}
-      {% for p in prices %}
-        {% set p_str = p.dtime | string %}
-        {% set p_ts = as_timestamp(p_str) %}
-        {% if p_ts == none %}
-          {% set p_dt = as_datetime(p_str) %}
-          {% if p_dt == none %} {% set p_dt = strptime(p_str, '%Y-%m-%d %H:%M:%S', strptime(p_str, '%Y-%m-%d %H:%M', none)) %} {% endif %}
-          {% set p_ts = as_timestamp(p_dt | string) if p_dt != none else none %}
-        {% endif %}
-        {% if p_ts != none and p_ts >= today_at('00:00').timestamp() %}
-          {% set p_hour = (p_ts | timestamp_custom('%H', true)) | int %}
-          {% if 11 <= p_hour <= 14 %}
-            {% set val = p.rce_pln | default(p.cen_cost | default(p.price | default(0))) | float(0) / 1000 %}
-            {% if val < ns.min_poludnie %} {% set ns.min_poludnie = val %} {% endif %}
-          {% endif %}
-        {% endif %}
-      {% endfor %}
-    {% endif %}
-    {{ (ns.min_poludnie + 0.20) | round(4) }}
-
-  v_midnight_sniper_active: >
-    {% set dzienne_zapotrzebowanie = cons_n_jutro | float(0) + cons_p_jutro | float(0) + cons_w_jutro | float(0) %}
-    {% set wymagane_slonce = dzienne_zapotrzebowanie * 1.4 %}
-    {% set prognoza_slonca = v_prognoza_pv_jutro | float(0) %}
-    {% set is_140_met = prognoza_slonca >= wymagane_slonce %}
-    {% set is_agresywny = states('input_boolean.alpha_rce_flaga_05') == 'on' %}
-    {{ 'true' if (is_140_met or is_agresywny) else 'false' }}
-
-  v_dynamic_dump_soc: "{{ target_night_base }}"
-
-  v_evening_tomorrow_ready: >
-    {% set dzienne_zapotrzebowanie = cons_n_jutro | float(0) + cons_p_jutro | float(0) + cons_w_jutro | float(0) %}
-    {% set bezpieczny_bufor = dzienne_zapotrzebowanie * 1.4 %}
-    {{ 'true' if v_prognoza_pv_jutro | float(0) >= bezpieczny_bufor else 'false' }}
-
-  v_force_sell_evening: >
-    {% if v_evening_tomorrow_ready == 'true' or v_evening_tomorrow_ready == true %}
-      {% set h = now().hour %}
-      {{ 'true' if h >= 16 and h < 22 else 'false' }}
-    {% else %} false {% endif %}
-
-  v_license_buffer_raw: "{{ states('input_number.alpha_rce_param_65') | float(-99999) }}"
-  v_license_buffer: >
-    {% if v_license_buffer_raw == -99999 %} 1
-    {% else %} {{ v_license_buffer_raw | int(1) }} {% endif %}
-  
-  v_safe_amps: "{{ [(((v_sell_power_w | float / 48.0) * 1.1) | round(0) | int), 240] | min }}"
-
-  tryb_ewakuacji: >
-    {% set st_soc = current_soc | float(0) %}
-    {% set dzienne_zapotrzebowanie = cons_n_jutro | float(0) + cons_p_jutro | float(0) + cons_w_jutro | float(0) %}
-    {% set bezpieczny_bufor = dzienne_zapotrzebowanie * 1.4 %}
-    {% set jutro_sloneczne = v_prognoza_pv_jutro | float(0) >= bezpieczny_bufor %}
-    
-    {% if (v_is_offgrid == 'true' or v_is_offgrid == true) %} false
-    {% elif st_soc >= 98 and jutro_sloneczne %} true
-    {% else %} false {% endif %}
-
-  price_now: >
-    {% set price = state_attr(v_rce_sensor, 'value') %}
-    {% if not price %} {% set price = state_attr(v_rce_sensor, 'prices') %} {% endif %}
-    {% if price is iterable and price is not string and price is not mapping %}
-      {% set now_ts = as_timestamp(now()) %}
-      {% set ns = namespace(p=0) %}
-      {% for p in price %}
-        {% set p_str = p.dtime | string %}
-        {% set p_ts = as_timestamp(p_str) %}
-        {% if p_ts == none %}
-          {% set p_dt = as_datetime(p_str) %}
-          {% if p_dt == none %} {% set p_dt = strptime(p_str, '%Y-%m-%d %H:%M:%S', strptime(p_str, '%Y-%m-%d %H:%M', none)) %} {% endif %}
-          {% set p_ts = as_timestamp(p_dt | string) if p_dt != none else none %}
-        {% endif %}
-        {% if p_ts != none and p_ts <= now_ts %}
-          {% set val = p.rce_pln | default(p.cen_cost | default(p.price | default(0))) %}
-          {% set ns.p = val | float(0) %}
-        {% endif %}
-      {% endfor %}
-      {{ (ns.p / 1000) | round(4) }}
-    {% else %} 0.00 {% endif %}
-
-  is_g12w: "{{ v_tariff == 'G12W' }}"
-  is_g12w_weekend: "{{ is_g12w == 'true' and ( (now().weekday() == 4 and now().hour >= 22) or now().weekday() == 5 or (now().weekday() == 6 and now().hour < 22) ) }}"
-
-  docelowy_soc: >
-    {% set symulacja = v_sim | string | lower %}
-    {% set net_billing = v_net_billing | string | lower %}
-    {% set balans = (states('input_number.alpha_rce_param_42') | float(0) >= 21) %} 
-    {% set start_h = v_start_ladowania | int %}
-    {% set is_midnight_sniper = (v_midnight_sniper_active == 'true' or v_midnight_sniper_active == true) %}
-    
-    {% set base_soc = 0 %}
-    {% if (v_is_offgrid == 'true' or v_is_offgrid == true) %} {% set base_soc = 100 %}
-    {% elif tryb_ewakuacji == 'true' or tryb_ewakuacji == true %} 
-      {% set base_soc = target_dump_evening if (now().hour >= 16 and now().hour < 22) else target_evening %}
-    {% elif balans and (now().hour >= 22 or now().hour < 6) %} {% set base_soc = 100 %}
-    {% elif is_g12w_weekend == 'true' or is_g12w_weekend == true %} {% set base_soc = v_swap_min_soc | int %}
-    {% elif is_midnight_sniper and (now().hour >= 22 or now().hour < start_h) %} {% set base_soc = v_dynamic_dump_soc %}
-    {% elif now().hour >= 22 or now().hour < 6 %} {% set base_soc = target_night %}
-    {% elif v_force_sell_evening == 'true' or v_force_sell_evening == true %} {% set base_soc = target_dump_evening %}
-    {% elif now().hour >= 6 and now().hour < v_start_ladowania %} {% set base_soc = target_night %}
-    {% else %} {% set base_soc = target_evening %} {% endif %}
-    {% set bezpieczna_podloga = ((v_swap_min_soc | float) * 1.1) | round(0) | int %}
-    {{ [base_soc | int, bezpieczna_podloga] | max }}
-
-  v_sell_threshold: >
-    {% set start_h = v_start_ladowania | int %}
-    {% set bazowy = v_prog_opacalnosci_bazowy | float(0) %}
-    {% set ewakuacja = tryb_ewakuacji == 'true' or tryb_ewakuacji == true %}
-    {% if (v_is_offgrid == 'true' or v_is_offgrid == true) %} 9999.0
-    {% elif (v_midnight_sniper_active == 'true' or v_midnight_sniper_active == true) and (now().hour >= 22 or now().hour < start_h) %}
-      {{ v_sniper_threshold }}
-    {% else %}
-      {% set dzienne_zapotrzebowanie = cons_n_jutro | float(0) + cons_p_jutro | float(0) + cons_w_jutro | float(0) %}
-      {% set bezpieczny_bufor = dzienne_zapotrzebowanie * 1.4 %}
-      {% set jutro_sloneczne = v_prognoza_pv_jutro | float(0) >= bezpieczny_bufor %}
-      {% set is_agresywny = states('input_boolean.alpha_rce_flaga_05') == 'on' %}
-      {% set d_soc = docelowy_soc | float(((v_swap_min_soc | float) * 1.1) | round(0) | int) %}
-      {% set wolny_soc = [current_soc - d_soc, 0] | max %}
-      {% set wolna_energia = (wolny_soc / 100) * cap %}
-      
-      {% if (jutro_sloneczne or ewakuacja or is_agresywny) and wolna_energia > 0 %}
-        {% set prices = state_attr(v_rce_sensor, 'value') %}
-        {% if not prices %} {% set prices = state_attr(v_rce_sensor, 'prices') %} {% endif %}
-        {% set now_ts = as_timestamp(now()) %}
-        {% set moc_kw = v_sell_power_w | float(6000) / 1000 %}
-        {% set energia_na_slupek = moc_kw * 0.25 %}
-        {% set potrzebne_slupki = (wolna_energia / energia_na_slupek) | round(0, 'ceil') | int %}
-        
-        {% set ns = namespace(future_prices=[]) %}
-        {% if prices is iterable and prices is not string and prices is not mapping %}
-          {% for p in prices %}
-            {% set p_str = p.dtime | string %}
-            {% set p_ts = as_timestamp(p_str) %}
-            {% if p_ts == none %}
-              {% set p_dt = as_datetime(p_str) %}
-              {% if p_dt == none %} {% set p_dt = strptime(p_str, '%Y-%m-%d %H:%M:%S', strptime(p_str, '%Y-%m-%d %H:%M', none)) %} {% endif %}
-              {% set p_ts = as_timestamp(p_dt | string) if p_dt != none else none %}
-            {% endif %}
-            {% if p_ts != none and p_ts >= (now_ts - 900) %}
-              {% set val = p.rce_pln | default(p.cen_cost | default(p.price | default(0))) | float(0) %}
-              {% if val >= 10.0 %}
-                {% set ns.future_prices = ns.future_prices + [val] %}
-              {% endif %}
-            {% endif %}
-          {% endfor %}
-        {% endif %}
-        
-        {% if ns.future_prices | length > 0 %}
-          {% set top_prices = ns.future_prices | sort(reverse=true) | batch(potrzebne_slupki) | first | default([]) %}
-          {% set min_top_price_pln = (top_prices | min / 1000) | round(4) %}
-          {% if ewakuacja %}
-            {{ min_top_price_pln }}
-          {% else %}
-            {{ [min_top_price_pln, bazowy] | min }}
-          {% endif %}
-        {% else %}
-          {{ 0.01 if ewakuacja else bazowy }}
-        {% endif %}
-      {% else %}
-        {{ bazowy }}
-      {% endif %}
-    {% endif %}
-
-  v_potencjal_kwh: >
-    {% set d_soc = docelowy_soc | float(((v_swap_min_soc | float) * 1.1) | round(0) | int) %}
-    {% if current_soc > d_soc %} {{ ((current_soc - d_soc) / 100 * cap) | round(1) }}
-    {% else %} 0.0 {% endif %}
-
-  v_tarcza_aktywna: >
-    {% set now_ts = as_timestamp(now()) %}
-    {% set start_tarczy_ts = as_timestamp(today_at('%02d:00' % (v_start_ladowania | int))) %}
-    {% if now_ts < start_tarczy_ts or now().hour >= 19 %}
-      false
-    {% else %}
-      {% set prices = state_attr(v_rce_sensor, 'value') %}
-      {% if not prices %} {% set prices = state_attr(v_rce_sensor, 'prices') %} {% endif %}
-      {% set prog = v_sell_threshold | float(0) * 1000 %}
-      {% set d_soc = docelowy_soc | float(((v_swap_min_soc | float) * 1.1) | round(0) | int) %}
-      {% set wolny_soc = [current_soc - d_soc, 0] | max %}
-      {% set wolna_energia = (wolny_soc / 100) * cap %}
-      {% set moc_kw = v_sell_power_w | float(6000) / 1000 %}
-      {% set energia_na_slupek = moc_kw * 0.25 %}
-      {% set max_slupkow = (wolna_energia / energia_na_slupek) | round(0, 'ceil') | int %}
-      {% set ns = namespace(future_active=[], first_sell_ts=9999999999) %}
-      
-      {% if max_slupkow > 0 and prices is iterable and prices is not string and prices is not mapping %}
-        {% for p in prices %}
-          {% set p_str = p.dtime | string %}
-          {% set p_ts = as_timestamp(p_str) %}
-          {% if p_ts == none %}
-            {% set p_dt = as_datetime(p_str) %}
-            {% if p_dt == none %} {% set p_dt = strptime(p_str, '%Y-%m-%d %H:%M:%S', strptime(p_str, '%Y-%m-%d %H:%M', none)) %} {% endif %}
-            {% set p_ts = as_timestamp(p_dt | string) if p_dt != none else none %}
-          {% endif %}
-          {% if p_ts != none and p_ts >= (now_ts - 900) %}
-            {% set val = p.rce_pln | default(p.cen_cost | default(p.price | default(0))) | float(0) %}
-            {% if val >= prog %}
-              {% set ns.future_active = ns.future_active + [{'ts': p_ts, 'cena': val}] %}
-            {% endif %}
-          {% endif %}
-        {% endfor %}
-        
-        {% if ns.future_active | length > 0 %}
-          {% set top_slupki = ns.future_active | sort(attribute='cena', reverse=true) | batch(max_slupkow) | first | default([]) %}
-          {% for b in top_slupki %}
-            {% if b.ts < ns.first_sell_ts %} {% set ns.first_sell_ts = b.ts %} {% endif %}
-          {% endfor %}
-        {% endif %}
-      {% endif %}
-      
-      {% set fallback_tarczy_ts = as_timestamp(today_at('19:00')) %}
-      {% set end_tarczy_ts = (ns.first_sell_ts - 900) if ns.first_sell_ts < 9999999999 else fallback_tarczy_ts %}
-      {{ 'true' if now_ts < end_tarczy_ts else 'false' }}
-    {% endif %}
-
-  v_plan_sprzedazy: >-
-    {% set start_h = v_start_ladowania | int %}
-    {% if (v_is_offgrid == 'true' or v_is_offgrid == true) %}
-      Oczekiwanie
-    {% elif v_tarcza_aktywna == 'true' or v_tarcza_aktywna == true %}
-      Oczekiwanie
-    {% else %}
-      {% set prices = state_attr(v_rce_sensor, 'value') %}
-      {% if not prices %} {% set prices = state_attr(v_rce_sensor, 'prices') %} {% endif %}
-      {% set prog = v_sell_threshold | float(0) * 1000 %}
-      {% if not prices or not (prices is iterable and prices is not string and prices is not mapping) %} 
-        Oczekiwanie
-      {% else %}
-        {% set now_ts = as_timestamp(now()) %}
-        {% set d_soc = docelowy_soc | float(((v_swap_min_soc | float) * 1.1) | round(0) | int) %}
-        {% set wolny_soc = [current_soc - d_soc, 0] | max %}
-        {% set wolna_energia = (wolny_soc / 100) * cap %}
-        {% set moc_kw = v_sell_power_w | float(6000) / 1000 %}
-        {% set energia_na_slupek = moc_kw * 0.25 %}
-        {% set max_slupkow = (wolna_energia / energia_na_slupek) | round(0, 'ceil') | int %}
-        
-        {% if max_slupkow > 0 %}
-          {% set ns = namespace(future_active=[], is_now=false) %}
-          {% for p in prices %}
-            {% set p_str = p.dtime | string %}
-            {% set p_ts = as_timestamp(p_str) %}
-            {% if p_ts == none %}
-              {% set p_dt = as_datetime(p_str) %}
-              {% if p_dt == none %} {% set p_dt = strptime(p_str, '%Y-%m-%d %H:%M:%S', strptime(p_str, '%Y-%m-%d %H:%M', none)) %} {% endif %}
-              {% set p_ts = as_timestamp(p_dt | string) if p_dt != none else none %}
-            {% endif %}
-            {% if p_ts != none and p_ts >= (now_ts - 900) %}
-              {% set val = p.rce_pln | default(p.cen_cost | default(p.price | default(0))) | float(0) %}
-              {% if val >= prog %}
-                {% set ns.future_active = ns.future_active + [{'dtime': p_str, 'cena': val, 'ts': p_ts}] %}
-              {% endif %}
-            {% endif %}
-          {% endfor %}
-          
-          {% if ns.future_active | length > 0 %}
-            {% set top_slupki = ns.future_active | sort(attribute='cena', reverse=true) | batch(max_slupkow) | first | default([]) %}
-            {% for b in top_slupki %}
-              {% if now_ts >= b.ts and now_ts < (b.ts + 900) %} 
-                {% set ns.is_now = true %} 
-              {% endif %}
-            {% endfor %}
-            {{ 'Sprzedaż' if ns.is_now else 'Oczekiwanie' }}
-          {% else %} Oczekiwanie {% endif %}
-        {% else %} Oczekiwanie {% endif %}
-      {% endif %}
-    {% endif %}
-
-  v_zysk_dzisiaj: >
-    {% set symulacja = v_sim | string | lower %}
-    {% set net_billing = v_net_billing | string | lower %}
-    {% if net_billing == 'true' and symulacja == 'false' and v_plan_sprzedazy == 'Sprzedaż' %}
-      {{ [ (v_potencjal_kwh | float(0) * price_now | float(0)), 0.0 ] | max | round(2) }}
-    {% else %} 0.0 {% endif %}
-
-  v_sygnal_g12: >-
-    {% set prices = state_attr(v_rce_sensor, 'value') %}
-    {% if not prices %} {% set prices = state_attr(v_rce_sensor, 'prices') %} {% endif %}
-    {% if v_t_aggr_start_h <= now().hour < v_t_prognoza_shift and prices is iterable and prices is not string and prices is not mapping %}
-      {% set prog = v_sell_threshold | float(0) * 1000 %}
-      {% set ns = namespace(f=false) %}
-      {% for p in prices %}
-        {% set p_str = p.dtime | string %}
-        {% set p_ts = as_timestamp(p_str) %}
-        {% if p_ts == none %}
-          {% set p_dt = as_datetime(p_str) %}
-          {% if p_dt == none %} {% set p_dt = strptime(p_str, '%Y-%m-%d %H:%M:%S', strptime(p_str, '%Y-%m-%d %H:%M', none)) %} {% endif %}
-          {% set p_ts = as_timestamp(p_dt | string) if p_dt != none else none %}
-        {% endif %}
-        {% if p_ts != none %}
-          {% if p_ts >= as_timestamp(today_at('%02d:00' % v_t_prognoza_shift)) %}
-            {% set val = p.rce_pln | default(p.cen_cost | default(p.price | default(0))) | float(0) %}
-            {% if val >= prog %} {% set ns.f = true %} {% endif %}
-          {% endif %}
-        {% endif %}
-      {% endfor %}
-      {{ 'TAK' if ns.f else 'NIE' }}
-    {% else %} NIE {% endif %}
-
-  bateria_niska: "{{ current_soc <= (v_swap_min_soc | float(25)) }}"
-  should_arbitrage: >
-    {% set symulacja = v_sim | string | lower %}
-    {% set net_billing = v_net_billing | string | lower %}
-    {{ (v_license_buffer | int(1)) == 2 and v_plan_sprzedazy == 'Sprzedaż' and not bateria_niska and net_billing == 'true' and symulacja == 'false' and not (v_is_offgrid == 'true' or v_is_offgrid == true) }}
-
-  should_charge_to_sell: >
-    {% set h = now().hour %}
-    {% set is_cheap_night = (h >= 22 or h < 6) %}
-    {% set start_h = v_start_ladowania | int %}
-    {% set is_cheap_day = (h >= start_h and h < (start_h + 2)) %}
-    {% set is_cheap_tariff = (is_cheap_night or is_cheap_day) %}
-    {% set symulacja = v_sim | string | lower %}
-    {% set net_billing = v_net_billing | string | lower %}
-    {% set is_midnight_sniper = (v_midnight_sniper_active == 'true' or v_midnight_sniper_active == true) and (now().hour >= 22 or now().hour < start_h) %}
-    {{ is_cheap_tariff and (v_license_buffer | int(1)) == 2 and v_plan_sprzedazy == 'Sprzedaż' and bateria_niska and not is_midnight_sniper and net_billing == 'true' and symulacja == 'false' and not (v_is_offgrid == 'true' or v_is_offgrid == true) }}
-
-  inv_w: '{{ states(s_rated_power) | float(12000) }}'
-  inv_max_a: '{{ (inv_w / 51.2) | round(0) | int }}'
-  cap_ah: '{{ (cap * 1000 / 51.2) | round(0) | int }}'
-  
-  c_max: '{{ [ (cap_ah * 0.5) | round(0) | int, inv_max_a ] | min }}'
-  c_night_start: '{{ [ (cap_ah * 0.15) | round(0) | int, inv_max_a ] | min }}'
-  c_night_throttle: '{{ [ (cap_ah * 0.05) | round(0) | int, inv_max_a ] | min }}'
-  c_low: '{{ [ (cap_ah * 0.1) | round(0) | int, inv_max_a ] | min }}'
-  c_precision: '{{ ([ (cap_ah * 0.01) | round(0) | int, 2 ] | max) + 3 }}'
-
-  ext_ct: "{{ states(ext_ct_ent) | float(0) }}"
-  int_ct: "{{ states(int_ct_ent) | float(0) }}"
-  load_p: "{{ states(load_ent) | float(0) }}"
-  v_home_load: "{{ ((ext_ct - int_ct) | abs) + load_p }}"
-  v_dynamic_sell_power: "{{ [v_sell_power_w | float(0) | round(0) | int(0), inv_w | float(12000) | int(0)] | min }}"
-
-  c_dynamic_night: >
-    {% set is_balancing = (states('input_number.alpha_rce_param_42') | float(0) >= 21) %}
-    {% set d_soc = 100 if is_balancing else target_night %}
-    {% set h = now().hour %}
-    {% set m = now().minute %}
-    {% set kwadrans = (m // 15) * 15 %}
-    {% if h >= 22 %} {% set time_left = (24 - h) + 3 - (kwadrans / 60) - 0.75 %}
-    {% elif h < 3 %} {% set time_left = 3 - h - (kwadrans / 60) - 0.75 %}
-    {% else %} {% set time_left = 0.5 %} {% endif %}
-    {% set time_left = [time_left, 0.5] | max %}
-    {% set missing_soc = [(d_soc | float(0)) - current_soc, 0] | max %}
-    {% set missing_kwh = (missing_soc / 100) * cap %}
-    {% set req_current = (missing_kwh * 1.15 / time_left * 1000) / 51.2 %}
-    {% set safe_current = [req_current | int(0), c_night_start | int(0)] | min %}
-    {{ [safe_current, c_night_throttle | int(0)] | max if missing_soc > 0 else c_night_throttle | int(0) }}
-
-  v_status_systemu: >
-    {% set offg = (v_is_offgrid == 'true' or v_is_offgrid == true) %}
-    {% set symulacja = v_sim | string | lower %}
-    {% set net_billing = v_net_billing | string | lower %}
-    {% set zablokuj_bypass = (symulacja == 'true' or net_billing == 'false') %}
-    {% set req_pv = ((cons_n | float(0) + cons_p | float(0) + cons_w | float(0)) * 1.4) | round(2) %}
-    {% set total_pv_today = v_pv_dzis | float(0) %}
-    {% set podloga = v_swap_min_soc | float(20) %}
-    {% set smart_toggle = (v_comfort_buffer_smart == true or v_comfort_buffer_smart == 'true') %}
-    {% set bufor_komfortu = 0 if (total_pv_today >= req_pv and smart_toggle) else (v_comfort_buffer | int(0)) %}
-    {% set twarda_podloga = podloga + bufor_komfortu %}
-    
-    {% set is_morning_bypass = (not zablokuj_bypass) and (6 <= now().hour < v_start_ladowania) and current_soc >= twarda_podloga and total_pv_today >= req_pv %}
-    
-    {% set is_midnight_sniper = (v_midnight_sniper_active == 'true' or v_midnight_sniper_active == true) and (now().hour >= 22 or now().hour < v_start_ladowania) %}
-    {% set w_dolku = (v_tarcza_aktywna == 'true' or v_tarcza_aktywna == true) %}
-    {% set start_h = v_start_ladowania | int %}
-    
-    {% if states(s_soc) in ['unknown', 'unavailable', 'none', ''] %} 🔴 BŁĄD KRYTYCZNY: Brak połączenia Modbus (Inwerter Offline)
-    {% elif states(curr_ent) in ['unknown', 'unavailable', 'none', ''] or states(sell_power_ent) in ['unknown', 'unavailable', 'none', ''] or states(tou1_s) in ['unknown', 'unavailable', 'none', ''] %} 🔴 BŁĄD STRUKTURY: Brak encji wykonawczej (ESPHome Literówka!)
-    {% elif offg %} ⚠️ TARCZA BLACKOUTOWA (Tryb Wyspowy / Off-Grid)
-    {% elif (v_license_buffer | int(1)) == 2 %}
-      {% if tryb_ewakuacji == 'true' or tryb_ewakuacji == true %} ⚠️ Zrzut Awaryjny (Obrona Płotka)
-      {% elif w_dolku %} 🎯 TARCZA DOŁKA (Blokada Maklera)
-      {% elif v_force_sell_evening == 'true' or v_force_sell_evening == true %} 🌇 WIECZORNY HANDEL (Wysoka Marża)
-      {% elif v_ev_grid_lock == 'true' or v_ev_grid_lock == true %} 🚗 EV Grid-Lock (Bypass)
-      {% elif is_morning_bypass %} ☀️ BYPASS PV (Czekam na dołek o {{ v_start_ladowania }}:00)
-      {% elif is_midnight_sniper %}
-        {% if v_plan_sprzedazy == 'Sprzedaż' %} ☀️ Nocny/Poranny Snajper (Zrzut w blokach)
-        {% else %} ☀️ Oczekiwanie Snajpera (Szukam dołków)
-        {% endif %}
-      {% elif should_arbitrage == 'True' or should_arbitrage == true %}
-        {% if (v_sell_threshold | float(0)) < (v_prog_opacalnosci_bazowy | float(0)) %} 🎯 Snajper Wolumenu (Zrzut Nadwyżki)
-        {% else %} 💰 Arbitraż RCE {% endif %}
-      {% elif should_charge_to_sell == 'True' or should_charge_to_sell == true %} ⚡ Ładowanie pod Sprzedaż
-      {% else %} 🏠 Oczekiwanie / Tryb Bilansowy {% endif %}
-    {% elif (v_license_buffer | int(1)) == 1 %}
-      🏠 Tryb Bilansowy (Licencja BASIC)
-    {% else %}
-      🔴 BRAK LICENCJI (Zablokowano)
-    {% endif %}
-
-  v_chce_ladowac: >
-    {% set h = now().hour %}
-    {% set is_cheap_night = (h >= 22 or h < 6) %}
-    {% set start_h = v_start_ladowania | int(13) %}
-    {% set is_cheap_day = (h >= start_h and h < (start_h + 2)) %}
-    
-    {% set is_cheap = (is_cheap_night or is_cheap_day) %}
-    
-    {% set force_charge = (should_charge_to_sell == 'True' or should_charge_to_sell == true) %}
-    {% set is_balancing = (states('input_number.alpha_rce_param_42') | float(0) >= 21) %}
-    
-    {% set symulacja = v_sim | string | lower %}
-    {% set net_billing = v_net_billing | string | lower %}
-    {% set zablokuj_bypass = (symulacja == 'true' or net_billing == 'false') %}
-    {% set req_pv = ((cons_n | float(0) + cons_p | float(0) + cons_w | float(0)) * 1.4) | round(2) %}
-    {% set total_pv_today = v_pv_dzis | float(0) %}
-    {% set podloga = v_swap_min_soc | float(20) %}
-    {% set smart_toggle = (v_comfort_buffer_smart == true or v_comfort_buffer_smart == 'true') %}
-    {% set bufor_komfortu = 0 if (total_pv_today >= req_pv and smart_toggle) else (v_comfort_buffer | int(0)) %}
-    {% set twarda_podloga = podloga + bufor_komfortu %}
-    
-    {% set is_morning_bypass = (not zablokuj_bypass) and (6 <= h < start_h) and current_soc >= twarda_podloga and total_pv_today >= req_pv %}
-    
-    {% if (v_is_offgrid == 'true' or v_is_offgrid == true) %}
-      true
-    {% elif is_morning_bypass and not force_charge and not is_balancing %}
-      false
-    {% else %}
-      {{ 'true' if (is_cheap or force_charge or is_balancing) else 'false' }}
-    {% endif %}
-
-triggers:
-  - platform: time_pattern
-    minutes: "/1"
-  - platform: time
-    at:
-      - '00:15:00'
-      - '02:00:00'
-      - '05:00:00'
-      - '05:57:00'
-      - '06:00:00'
-      - '12:57:00'
-      - '13:00:00'
-      - '13:05:00'
-      - '14:00:00'
-      - '14:55:00'
-      - '14:57:00'
-      - '15:00:00'
-      - '15:05:00'
-      - '16:00:00'
-      - '17:00:00'
-      - '21:00:00'
-      - '21:57:00'
-      - '22:00:00'
-      - '22:05:00'
-      - '23:56:00'
-      - '23:59:00'
-  - platform: state
-    entity_id: input_boolean.alpha_rce_flaga_10
-    to: 'on'
-    id: "setup_trigger"
-  - platform: state
-    entity_id: input_boolean.alpha_rce_flaga_11
-    to: 'on'
-    id: "reset_trigger"
-  - platform: homeassistant
-    event: start
-action:
-  - if:
-      - condition: template
-        value_template: >
-          {% if trigger is undefined or trigger is none %} false
-          {% elif trigger.platform is defined and trigger.platform == 'time_pattern' %} true
-          {% else %} false {% endif %}
-    then:
-      - choose:
-          - conditions:
-              - condition: template
-                value_template: "{{ v_max_grid | float < 100.0 }}"
-              - condition: template
-                value_template: "{{ states('input_boolean.alpha_rce_flaga_15') == 'off' }}"
-            sequence:
-              - action: input_boolean.turn_on
-                target: { entity_id: input_boolean.alpha_rce_flaga_15 }
-              - action: persistent_notification.create
-                data:
-                  title: "⚠️ ALPHA HEMS: TARCZA BLACKOUTOWA"
-                  message: "Wykryto awarię sieci. System przechodzi w tryb przetrwania (Off-grid override)."
-          - conditions:
-              - condition: template
-                value_template: "{{ v_max_grid | float > 200.0 }}"
-              - condition: template
-                value_template: "{{ states('input_boolean.alpha_rce_flaga_15') == 'on' }}"
-            sequence:
-              - action: input_boolean.turn_off
-                target: { entity_id: input_boolean.alpha_rce_flaga_15 }
-              - action: persistent_notification.create
-                data:
-                  title: "✅ ALPHA HEMS: SIEĆ PRZYWRÓCONA"
-                  message: "Napięcie sieci stabilne. Tarcza Blackoutowa opuszczona, powrót do standardowej logiki."
-
-  - if:
-      - condition: template
-        value_template: >
-          {% if trigger is undefined or trigger is none %} false
-          {% elif trigger.platform is defined and trigger.platform == 'time' %}
-            {{ now().strftime('%H:%M') in ['05:57', '12:57', '14:57', '21:57', '23:56'] }}
-          {% else %} false {% endif %}
-    then:
-      - if:
-          - condition: template
-            value_template: "{{ v_ev_sensor | length > 5 }}"
-        then:
-          - action: homeassistant.update_entity
-            target: { entity_id: "{{ v_ev_sensor }}" }
-            continue_on_error: true
-
-  - if:
-      - condition: template
-        value_template: >
-          {% if trigger is undefined or trigger is none %} true
-          {% elif trigger.platform is undefined or trigger.platform is none %} true
-          {% elif trigger.platform is defined and trigger.platform == 'homeassistant' %} true
-          {% elif trigger.id is defined and trigger.id in ['setup_trigger', 'reset_trigger'] %} true
-          {% else %} false {% endif %}
-    then:
-      - action: persistent_notification.create
-        data:
-          title: "⏳ ALPHA HEMS: Inicjalizacja Modbus"
-          message: "Uruchamiam system w trybie opóźnionego zapłonu. Oczekuję na nawiązanie komunikacji z inwerterem (max 3 minuty)..."
-        
-      - wait_template: "{{ states(s_soc) not in ['unknown', 'unavailable', 'none', ''] }}"
-        timeout: "00:03:00"
-        continue_on_timeout: true
-
-  - if:
-      - condition: template
-        value_template: >
-          {{ states(s_soc) in ['unknown', 'unavailable', 'none', ''] or 
-             states(curr_ent) in ['unknown', 'unavailable', 'none', ''] or
-             states(sell_power_ent) in ['unknown', 'unavailable', 'none', ''] or
-             states(work_mode_ent) in ['unknown', 'unavailable', 'none', ''] or
-             states(tou1_s) in ['unknown', 'unavailable', 'none', ''] }}
-    then:
-      - action: input_text.set_value
-        target: { entity_id: input_text.alpha_rce_stan_03 }
-        data: { value: "{{ v_status_systemu }}" }
-      - stop: "BŁĄD STRUKTURY: Brak komunikacji Modbus lub brakuje encji wykonawczej (Literówka). Pętla zatrzymana."
-
-  - if:
-      - condition: template
-        value_template: >
-          {% if trigger is undefined or trigger is none %} true
-          {% elif trigger.platform is undefined or trigger.platform is none %} true
-          {% elif trigger.platform is defined and trigger.platform == 'homeassistant' %} true
-          {% elif trigger.id is defined and trigger.id in ['setup_trigger', 'reset_trigger'] %} true
-          {% else %} false {% endif %}
-    then:
-      - action: persistent_notification.create
-        data:
-          title: "✅ ALPHA HEMS v8.012: Status Startowy"
-          message: >
-            Wykryto nową architekturę (HYBRID RADAR & DEEP SCAN): 
-            - Inwerter: {{ prefix }} (Tłumacz HAL: {{ v_use_hal }})
-            - Zegarmistrz ({{ v_osd }}): {{ 'LATO' if v_is_dst else 'STANDARD/ZIMA' }}
-            - Magazyn: {{ cap }} kWh
-            - System Rozliczeń: {{ 'Net-billing' if v_net_billing else 'Opusty (Blokada RCE)' }}
-            - Cel Nocny: {{ target_night }}% / Cel Dzienny: {{ target_evening }}%
-            (Struktura ESPHome weryfikowana. Aktywna tarcza EEPROM).
-
-      - if:
-          - condition: template
-            value_template: >
-              {% if not v_notify_on %} false
-              {% elif trigger is undefined or trigger is none %} true
-              {% elif trigger.platform is undefined or trigger.platform is none %} true
-              {% elif trigger.id is defined and trigger.id in ['setup_trigger', 'reset_trigger'] %} true
-              {% else %} false {% endif %}
-        then:
-          - action: "{{ 'notify.mobile_app_' ~ (v_notify_device | replace('device_tracker.', '')) }}"
-            continue_on_error: true
-            data:
-              title: "🔔 ALPHA HEMS: Sygnał Życia"
-              message: "Pancerka v8.012 gotowa. Modbus połączony, struktura zweryfikowana w 100%. EEPROM chroniony."
-
-  - if:
-      - condition: template
-        value_template: "{{ states('input_number.alpha_pojemnosc_magazynu') | float(-1) != (cap | float) }}"
-    then:
-      - action: input_number.set_value
-        target: { entity_id: input_number.alpha_pojemnosc_magazynu }
-        data: { value: "{{ cap }}" }
-        continue_on_error: true
-
-  - if:
-      - condition: template
-        value_template: >
-          {% if trigger is undefined or trigger is none %} true
-          {% elif trigger.platform is undefined or trigger.platform is none %} true
-          {% elif trigger.id is defined and trigger.id == 'setup_trigger' %} true
-          {% elif trigger.platform is defined and trigger.platform == 'homeassistant' %} true
-          {% else %} false {% endif %}
-    then:
-      - action: homeassistant.update_entity
-        target: { entity_id: sensor.bms_communication_offset }
-        continue_on_error: true
-      - delay: "00:00:02"
-
-      - action: persistent_notification.create
-        data:
-          title: "⚙️ ALPHA SYNC: Betonowanie Pamięci (Zapis jednorazowy)"
-          message: "Rozpoczynam uszczelnianie okienek TOU do wartości Low SOC w celu ochrony pamięci EEPROM (Z weryfikacją stanu i opóźnieniami)..."
-          
-      - variables:
-          v_target_soc: "{{ v_low_soc | float(20) }}"
-          t1: "{{ states(tou1_soc) | float(-1) }}"
-          t2: "{{ states(tou2_soc) | float(-1) }}"
-          t3: "{{ states(tou3_soc) | float(-1) }}"
-          t4: "{{ states(tou4_soc) | float(-1) }}"
-          t5: "{{ states(tou5_soc) | float(-1) }}"
-          t6: "{{ states(tou6_soc) | float(-1) }}"
-
-      - action: switch.turn_off
-        target: { entity_id: ["{{ tou1_grid }}", "{{ tou2_grid }}", "{{ tou3_grid }}", "{{ tou4_grid }}", "{{ tou5_grid }}", "{{ tou6_grid }}"] }
-        continue_on_error: true
-      - delay: "00:00:02"
-
-      - if:
-          - condition: template
-            value_template: "{{ t1 != -1 and t1 != v_target_soc }}"
-        then:
-          - action: number.set_value
-            target: { entity_id: "{{ tou1_soc }}" }
-            data: { value: "{{ v_target_soc }}" }
-          - delay: "00:00:01"
-      - if:
-          - condition: template
-            value_template: "{{ t2 != -1 and t2 != v_target_soc }}"
-        then:
-          - action: number.set_value
-            target: { entity_id: "{{ tou2_soc }}" }
-            data: { value: "{{ v_target_soc }}" }
-          - delay: "00:00:01"
-      - if:
-          - condition: template
-            value_template: "{{ t3 != -1 and t3 != v_target_soc }}"
-        then:
-          - action: number.set_value
-            target: { entity_id: "{{ tou3_soc }}" }
-            data: { value: "{{ v_target_soc }}" }
-          - delay: "00:00:01"
-      - if:
-          - condition: template
-            value_template: "{{ t4 != -1 and t4 != v_target_soc }}"
-        then:
-          - action: number.set_value
-            target: { entity_id: "{{ tou4_soc }}" }
-            data: { value: "{{ v_target_soc }}" }
-          - delay: "00:00:01"
-      - if:
-          - condition: template
-            value_template: "{{ t5 != -1 and t5 != v_target_soc }}"
-        then:
-          - action: number.set_value
-            target: { entity_id: "{{ tou5_soc }}" }
-            data: { value: "{{ v_target_soc }}" }
-          - delay: "00:00:01"
-      - if:
-          - condition: template
-            value_template: "{{ t6 != -1 and t6 != v_target_soc }}"
-        then:
-          - action: number.set_value
-            target: { entity_id: "{{ tou6_soc }}" }
-            data: { value: "{{ v_target_soc }}" }
-          - delay: "00:00:01"
-
-      - action: switch.turn_off
-        target: { entity_id: ["{{ tou1_gen }}", "{{ tou2_gen }}", "{{ tou3_gen }}", "{{ tou4_gen }}", "{{ tou5_gen }}", "{{ tou6_gen }}"] }
-        continue_on_error: true
-      - delay: "00:00:01"
-
-      - if:
-          - condition: template
-            value_template: >
-              {% if trigger is undefined or trigger is none %} true
-              {% elif trigger.platform is undefined or trigger.platform is none %} true
-              {% elif trigger.id is defined and trigger.id == 'setup_trigger' %} true
-              {% else %} false {% endif %}
-        then:
-          - choose:
-              - conditions: "{{ v_integration == 'Solar Assistant' }}"
-                sequence:
-                  - action: shell_command.update_alpha_dashboard_sa
-                    data: { prefix: "{{ prefix }}" }
-                    continue_on_error: true
-            default:
-              - action: shell_command.update_alpha_dashboard_esp
-                continue_on_error: true
-          - action: persistent_notification.create
-            data:
-              title: "🚀 ALPHA SYNC: Dashboard zaktualizowany"
-              message: "Odśwież stronę (F5/Przeciągnij w dół), aby zobaczyć zmiany."
-          - action: input_boolean.turn_off
-            target: { entity_id: input_boolean.alpha_rce_flaga_10 }
-            continue_on_error: true
-
-  - if:
-      - condition: template
-        value_template: >
-          {% set t4 = states(tou4_s) %}
-          {% set t5 = states(tou5_s) %}
-          {% if t4 in ['unknown', 'unavailable', 'none', ''] %} false
-          {% elif t4[:5] != v_tou4_start or t5[:5] != v_tou5_start %} true
-          {% else %} false {% endif %}
-    then:
-      - action: persistent_notification.create
-        data:
-          title: "⏰ ALPHA HEMS: Korekta Zegarmistrza"
-          message: "Wykryto niezgodność godzin okienek w falowniku z profilem operatora ({{ v_osd }}). System autonomicznie rozpoczyna kaskadę zmiany czasu na: {{ v_tou4_start }} - {{ v_tou5_start }}."
-      - choose:
-          - conditions: "{{ v_is_dst }}"
-            sequence:
-              - choose:
-                  - conditions: "{{ v_integration == 'Solar Assistant' }}"
-                    sequence:
-                      - action: select.select_option
-                        target: { entity_id: "{{ tou5_s }}" }
-                        data: { option: "{{ v_tou5_start }}" }
-                        continue_on_error: true
-                      - delay: "00:00:03"
-                      - action: select.select_option
-                        target: { entity_id: "{{ tou4_s }}" }
-                        data: { option: "{{ v_tou4_start }}" }
-                        continue_on_error: true
-                default:
-                  - action: time.set_value
-                    target: { entity_id: "{{ tou5_s }}" }
-                    data: { time: "{{ v_tou5_start }}:00" }
-                    continue_on_error: true
-                  - delay: "00:00:03"
-                  - action: time.set_value
-                    target: { entity_id: "{{ tou4_s }}" }
-                    data: { time: "{{ v_tou4_start }}:00" }
-                    continue_on_error: true
-        default:
-          - choose:
-              - conditions: "{{ v_integration == 'Solar Assistant' }}"
-                sequence:
-                  - action: select.select_option
-                    target: { entity_id: "{{ tou4_s }}" }
-                    data: { option: "{{ v_tou4_start }}" }
-                    continue_on_error: true
-                  - delay: "00:00:03"
-                  - action: select.select_option
-                    target: { entity_id: "{{ tou5_s }}" }
-                    data: { option: "{{ v_tou5_start }}" }
-                    continue_on_error: true
-            default:
-              - action: time.set_value
-                target: { entity_id: "{{ tou4_s }}" }
-                data: { time: "{{ v_tou4_start }}:00" }
-                continue_on_error: true
-              - delay: "00:00:03"
-              - action: time.set_value
-                target: { entity_id: "{{ tou5_s }}" }
-                data: { time: "{{ v_tou5_start }}:00" }
-                continue_on_error: true
-
-  - if:
-      - condition: template
-        value_template: >
-          {% if trigger is undefined or trigger is none %} false
-          {% elif trigger.platform is defined and trigger.platform == 'time' %}
-            {{ now().strftime('%H:%M') in ['02:00', '14:00'] }}
-          {% else %} false {% endif %}
-    then:
-      - variables:
-          v_target_soc: "{{ v_low_soc | float(20) }}"
-          tou1_curr: "{{ states(tou1_soc) | float(-1) }}"
-          tou2_curr: "{{ states(tou2_soc) | float(-1) }}"
-          tou3_curr: "{{ states(tou3_soc) | float(-1) }}"
-          tou4_curr: "{{ states(tou4_soc) | float(-1) }}"
-          tou5_curr: "{{ states(tou5_soc) | float(-1) }}"
-          tou6_curr: "{{ states(tou6_soc) | float(-1) }}"
-      - if:
-          - condition: template
-            value_template: >
-              {{ tou1_curr != -1 and (tou1_curr != v_target_soc or tou2_curr != v_target_soc or tou3_curr != v_target_soc or tou4_curr != v_target_soc or tou5_curr != v_target_soc or tou6_curr != v_target_soc) }}
-        then:
-          - action: persistent_notification.create
-            data:
-              title: "🔧 ALPHA HEMS: Autonaprawa TOU SOC"
-              message: "Wykryto rozbieżność w okienkach TOU. Wyrównuję uszkodzone rejestry do sprzętowego Low SOC ({{ v_target_soc }}%) z zachowaniem ochrony pamięci Flash/EEPROM."
-          - if:
-              - condition: template
-                value_template: "{{ tou1_curr != -1 and tou1_curr != v_target_soc }}"
-            then:
-              - action: number.set_value
-                target: { entity_id: "{{ tou1_soc }}" }
-                data: { value: "{{ v_target_soc }}" }
-              - delay: "00:00:02"
-          - if:
-              - condition: template
-                value_template: "{{ tou2_curr != -1 and tou2_curr != v_target_soc }}"
-            then:
-              - action: number.set_value
-                target: { entity_id: "{{ tou2_soc }}" }
-                data: { value: "{{ v_target_soc }}" }
-              - delay: "00:00:02"
-          - if:
-              - condition: template
-                value_template: "{{ tou3_curr != -1 and tou3_curr != v_target_soc }}"
-            then:
-              - action: number.set_value
-                target: { entity_id: "{{ tou3_soc }}" }
-                data: { value: "{{ v_target_soc }}" }
-              - delay: "00:00:02"
-          - if:
-              - condition: template
-                value_template: "{{ tou4_curr != -1 and tou4_curr != v_target_soc }}"
-            then:
-              - action: number.set_value
-                target: { entity_id: "{{ tou4_soc }}" }
-                data: { value: "{{ v_target_soc }}" }
-              - delay: "00:00:02"
-          - if:
-              - condition: template
-                value_template: "{{ tou5_curr != -1 and tou5_curr != v_target_soc }}"
-            then:
-              - action: number.set_value
-                target: { entity_id: "{{ tou5_soc }}" }
-                data: { value: "{{ v_target_soc }}" }
-              - delay: "00:00:02"
-          - if:
-              - condition: template
-                value_template: "{{ tou6_curr != -1 and tou6_curr != v_target_soc }}"
-            then:
-              - action: number.set_value
-                target: { entity_id: "{{ tou6_soc }}" }
-                data: { value: "{{ v_target_soc }}" }
-
-  - if:
-      - condition: template
-        value_template: >
-          {% if trigger is undefined or trigger is none %} false
-          {% elif trigger.platform is undefined or trigger.platform is none %} false
-          {% elif trigger.id is defined and trigger.id == 'reset_trigger' %} true
-          {% else %} false {% endif %}
-    then:
-      - variables:
-          v_vault_raw: "{{ states('input_text.alpha_rce_stan_14') }}"
-          v_has_vault: "{{ v_vault_raw is defined and v_vault_raw != 'unknown' and v_vault_raw.startswith('{') and v_vault_raw.endswith('}') }}"
-        
-      - choose:
-          - conditions:
-              - condition: template
-                value_template: "{{ v_has_vault }}"
-            sequence:
-              - action: persistent_notification.create
-                data:
-                  title: "🛡️ ALPHA HEMS: Skarbiec Aktywowany"
-                  message: "Odtwarzam zapisane profile szufladek z pamięci (stan_14)."
-              - variables:
-                  v_vault_data: "{{ v_vault_raw | from_json }}"
-              - action: input_number.set_value
-                target: { entity_id: input_number.alpha_rce_param_11 }
-                data: { value: "{{ v_vault_data.get('11', (in_daily_cons | float * 0.25) | round(1)) }}" }
-              - action: input_number.set_value
-                target: { entity_id: input_number.alpha_rce_param_12 }
-                data: { value: "{{ v_vault_data.get('12', (in_daily_cons | float * 0.25) | round(1)) }}" }
-              - action: input_number.set_value
-                target: { entity_id: input_number.alpha_rce_param_13 }
-                data: { value: "{{ v_vault_data.get('13', (in_daily_cons | float * 0.25) | round(1)) }}" }
-              - action: input_number.set_value
-                target: { entity_id: input_number.alpha_rce_param_14 }
-                data: { value: "{{ v_vault_data.get('14', (in_daily_cons | float * 0.25) | round(1)) }}" }
-              - action: input_number.set_value
-                target: { entity_id: input_number.alpha_rce_param_15 }
-                data: { value: "{{ v_vault_data.get('15', (in_daily_cons | float * 0.25) | round(1)) }}" }
-              - action: input_number.set_value
-                target: { entity_id: input_number.alpha_rce_param_16 }
-                data: { value: "{{ v_vault_data.get('16', (in_daily_cons | float * 0.25) | round(1)) }}" }
-              - action: input_number.set_value
-                target: { entity_id: input_number.alpha_rce_param_17 }
-                data: { value: "{{ v_vault_data.get('17', (in_daily_cons | float * 0.25) | round(1)) }}" }
+              ### 🛡️ 3. LOGIKA 140% & PODWÓJNY CYKL (Double-Cycle Arbitrage)
+              * Łączne zapotrzebowanie DZIŚ: **{{ total_dzis | round(2) }} kWh** | Wymóg PV 140%: **{{ wymog_140_dzis | round(2) }} kWh**
+              * Słońce Dziś ({{ pv_dzis }} kWh) ≥ Wymóg 140%? ➔ **{{ '✅ TAK (Filar 1 autoryzowany)' if is_sunny_dzis else '❌ NIE (Standardowa ochrona, zrzut zablokowany)' }}**
               
-              - action: input_number.set_value
-                target: { entity_id: input_number.alpha_rce_param_21 }
-                data: { value: "{{ v_vault_data.get('21', (in_daily_cons | float * 0.30) | round(1)) }}" }
-              - action: input_number.set_value
-                target: { entity_id: input_number.alpha_rce_param_22 }
-                data: { value: "{{ v_vault_data.get('22', (in_daily_cons | float * 0.30) | round(1)) }}" }
-              - action: input_number.set_value
-                target: { entity_id: input_number.alpha_rce_param_23 }
-                data: { value: "{{ v_vault_data.get('23', (in_daily_cons | float * 0.30) | round(1)) }}" }
-              - action: input_number.set_value
-                target: { entity_id: input_number.alpha_rce_param_24 }
-                data: { value: "{{ v_vault_data.get('24', (in_daily_cons | float * 0.30) | round(1)) }}" }
-              - action: input_number.set_value
-                target: { entity_id: input_number.alpha_rce_param_25 }
-                data: { value: "{{ v_vault_data.get('25', (in_daily_cons | float * 0.30) | round(1)) }}" }
-              - action: input_number.set_value
-                target: { entity_id: input_number.alpha_rce_param_26 }
-                data: { value: "{{ v_vault_data.get('26', (in_daily_cons | float * 0.30) | round(1)) }}" }
-              - action: input_number.set_value
-                target: { entity_id: input_number.alpha_rce_param_27 }
-                data: { value: "{{ v_vault_data.get('27', (in_daily_cons | float * 0.30) | round(1)) }}" }
-
-              - action: input_number.set_value
-                target: { entity_id: input_number.alpha_rce_param_31 }
-                data: { value: "{{ v_vault_data.get('31', (in_daily_cons | float * 0.45) | round(1)) }}" }
-              - action: input_number.set_value
-                target: { entity_id: input_number.alpha_rce_param_32 }
-                data: { value: "{{ v_vault_data.get('32', (in_daily_cons | float * 0.45) | round(1)) }}" }
-              - action: input_number.set_value
-                target: { entity_id: input_number.alpha_rce_param_33 }
-                data: { value: "{{ v_vault_data.get('33', (in_daily_cons | float * 0.45) | round(1)) }}" }
-              - action: input_number.set_value
-                target: { entity_id: input_number.alpha_rce_param_34 }
-                data: { value: "{{ v_vault_data.get('34', (in_daily_cons | float * 0.45) | round(1)) }}" }
-              - action: input_number.set_value
-                target: { entity_id: input_number.alpha_rce_param_35 }
-                data: { value: "{{ v_vault_data.get('35', (in_daily_cons | float * 0.45) | round(1)) }}" }
-              - action: input_number.set_value
-                target: { entity_id: input_number.alpha_rce_param_36 }
-                data: { value: "{{ v_vault_data.get('36', (in_daily_cons | float * 0.45) | round(1)) }}" }
-              - action: input_number.set_value
-                target: { entity_id: input_number.alpha_rce_param_37 }
-                data: { value: "{{ v_vault_data.get('37', (in_daily_cons | float * 0.45) | round(1)) }}" }
-                
-        default:
-          - action: persistent_notification.create
-            data:
-              title: "🔄 ALPHA HEMS: Nowe opomiarowanie"
-              message: "Skarbiec pusty. Zalewam 21 szufladek na bazie {{ in_daily_cons }} kWh."
-          - action: input_number.set_value
-            target: { entity_id: [input_number.alpha_rce_param_11, input_number.alpha_rce_param_12, input_number.alpha_rce_param_13, input_number.alpha_rce_param_14, input_number.alpha_rce_param_15, input_number.alpha_rce_param_16, input_number.alpha_rce_param_17] }
-            data: { value: "{{ (in_daily_cons | float * 0.25) | round(1) }}" }
-          - action: input_number.set_value
-            target: { entity_id: [input_number.alpha_rce_param_21, input_number.alpha_rce_param_22, input_number.alpha_rce_param_23, input_number.alpha_rce_param_24, input_number.alpha_rce_param_25, input_number.alpha_rce_param_26, input_number.alpha_rce_param_27] }
-            data: { value: "{{ (in_daily_cons | float * 0.30) | round(1) }}" }
-          - action: input_number.set_value
-            target: { entity_id: [input_number.alpha_rce_param_31, input_number.alpha_rce_param_32, input_number.alpha_rce_param_33, input_number.alpha_rce_param_34, input_number.alpha_rce_param_35, input_number.alpha_rce_param_36, input_number.alpha_rce_param_37] }
-            data: { value: "{{ (in_daily_cons | float * 0.45) | round(1) }}" }
-
-      - action: input_boolean.turn_off
-        target: { entity_id: input_boolean.alpha_rce_flaga_11 }
-        continue_on_error: true
-
-  - variables:
-      raw_offset: "{{ states('sensor.bms_communication_offset') | float(-1) }}"
-      curr_szufladka: "{{ states('input_number.alpha_rce_param_65') | float(-99999) }}"
-      last_chg: "{{ states.sensor.bms_communication_offset.last_changed | default(now(), true) }}"
-      diff_sec: "{{ (as_timestamp(now()) - as_timestamp(last_chg)) | float(0) }}"
-      new_lic_value: >
-        {% if raw_offset == 2 %} 2
-        {% elif raw_offset == 0 %} 0
-        {% elif raw_offset == 1 or raw_offset == -1 %}
-          {% if curr_szufladka == 2 and diff_sec < 43200 %} 2 {% else %} 1 {% endif %}
-        {% else %} {{ curr_szufladka }} {% endif %}
-  - if:
-      - condition: template
-        value_template: "{{ new_lic_value in [0, 1, 2] and new_lic_value != curr_szufladka }}"
-    then:
-      - action: input_number.set_value
-        target: { entity_id: input_number.alpha_rce_param_65 }
-        data: { value: "{{ new_lic_value }}" }
-        continue_on_error: true
-
-  - variables:
-      active_license_raw: "{{ states('input_number.alpha_rce_param_65') | float(-99999) }}"
-      active_license: >
-        {% if active_license_raw == -99999 %} 1
-        {% else %} {{ active_license_raw | int(1) }} {% endif %}
-  - action: input_text.set_value
-    target: { entity_id: input_text.alpha_rce_stan_15 }
-    data:
-      value: >
-        {% if active_license == 2 %} 🟢 PRO (Handel + Ochrona)
-        {% elif active_license == 1 %} 🟡 BASIC (Tylko Ochrona)
-        {% else %} 🔴 BRAK (System Zablokowany) {% endif %}
-    continue_on_error: true
-
-  - action: input_number.set_value
-    target: { entity_id: input_number.alpha_rce_param_01 }
-    data: { value: "{{ price_now | float(0) }}" }
-  - action: input_number.set_value
-    target: { entity_id: input_number.alpha_rce_param_02 }
-    data: { value: "{{ v_real_cost | float(0) }}" }
-  - action: input_number.set_value
-    target: { entity_id: input_number.alpha_rce_param_03 }
-    data: { value: "{{ v_sell_threshold | float(0) }}" }
-  - action: input_number.set_value
-    target: { entity_id: input_number.alpha_rce_param_04 }
-    data: { value: "{{ v_potencjal_kwh | float(0) }}" }
-  - action: input_text.set_value
-    target: { entity_id: input_text.alpha_rce_stan_01 }
-    data: { value: "{{ 'Ładowanie pod Sprzedaż' if (should_charge_to_sell == 'True' or should_charge_to_sell == true) else v_plan_sprzedazy }}" }
-  - action: input_text.set_value
-    target: { entity_id: input_text.alpha_rce_stan_02 }
-    data: { value: "{{ v_sygnal_g12 }}" }
-  - action: input_text.set_value
-    target: { entity_id: input_text.alpha_rce_stan_03 }
-    data: { value: "{{ v_status_systemu }}" }
-  - action: input_number.set_value
-    target: { entity_id: input_number.alpha_rce_param_20 }
-    data: { value: "{{ docelowy_soc }}" }
-  - action: input_text.set_value
-    target: { entity_id: input_text.alpha_rce_stan_04 }
-    data: { value: "{{ v_tou4_start }} — {{ v_tou5_start }}" }
-  - action: input_text.set_value
-    target: { entity_id: input_text.alpha_rce_stan_05 }
-    continue_on_error: true
-    data: 
-      value: >
-        Jutro Cel 140%: {{ ((cons_n_jutro | float(0) + cons_p_jutro | float(0) + cons_w_jutro | float(0)) * 1.4) | round(1) }} kWh | Słońce: {{ v_prognoza_pv_jutro | float(0) }} kWh
-
-  - variables:
-      v_max_soc_dzis: "{{ states('input_number.alpha_rce_param_41') | float(0) }}"
-  - if:
-      - condition: template
-        value_template: "{{ current_soc > v_max_soc_dzis }}"
-    then:
-      - action: input_number.set_value
-        target: { entity_id: input_number.alpha_rce_param_41 }
-        data: { value: "{{ current_soc }}" }
-        continue_on_error: true
-
-  - if:
-      - condition: template
-        value_template: "{{ in_vg_2 | length > 5 }}"
-    then:
-      - choose:
-          - conditions:
-              - condition: template
-                value_template: "{{ v_max_grid | float >= 251.5 }}"
-              - condition: template
-                value_template: "{{ states(in_vg_2) == 'off' }}"
-            sequence:
-              - action: homeassistant.turn_on
-                target: { entity_id: "{{ in_vg_2 }}" }
-          - conditions:
-              - condition: template
-                value_template: "{{ v_max_grid | float < 248.0 }}"
-              - condition: template
-                value_template: "{{ states(in_vg_2) == 'on' }}"
-              - condition: template
-                value_template: "{{ (as_timestamp(now()) - as_timestamp(states[in_vg_2].last_changed | default(now()))) > 300 }}"
-            sequence:
-              - action: homeassistant.turn_off
-                target: { entity_id: "{{ in_vg_2 }}" }
-
-  - if:
-      - condition: template
-        value_template: "{{ in_vg_1 | length > 5 }}"
-    then:
-      - choose:
-          - conditions:
-              - condition: template
-                value_template: "{{ v_max_grid | float >= 250.0 }}"
-              - condition: template
-                value_template: "{{ states(in_vg_1) == 'off' }}"
-            sequence:
-              - action: homeassistant.turn_on
-                target: { entity_id: "{{ in_vg_1 }}" }
-          - conditions:
-              - condition: template
-                value_template: "{{ v_max_grid | float < 248.0 }}"
-              - condition: template
-                value_template: "{{ states(in_vg_1) == 'on' }}"
-              - condition: template
-                value_template: "{{ (as_timestamp(now()) - as_timestamp(states[in_vg_1].last_changed | default(now()))) > 300 }}"
-            sequence:
-              - action: homeassistant.turn_off
-                target: { entity_id: "{{ in_vg_1 }}" }
-
-  - if:
-      - condition: template
-        value_template: "{{ v_ev_switch | length > 5 }}"
-    then:
-      - variables:
-          v_voltage_spike: >
-            {% if v_ev_vg == 'true' or v_ev_vg == true %}
-              {% set is_on = states(v_ev_switch) == 'on' %}
-              {% if v_max_grid | float >= 250.0 %} true
-              {% elif is_on and v_max_grid | float >= 248.0 %} true
-              {% else %} false {% endif %}
-            {% else %} false {% endif %}
-            
-      - choose:
-          - conditions: "{{ v_ev_mode == 'Tylko Słońce (Nadwyżki)' }}"
-            sequence:
-              - if:
-                  - condition: template
-                    value_template: >
-                      {% set is_dyn = v_ev_dynamic_start == 'true' or v_ev_dynamic_start == true %}
-                      {% set d_soc = docelowy_soc | float(100) %}
-                      {% set start_soc = (d_soc + 10) if is_dyn else (v_ev_start_soc | float) %}
-                      {% set stop_soc = d_soc if is_dyn else (v_ev_dynamic_limit | float + 3) %}
-                      {% if v_voltage_spike == 'true' or v_voltage_spike == true %} true
-                      {% elif current_soc >= start_soc %} true
-                      {% elif states(v_ev_switch) == 'on' and current_soc > stop_soc %} true
-                      {% else %} false {% endif %}
-                then:
-                  - if:
-                      - condition: template
-                        value_template: "{{ states(v_ev_switch) != 'on' }}"
-                    then:
-                      - action: homeassistant.turn_on
-                        target: { entity_id: "{{ v_ev_switch }}" }
-                        continue_on_error: true
-                else:
-                  - if:
-                      - condition: template
-                        value_template: "{{ states(v_ev_switch) != 'off' }}"
-                    then:
-                      - action: homeassistant.turn_off
-                        target: { entity_id: "{{ v_ev_switch }}" }
-                        continue_on_error: true
-          
-          - conditions: "{{ v_ev_mode == 'Automatyczny (Słońce + Noc G12)' }}"
-            sequence:
-              - if:
-                  - condition: template
-                    value_template: >
-                      {% set is_dyn = v_ev_dynamic_start == 'true' or v_ev_dynamic_start == true %}
-                      {% set d_soc = docelowy_soc | float(100) %}
-                      {% set start_soc = (d_soc + 10) if is_dyn else (v_ev_start_soc | float) %}
-                      {% set stop_soc = d_soc if is_dyn else (v_ev_dynamic_limit | float + 3) %}
-                      {% set is_cheap = (now().hour >= 22 or now().hour < 6) or (v_t_aggr_start_h | int <= now().hour < v_t_prognoza_shift | int) %}
-                      {% set has_surplus = current_soc >= start_soc or (states(v_ev_switch) == 'on' and current_soc > stop_soc) %}
-                      {% set is_spike = v_voltage_spike == 'true' or v_voltage_spike == true %}
-                      {{ is_cheap or has_surplus or is_spike }}
-                then:
-                  - if:
-                      - condition: template
-                        value_template: "{{ states(v_ev_switch) != 'on' }}"
-                    then:
-                      - action: homeassistant.turn_on
-                        target: { entity_id: "{{ v_ev_switch }}" }
-                        continue_on_error: true
-                else:
-                  - if:
-                      - condition: template
-                        value_template: "{{ states(v_ev_switch) != 'off' }}"
-                    then:
-                      - action: homeassistant.turn_off
-                        target: { entity_id: "{{ v_ev_switch }}" }
-                        continue_on_error: true
-                    
-          - conditions: "{{ v_ev_mode == 'Wyłączony' }}"
-            sequence:
-              - if:
-                  - condition: template
-                    value_template: "{{ v_voltage_spike == 'true' or v_voltage_spike == true }}"
-                then:
-                  - if:
-                      - condition: template
-                        value_template: "{{ states(v_ev_switch) != 'on' }}"
-                    then:
-                      - action: homeassistant.turn_on
-                        target: { entity_id: "{{ v_ev_switch }}" }
-                        continue_on_error: true
-                else:
-                  - if:
-                      - condition: template
-                        value_template: "{{ states(v_ev_switch) == 'on' }}"
-                    then:
-                      - action: homeassistant.turn_off
-                        target: { entity_id: "{{ v_ev_switch }}" }
-                        continue_on_error: true
-
-  - choose:
-      - conditions:
-          - condition: template
-            value_template: "{{ now().hour >= 22 or now().hour < 6 }}"
-        sequence:
-          - variables:
-              v_new_night_current: >
-                {% set offg = (v_is_offgrid == 'true' or v_is_offgrid == true) %}
-                {% set current_soc_val = states(s_soc)|float(0) %}
-                {% if offg %}
-                  {{ c_max }}
-                {% elif current_soc_val < 60 %}
-                  {{ c_max }}
-                {% elif current_soc_val >= 98 %}
-                  {{ c_precision }}
-                {% elif current_soc_val >= 90 %}
-                  {{ c_low }}
-                {% elif current_soc_val >= 80 %}
-                  {{ c_night_throttle }}
-                {% else %}
-                  {{ c_dynamic_night }}
-                {% endif %}
-          - if:
-              - condition: template
-                value_template: "{{ states(curr_ent) | float(-1) != (v_new_night_current | float) }}"
-            then:
-              - action: number.set_value
-                target: { entity_id: "{{ curr_ent }}" }
-                data: { value: "{{ v_new_night_current }}" }
-                continue_on_error: true
-
-      - conditions:
-          - condition: template
-            value_template: "{{ 6 <= now().hour < 22 }}"
-        sequence:
-          - variables:
-              v_new_day_current: >
-                {% set offg = (v_is_offgrid == 'true' or v_is_offgrid == true) %}
-                {% set symulacja = v_sim | string | lower %}
-                {% set net_billing = v_net_billing | string | lower %}
-                {% set zablokuj_bypass = (symulacja == 'true' or net_billing == 'false') %}
-                {% set current_soc_val = states(s_soc)|float(0) %}
-                {% set req_pv = ((cons_n | float(0) + cons_p | float(0) + cons_w | float(0)) * 1.4) | round(2) %}
-                {% set total_pv_today = v_pv_dzis | float(0) %}
-                {% set podloga = v_swap_min_soc | float(20) %}
-                {% set smart_toggle = (v_comfort_buffer_smart == true or v_comfort_buffer_smart == 'true') %}
-                {% set bufor_komfortu = 0 if (total_pv_today >= req_pv and smart_toggle) else (v_comfort_buffer | int(0)) %}
-                {% set twarda_podloga = podloga + bufor_komfortu %}
-                
-                {% set is_morning_bypass = (not zablokuj_bypass) and (6 <= now().hour < v_start_ladowania) and current_soc_val >= twarda_podloga and total_pv_today >= req_pv %}
-                {% set cena_ujemna = (price_now | float(1)) < 0.01 %}
-                {% set is_summer_dump = (v_is_summer_dump == 'true' or v_is_summer_dump == true) and now().hour < (v_start_ladowania | int) %}
-                
-                {% if offg %}
-                  {{ c_max }}
-                {% elif cena_ujemna %}
-                  {{ c_max }}
-                {% elif is_morning_bypass %}
-                  10
-                {% elif is_summer_dump and current_soc_val <= podloga + 1 %}
-                  2
-                {% elif current_soc_val < 60 %}
-                  {{ c_max }}
-                {% elif current_soc_val >= 98 %}
-                  {{ c_precision }}
-                {% elif current_soc_val >= 90 %}
-                  {{ c_low }}
-                {% else %}
-                  {{ c_max }}
-                {% endif %}
-          - if:
-              - condition: template
-                value_template: "{{ states(curr_ent) | float(-1) != (v_new_day_current | float) }}"
-            then:
-              - action: number.set_value
-                target: { entity_id: "{{ curr_ent }}" }
-                data: { value: "{{ v_new_day_current }}" }
-                continue_on_error: true
-
-  - choose:
-      - conditions: "{{ v_sim }}"
-        sequence:
-          - if:
-              - condition: template
-                value_template: "{{ states(work_mode_ent) != v_idle_mode }}"
-            then:
-              - action: select.select_option
-                target: { entity_id: "{{ work_mode_ent }}" }
-                data: { option: "{{ v_idle_mode }}" }
-                continue_on_error: true
-          - if:
-              - condition: template
-                value_template: "{{ tou_sell_all_ent != 'switch.brak_encji' and states(tou_sell_all_ent) != 'off' }}"
-            then:
-              - action: switch.turn_off
-                target: { entity_id: "{{ tou_sell_all_ent }}" }
-                continue_on_error: true
-          
-          - if:
-              - condition: template
-                value_template: "{{ states(sell_power_ent) | float(-1) != (v_dynamic_sell_power | float) }}"
-            then:
-              - action: number.set_value
-                target: { entity_id: "{{ sell_power_ent }}" }
-                data: { value: "{{ v_dynamic_sell_power }}" }
-                continue_on_error: true
-
-      - conditions: "{{ (should_arbitrage == 'True' or should_arbitrage == true) and not v_sim }}"
-        sequence:
-          - if:
-              - condition: template
-                value_template: >
-                  {% set is_selling = states(work_mode_ent) == 'Selling First' %}
-                  {% set podloga = v_swap_min_soc | float %}
-                  {% set sufit = docelowy_soc | float %}
-                  {{ current_soc >= sufit or (is_selling and current_soc > podloga) }}
-            then:
-              - if:
-                  - condition: template
-                    value_template: "{{ states(work_mode_ent) != 'Selling First' }}"
-                then:
-                  - action: select.select_option
-                    target: { entity_id: "{{ work_mode_ent }}" }
-                    data: { option: "Selling First" }
-                    continue_on_error: true
-              - if:
-                  - condition: template
-                    value_template: "{{ tou_sell_all_ent != 'switch.brak_encji' and states(tou_sell_all_ent) != 'on' }}"
-                then:
-                  - action: switch.turn_on
-                    target: { entity_id: "{{ tou_sell_all_ent }}" }
-                    continue_on_error: true
-              - delay: "00:00:01"
-              - if:
-                  - condition: template
-                    value_template: "{{ states(sell_power_ent) | float(-1) != (v_dynamic_sell_power | float) }}"
-                then:
-                  - action: number.set_value
-                    target: { entity_id: "{{ sell_power_ent }}" }
-                    data: { value: "{{ v_dynamic_sell_power }}" }
-                    continue_on_error: true
-            else:
-              - if:
-                  - condition: template
-                    value_template: "{{ current_soc <= (v_swap_min_soc | float) }}"
-                then:
-                  - if:
-                      - condition: template
-                        value_template: "{{ states(work_mode_ent) != v_idle_mode }}"
-                    then:
-                      - action: select.select_option
-                        target: { entity_id: "{{ work_mode_ent }}" }
-                        data: { option: "{{ v_idle_mode }}" }
-                        continue_on_error: true
-                  - if:
-                      - condition: template
-                        value_template: "{{ tou_sell_all_ent != 'switch.brak_encji' and states(tou_sell_all_ent) != 'off' }}"
-                    then:
-                      - action: switch.turn_off
-                        target: { entity_id: "{{ tou_sell_all_ent }}" }
-                        continue_on_error: true
-
-      - conditions: "{{ not (should_arbitrage == 'True' or should_arbitrage == true) and not (should_charge_to_sell == 'True' or should_charge_to_sell == true) and not v_sim }}"
-        sequence:
-          - if:
-              - condition: template
-                value_template: "{{ states(work_mode_ent) != v_idle_mode }}"
-            then:
-              - action: select.select_option
-                target: { entity_id: "{{ work_mode_ent }}" }
-                data: { option: "{{ v_idle_mode }}" }
-                continue_on_error: true
-          - if:
-              - condition: template
-                value_template: "{{ tou_sell_all_ent != 'switch.brak_encji' and states(tou_sell_all_ent) != 'off' }}"
-            then:
-              - action: switch.turn_off
-                target: { entity_id: "{{ tou_sell_all_ent }}" }
-                continue_on_error: true
-          - if:
-              - condition: template
-                value_template: "{{ states(sell_power_ent) | float(-1) != (v_dynamic_sell_power | float) }}"
-            then:
-              - action: number.set_value
-                target: { entity_id: "{{ sell_power_ent }}" }
-                data: { value: "{{ v_dynamic_sell_power }}" }
-                continue_on_error: true
-
-  - if:
-      - condition: template
-        value_template: "{{ solar_sell_ent != 'switch.brak_encji' }}"
-    then:
-      - variables:
-          v_force_pv_off: >
-            {% set cena = price_now | float(1) %}
-            {% set offg = (v_is_offgrid == 'true' or v_is_offgrid == true) %}
-            {{ offg or (cena < 0.01 and not v_sim) }}
-      - if:
-          - condition: template
-            value_template: "{{ v_force_pv_off }}"
-        then:
-          - if:
-              - condition: template
-                value_template: "{{ states(solar_sell_ent) != 'off' }}"
-            then:
-              - action: switch.turn_off
-                target: { entity_id: "{{ solar_sell_ent }}" }
-                continue_on_error: true
-        else:
-          - if:
-              - condition: template
-                value_template: "{{ states(solar_sell_ent) != 'on' }}"
-            then:
-              - action: switch.turn_on
-                target: { entity_id: "{{ solar_sell_ent }}" }
-                continue_on_error: true
-
-  - variables:
-      v_is_balancing: "{{ states('input_number.alpha_rce_param_42') | float(0) >= 21 }}"
-      v_dance_window: "{{ now().hour >= 22 or now().hour < 6 }}"
-      v_dance_timeout: "{{ now().hour == 5 and now().minute >= 55 }}"
-      v_dance_flag_state: "{{ states('input_boolean.alpha_rce_flaga_13') }}"
-      v_dance_flag_time: "{{ ((as_timestamp(now()) - as_timestamp(states['input_boolean.alpha_rce_flaga_13'].last_changed | default(now()))) / 60) | float(0) }}"
-
-  - if:
-      - condition: template
-        value_template: >
-          {% if trigger is undefined or trigger is none %} false
-          {% elif trigger.platform is undefined or trigger.platform is none %} false
-          {% elif trigger.platform is defined and trigger.platform == 'time_pattern' %} true
-          {% else %} false {% endif %}
-    then:
-      - choose:
-          - conditions:
-              - condition: template
-                value_template: "{{ v_is_balancing and v_dance_window and current_soc >= 99 and v_dance_flag_state == 'off' }}"
-            sequence:
-              - action: input_boolean.turn_on
-                target: { entity_id: input_boolean.alpha_rce_flaga_13 }
-              - action: persistent_notification.create
-                data:
-                  title: "🔋 ALPHA HEMS: Balansowanie Rozpoczęte"
-                  message: "Osiągnięto górny limit SOC. Utrzymuję ten stan łagodnym prądem przez 1.5h, aby wyrównać cele."
-
-          - conditions:
-              - condition: template
-                value_template: "{{ v_is_balancing and v_dance_flag_state == 'on' and (v_dance_flag_time >= 90 or v_dance_timeout or not v_dance_window) }}"
-            sequence:
-              - action: input_boolean.turn_off
-                target: { entity_id: input_boolean.alpha_rce_flaga_13 }
-              - action: input_number.set_value
-                target: { entity_id: input_number.alpha_rce_param_42 }
-                data: { value: 0 }
-                continue_on_error: true
-              - action: persistent_notification.create
-                data:
-                  title: "✅ ALPHA HEMS: Balansowanie Zakończone"
-                  message: "Zakończono wygrzewanie cel. Wracam do wyliczonych wartości Płotka."
-
-  - choose:
-      - conditions:
-          - condition: template
-            value_template: "{{ now().strftime('%H:%M') == '06:00' }}"
-        sequence:
-          - action: input_number.set_value
-            target:
-              entity_id: input_number.alpha_rce_param_28
-            data:
-              value: >
-                {% if v_use_hal == 'true' or v_use_hal == true %} {{ states('sensor.alpha_hems_dobowe_zuzycie_domu') | float(0) }}
-                {% else %} {{ states('sensor.' ~ prefix ~ '_daily_load_consumption') | float(0) }} {% endif %}
-          - if:
-              - condition: template
-                value_template: "{{ v_ev_sensor | length > 5 }}"
-            then:
-              - action: input_number.set_value
-                target: { entity_id: input_number.alpha_rce_param_29 }
-                data: { value: "{{ states(v_ev_sensor) | float(0) }}" }
-                
-          - variables:
-              v_por_start: "{{ states('input_number.alpha_rce_param_28') | float(0) }}"
-              v_ev_start: "{{ states('input_number.alpha_rce_param_29') | float(0) }}"
-              v_ev_end: "{{ states(v_ev_sensor) | float(0) if v_ev_sensor | length > 5 else v_ev_start }}"
-              v_ev_diff: "{{ [v_ev_end - v_ev_start, 0] | max }}"
-              v_load_end: >
-                {% if v_use_hal == 'true' or v_use_hal == true %} {{ states('sensor.alpha_hems_dobowe_zuzycie_domu') | float(0) }}
-                {% else %} {{ states('sensor.' ~ prefix ~ '_daily_load_consumption') | float(0) }} {% endif %}
-              v_load_diff: "{{ [v_load_end - v_por_start, 0] | max }}"
-              v_real_cons: "{{ [v_load_diff - v_ev_diff, 0.1] | max }}"
-          - action: input_number.set_value
-            target: { entity_id: "{{ sz_noc }}" }
-            data: { value: "{{ v_real_cons | round(1) }}" }
-
-      - conditions:
-          - condition: template
-            value_template: "{{ now().strftime('%H:%M') == ('%02d:00' % v_start_ladowania | int) }}"
-        sequence:
-          - action: input_number.set_value
-            target:
-              entity_id: input_number.alpha_rce_param_38
-            data:
-              value: >
-                {% if v_use_hal == 'true' or v_use_hal == true %} {{ states('sensor.alpha_hems_dobowe_zuzycie_domu') | float(0) }}
-                {% else %} {{ states('sensor.' ~ prefix ~ '_daily_load_consumption') | float(0) }} {% endif %}
-          - if:
-              - condition: template
-                value_template: "{{ v_ev_sensor | length > 5 }}"
-            then:
-              - action: input_number.set_value
-                target: { entity_id: input_number.alpha_rce_param_47 }
-                data: { value: "{{ states(v_ev_sensor) | float(0) }}" }
-                
-          - variables:
-              v_wie_start: "{{ states('input_number.alpha_rce_param_28') | float(0) }}"
-              v_ev_start: "{{ states('input_number.alpha_rce_param_29') | float(0) }}"
-              v_ev_end: "{{ states(v_ev_sensor) | float(0) if v_ev_sensor | length > 5 else v_ev_start }}"
-              v_ev_diff: "{{ [v_ev_end - v_ev_start, 0] | max }}"
-              v_load_end: >
-                {% if v_use_hal == 'true' or v_use_hal == true %} {{ states('sensor.alpha_hems_dobowe_zuzycie_domu') | float(0) }}
-                {% else %} {{ states('sensor.' ~ prefix ~ '_daily_load_consumption') | float(0) }} {% endif %}
-              v_load_diff: "{{ [v_load_end - v_wie_start, 0] | max }}"
-              v_real_cons: "{{ [v_load_diff - v_ev_diff, 0.1] | max }}"
-          - action: input_number.set_value
-            target: { entity_id: "{{ sz_por }}" }
-            data: { value: "{{ v_real_cons | round(1) }}" }
-
-      - conditions:
-          - condition: template
-            value_template: "{{ now().strftime('%H:%M') == '22:00' }}"
-        sequence:
-          - action: input_number.set_value
-            target:
-              entity_id: input_number.alpha_rce_param_39
-            data:
-              value: >
-                {% if v_use_hal == 'true' or v_use_hal == true %} {{ states('sensor.alpha_hems_dobowe_zuzycie_domu') | float(0) }}
-                {% else %} {{ states('sensor.' ~ prefix ~ '_daily_load_consumption') | float(0) }} {% endif %}
-          - if:
-              - condition: template
-                value_template: "{{ v_ev_sensor | length > 5 }}"
-            then:
-              - action: input_number.set_value
-                target: { entity_id: input_number.alpha_rce_param_48 }
-                data: { value: "{{ states(v_ev_sensor) | float(0) }}" }
-                
-          - variables:
-              v_noc_start: "{{ states('input_number.alpha_rce_param_38') | float(0) }}"
-              v_ev_start: "{{ states('input_number.alpha_rce_param_47') | float(0) }}"
-              v_ev_end: "{{ states(v_ev_sensor) | float(0) if v_ev_sensor | length > 5 else v_ev_start }}"
-              v_ev_diff: "{{ [v_ev_end - v_ev_start, 0] | max }}"
-              v_load_end: >
-                {% if v_use_hal == 'true' or v_use_hal == true %} {{ states('sensor.alpha_hems_dobowe_zuzycie_domu') | float(0) }}
-                {% else %} {{ states('sensor.' ~ prefix ~ '_daily_load_consumption') | float(0) }} {% endif %}
-              v_load_diff: "{{ [v_load_end - v_noc_start, 0] | max }}"
-              v_real_cons: "{{ [v_load_diff - v_ev_diff, 0.1] | max }}"
-          - action: input_number.set_value
-            target: { entity_id: "{{ sz_wie }}" }
-            data: { value: "{{ v_real_cons | round(1) }}" }
-
-      - conditions:
-          - condition: template
-            value_template: "{{ now().strftime('%H:%M') == '23:59' }}"
-        sequence:
-          - variables:
-              ev_now: >
-                {% if v_ev_sensor | length > 5 %}
-                  {% set ev_raw = states(v_ev_sensor) %}
-                  {{ ev_raw | float(0) if ev_raw not in ['unknown', 'unavailable', 'none', ''] and ev_raw | float(0) > 0 else states('input_number.alpha_rce_param_53') | float(0) }}
-                {% else %} 0.0 {% endif %}
-              ev_mid: "{{ states('input_number.alpha_rce_param_54') | float(0) if v_ev_sensor | length > 5 else 0.0 }}"
-              ev_daily_raw: "{{ ev_now - ev_mid }}"
-              ev_daily_total: >
-                {% if ev_mid == 0 and ev_daily_raw > 150 %} 0.0
-                {% else %} {{ [ev_daily_raw, 0] | max }} {% endif %}
-                
-              v_bought: >
-                {% if v_use_hal == 'true' or v_use_hal == true %} {{ states('sensor.alpha_hems_dobowy_zakup_siec') | float(0) }}
-                {% else %} {{ states('sensor.' ~ prefix ~ '_daily_energy_bought') | float(0) }} {% endif %}
-              v_discharge: >
-                {% if v_use_hal == 'true' or v_use_hal == true %} {{ states('sensor.alpha_hems_dobowe_rozladowanie_baterii') | float(0) }}
-                {% else %} {{ states('sensor.' ~ prefix ~ '_daily_battery_discharge') | float(0) }} {% endif %}
-              v_gen: >
-                {% if v_use_hal == 'true' or v_use_hal == true %} {{ states('sensor.alpha_hems_dobowa_produkcja_generatora') | float(0) }}
-                {% else %} {{ states('sensor.' ~ prefix ~ '_daily_generator_production') | float(0) }} {% endif %}
-              v_pv: >
-                {% if v_use_hal == 'true' or v_use_hal == true %} {{ states('sensor.alpha_hems_dobowa_produkcja_pv') | float(0) }}
-                {% else %} {{ states('sensor.' ~ prefix ~ '_daily_pv_production') | float(0) }} {% endif %}
-              v_sold: >
-                {% if v_use_hal == 'true' or v_use_hal == true %} {{ states('sensor.alpha_hems_dobowa_sprzedaz_siec') | float(0) }}
-                {% else %} {{ states('sensor.' ~ prefix ~ '_daily_energy_sold') | float(0) }} {% endif %}
-              v_charge: >
-                {% if v_use_hal == 'true' or v_use_hal == true %} {{ states('sensor.alpha_hems_dobowe_ladowanie_baterii') | float(0) }}
-                {% else %} {{ states('sensor.' ~ prefix ~ '_daily_battery_charge') | float(0) }} {% endif %}
-              v_load_raw: >
-                {% if v_use_hal == 'true' or v_use_hal == true %} {{ states('sensor.alpha_hems_dobowe_zuzycie_domu') }}
-                {% else %} {{ states('sensor.' ~ prefix ~ '_daily_load_consumption') }} {% endif %}
-              v_load_val: "{{ v_load_raw | float(-1.0) }}"
-              
-              dzisiejsze_zuzycie_calkowite_raw: >
-                {% if v_load_val >= 0.0 %}
-                  {{ [v_load_val, 0.1] | max | round(1) }}
-                {% else %}
-                  {% set res = (v_bought - v_sold) + (v_discharge - v_charge) + v_gen + v_pv %}
-                  {{ [res, 0.1] | max | round(1) }}
-                {% endif %}
-              
-              dzisiejsze_zuzycie_calkowite: "{{ [dzisiejsze_zuzycie_calkowite_raw - ev_daily_total, 0.1] | max | round(1) }}"
-              
-              v_load_13_z_szufladki: "{{ states('input_number.alpha_rce_param_38') | float(0) }}"
-              v_load_06_z_szufladki: "{{ states('input_number.alpha_rce_param_28') | float(0) }}"
-              v_load_22_z_szufladki: "{{ states('input_number.alpha_rce_param_39') | float(0) }}"
-              
-              ev_06: "{{ states('input_number.alpha_rce_param_51') | float(0) if v_ev_sensor | length > 5 else 0.0 }}"
-              ev_13: "{{ states('input_number.alpha_rce_param_52') | float(0) if v_ev_sensor | length > 5 else 0.0 }}"
-              ev_22: "{{ states('input_number.alpha_rce_param_53') | float(0) if v_ev_sensor | length > 5 else 0.0 }}"
-              
-              zuz_por_raw: "{{ [v_load_13_z_szufladki - v_load_06_z_szufladki, 0] | max }}"
-              ev_por_raw: "{{ ev_13 - ev_06 }}"
-              ev_por: "{{ ev_por_raw if 0 <= ev_por_raw <= 150 else 0 }}"
-              zuzycie_poranek_temp: "{{ [zuz_por_raw - ev_por, 0] | max }}"
-              
-              zuz_wie_raw: "{{ [v_load_22_z_szufladki - v_load_13_z_szufladki, 0] | max }}"
-              ev_wie_raw: "{{ ev_22 - ev_13 }}"
-              ev_wie: "{{ ev_wie_raw if 0 <= ev_wie_raw <= 150 else 0 }}"
-              zuzycie_wieczor_temp: "{{ [zuz_wie_raw - ev_wie, 0] | max }}"
-              
-              v_zuzycie_noc_wyliczone: >
-                {% set noc = dzisiejsze_zuzycie_calkowite - zuzycie_poranek_temp - zuzycie_wieczor_temp %}
-                {{ [noc, 0.1] | max | round(1) }}
-                
-          - action: input_number.set_value
-            target:
-              entity_id: "{{ sz_noc }}"
-            data:
-              value: >
-                {% set old = states(sz_noc) | float(0) %}
-                {{ ((old * 3 + v_zuzycie_noc_wyliczone) / 4) | round(1) }}
-
-          - if:
-              - condition: template
-                value_template: "{{ v_ev_sensor | length > 5 }}"
-            then:
-              - action: input_number.set_value
-                target: { entity_id: input_number.alpha_rce_param_54 }
-                data: { value: "{{ ev_now }}" }
-
-          - variables:
-              rad_ai_radar: >
-                {% set ns = namespace(entity='sensor.ai_raw_forecast_data') %}
-                {% for state in states.weather | selectattr('attributes.attribution', 'defined') %}
-                  {% if 'Open-Meteo' in state.attributes.attribution %}
-                    {% set ns.entity = state.entity_id %}
+              {% set prices = state_attr(sensor_rce, 'value') %}
+              {% if not prices %} {% set prices = state_attr(sensor_rce, 'prices') %} {% endif %}
+              {% set ns = namespace(max_rano=-999.0, min_poludnie=999.0) %}
+              {% if prices is iterable and prices is not string and prices is not mapping %}
+                {% for p in prices %}
+                  {% set p_str = p.dtime | string %}
+                  {% set p_dt = as_datetime(p_str) %}
+                  {% if p_dt == none %} {% set p_dt = strptime(p_str, '%Y-%m-%d %H:%M:%S', strptime(p_str, '%Y-%m-%d %H:%M', none)) %} {% endif %}
+                  {% set p_ts = as_timestamp(p_dt) if p_dt != none else none %}
+                  {% if p_ts != none and p_ts >= today_at('00:00').timestamp() %}
+                    {% set p_hour = (p_ts | timestamp_custom('%H', true)) | int %}
+                    {% set val = p.rce_pln | default(p.cen_cost | default(p.price | default(0))) | float(0) / 1000 %}
+                    {% if 6 <= p_hour < 11 %}
+                      {% if val > ns.max_rano %} {% set ns.max_rano = val %} {% endif %}
+                    {% endif %}
+                    {% if 11 <= p_hour <= 14 %}
+                      {% if val < ns.min_poludnie %} {% set ns.min_poludnie = val %} {% endif %}
+                    {% endif %}
                   {% endif %}
                 {% endfor %}
-                {{ ns.entity }}
-              rad_ai: >
-                {% if rad_ai_radar.startswith('weather.') %}
-                  {{ state_attr(rad_ai_radar, 'forecast') | default([], true) | map(attribute='shortwave_radiation') | select('defined') | list }}
+              {% endif %}
+              {% set spread = (ns.max_rano - ns.min_poludnie) | round(2) %}
+              {% set sniper_threshold = (ns.min_poludnie + 0.20) | round(4) %}
+              
+              * 📉 Max cena rano: **{{ ns.max_rano }} zł/kWh** | 📈 Min cena południe: **{{ ns.min_poludnie }} zł/kWh**
+              * Obliczony Spread (Różnica): **{{ spread }} zł/kWh**
+              * Podwójny Cykl Opłacalny (Spread >= 0.20 zł)? ➔ **{{ '✅ TAK (Filar 2 autoryzowany)' if spread >= 0.20 else '❌ NIE (Różnica w cenie nie opłaca amortyzacji)' }}**
+              * 🎯 **Dynamiczny Celownik Snajpera (Dołek + 20 gr): {{ sniper_threshold }} zł/kWh**
+
+              ---
+
+              ### 📈 Planowanie Okienek Handlowych (Autoscale RCE)
+              {% set now_ts = as_timestamp(now()) %}
+              {% set h = now().hour %}
+              {% set prognoza_shift = 15 if states('input_boolean.alpha_rce_flaga_12') == 'on' else 13 %}
+              {% set t_aggr = 15 if states('input_boolean.alpha_rce_flaga_12') == 'on' else 13 %}
+              {% set prog = states('input_number.alpha_rce_param_03') | float(0) * 1000 %}
+              {% set ns = namespace(future_active=[], is_now=false) %}
+              {% if slupki_req > 0 and prices is iterable and prices is not string and prices is not mapping %}
+                {% for p in prices %}
+                  {% set p_ts = as_timestamp(as_datetime(p.dtime | string)) if as_datetime(p.dtime | string) != none else as_timestamp(strptime(p.dtime | string, '%Y-%m-%d %H:%M:%S', strptime(p.dtime | string, '%Y-%m-%d %H:%M', none))) %}
+                  {% if p_ts != none and p_ts >= (now_ts - 900) %}
+                    {% if (h < t_aggr and p_ts < as_timestamp(today_at('%02d:01' % t_aggr))) or (h >= prognoza_shift) %}
+                      {% set val = p.rce_pln | default(p.cen_cost | default(p.price | default(0))) | float(0) %}
+                      {% if val >= prog %}
+                        {% set ns.future_active = ns.future_active + [{'dtime': p.dtime | string, 'cena': val, 'ts': p_ts}] %}
+                      {% endif %}
+                    {% endif %}
+                  {% endif %}
+                {% endfor %}
+                {% if ns.future_active | length > 0 %}
+                  {% set top_slupki = ns.future_active | sort(attribute='cena', reverse=true) | batch(slupki_req) | first | default([]) %}
+                  **🎯 Celownik Systemu (TOP {{ slupki_req }}):**
+                  {% for b in top_slupki %}
+                    - {{ b.dtime[11:16] }} -> **{{ b.cena }}** zł/MWh
+                    {% if now_ts >= b.ts and now_ts < (b.ts + 900) %}
+                      {% set ns.is_now = true %}
+                    {% endif %}
+                  {% endfor %}
+                  **🛑 Werdykt Rentgena:** {{ '✅ Cel zablokowany: SPRZEDAŻ!' if ns.is_now else '⏳ Oczekuję na lepsze ceny.' }}
                 {% else %}
-                  {{ state_attr('sensor.ai_raw_forecast_data', 'shortwave_radiation') | default([], true) }}
+                  **🛑 Werdykt Rentgena:** Brak opłacalnych okienek powyżej progu.
                 {% endif %}
-              today_ghi: >
-                {% if rad_ai and rad_ai | length >= 24 %} {{ (rad_ai[0:24] | map('float') | sum) / 1000 }}
-                {% else %} 0 {% endif %}
-              stary_mnoznik_raw: "{{ states('input_number.alpha_rce_param_46') | float(-99999) }}"
-              stary_mnoznik: "{{ 6.00 if stary_mnoznik_raw <= 0 else stary_mnoznik_raw }}"
-              nowy_mnoznik: >
-                {% if today_ghi > 0 and v_pv > 0 %}
-                  {{ (((stary_mnoznik * 9.0) + (v_pv / today_ghi)) / 10.0) | round(3) }}
-                {% else %}
-                  {{ stary_mnoznik }}
-                {% endif %}
-          - action: input_number.set_value
-            target:
-              entity_id: input_number.alpha_rce_param_46
-            data:
-              value: "{{ nowy_mnoznik }}"
-            continue_on_error: true
+              {% else %}
+                **🛑 Werdykt Rentgena:** Brak wolnej energii do zrzutu lub ujemne ceny.
+              {% endif %}
 
-          - variables:
-              jutro_dzien: "{{ (now() + timedelta(days=1)).day }}"
-              jutro_miesiac: "{{ (now() + timedelta(days=1)).month }}"
-          - if:
-              - condition: template
-                value_template: "{{ jutro_dzien == 1 }}"
-            then:
-              - action: input_number.set_value
-                target: { entity_id: input_number.alpha_rce_param_44 }
-                data: { value: 0 }
-                continue_on_error: true
-              - if:
-                  - condition: template
-                    value_template: "{{ jutro_miesiac == 1 }}"
-                then:
-                  - action: input_number.set_value
-                    target: { entity_id: input_number.alpha_rce_param_45 }
-                    data: { value: 0 }
-                    continue_on_error: true
-                    
-          - action: input_text.set_value
-            target: { entity_id: input_text.alpha_rce_stan_14 }
-            data:
-              value: >
-                {% set d = {
-                  '11': states('input_number.alpha_rce_param_11') | float(0),
-                  '12': states('input_number.alpha_rce_param_12') | float(0),
-                  '13': states('input_number.alpha_rce_param_13') | float(0),
-                  '14': states('input_number.alpha_rce_param_14') | float(0),
-                  '15': states('input_number.alpha_rce_param_15') | float(0),
-                  '16': states('input_number.alpha_rce_param_16') | float(0),
-                  '17': states('input_number.alpha_rce_param_17') | float(0),
-                  '21': states('input_number.alpha_rce_param_21') | float(0),
-                  '22': states('input_number.alpha_rce_param_22') | float(0),
-                  '23': states('input_number.alpha_rce_param_23') | float(0),
-                  '24': states('input_number.alpha_rce_param_24') | float(0),
-                  '25': states('input_number.alpha_rce_param_25') | float(0),
-                  '26': states('input_number.alpha_rce_param_26') | float(0),
-                  '27': states('input_number.alpha_rce_param_27') | float(0),
-                  '31': states('input_number.alpha_rce_param_31') | float(0),
-                  '32': states('input_number.alpha_rce_param_32') | float(0),
-                  '33': states('input_number.alpha_rce_param_33') | float(0),
-                  '34': states('input_number.alpha_rce_param_34') | float(0),
-                  '35': states('input_number.alpha_rce_param_35') | float(0),
-                  '36': states('input_number.alpha_rce_param_36') | float(0),
-                  '37': states('input_number.alpha_rce_param_37') | float(0)
-                } %}
-                {{ d | to_json }}
-            continue_on_error: true
+          - type: markdown
+            title: "🌙 Sektor Nocny (22:00-06:00)"
+            content: >
+              - **Poniedziałek:** {{ states('input_number.alpha_rce_param_11') }} kWh
+              - **Wtorek:** {{ states('input_number.alpha_rce_param_12') }} kWh
+              - **Środa:** {{ states('input_number.alpha_rce_param_13') }} kWh
+              - **Czwartek:** {{ states('input_number.alpha_rce_param_14') }} kWh
+              - **Piątek:** {{ states('input_number.alpha_rce_param_15') }} kWh
+              - **Sobota:** {{ states('input_number.alpha_rce_param_16') }} kWh
+              - **Niedziela:** {{ states('input_number.alpha_rce_param_17') }} kWh
 
-  - if:
-      - condition: template
-        value_template: >
-          {% if trigger is undefined or trigger is none %} false
-          {% elif trigger.platform is undefined or trigger.platform is none %} false
-          {% elif trigger.platform is defined and trigger.platform == 'time_pattern' %} true
-          {% else %} false {% endif %}
-    then:
-      - variables:
-          v_ct_val: "{{ states(ext_ct_ent) }}"
-          v_grid_val: >
-            {% if v_use_hal == 'true' or v_use_hal == true %} {{ states('sensor.alpha_hems_siec_moc_calkowita') | float(0) }}
-            {% else %} {{ states('sensor.' ~ prefix ~ '_grid_power') | float(0) }} {% endif %}
-          v_moc_surowa: >
-            {% if v_ct_val not in ['unknown', 'unavailable', 'none', ''] and v_ct_val | float(0) != 0 %}
-              {{ v_ct_val | float(0) }}
-            {% else %}
-              {{ v_grid_val | float(0) }}
-            {% endif %}
-            
-          v_moc_eksport: "{{ [0, (v_moc_surowa * -1)] | max }}"
-          v_cena_rce: "{{ [states('input_number.alpha_rce_param_01') | float(0), 0.0] | max }}"
-          
-          v_zysk_minuta: >
-            {% if (v_net_billing == 'true' or v_net_billing == true) %}
-              {{ ((v_moc_eksport / 1000) * v_cena_rce / 60) | round(3) }}
-            {% else %}
-              0.0
-            {% endif %}
-          
-          v_zysk_dzien_raw: "{{ states('input_number.alpha_rce_param_05') | float(-99999) }}"
-          v_zysk_dzien: "{{ 0.0 if v_zysk_dzien_raw <= -99999 else v_zysk_dzien_raw }}"
-          v_zysk_total_raw: "{{ states('input_number.alpha_rce_param_43') | float(-99999) }}"
-          v_zysk_total: "{{ 0.0 if v_zysk_total_raw <= -99999 else v_zysk_total_raw }}"
-          v_zysk_miesiac_raw: "{{ states('input_number.alpha_rce_param_44') | float(-99999) }}"
-          v_zysk_miesiac: "{{ 0.0 if v_zysk_miesiac_raw <= -99999 else v_zysk_miesiac_raw }}"
-          v_zysk_rok_raw: "{{ states('input_number.alpha_rce_param_45') | float(-99999) }}"
-          v_zysk_rok: "{{ 0.0 if v_zysk_rok_raw <= -99999 else v_zysk_rok_raw }}"
+          - type: markdown
+            title: "🌅 Sektor Poranny (06:00-13:00)"
+            content: >
+              - **Poniedziałek:** {{ states('input_number.alpha_rce_param_21') }} kWh
+              - **Wtorek:** {{ states('input_number.alpha_rce_param_22') }} kWh
+              - **Środa:** {{ states('input_number.alpha_rce_param_23') }} kWh
+              - **Czwartek:** {{ states('input_number.alpha_rce_param_24') }} kWh
+              - **Piątek:** {{ states('input_number.alpha_rce_param_25') }} kWh
+              - **Sobota:** {{ states('input_number.alpha_rce_param_26') }} kWh
+              - **Niedziela:** {{ states('input_number.alpha_rce_param_27') }} kWh
 
-      - if:
-          - condition: template
-            value_template: "{{ v_zysk_minuta > 0 or v_zysk_total_raw <= -99999 or v_zysk_miesiac_raw <= -99999 or v_zysk_rok_raw <= -99999 or v_zysk_dzien_raw <= -99999 }}"
-        then:
-          - action: input_number.set_value
-            target: { entity_id: input_number.alpha_rce_param_05 }
-            data: { value: "{{ (v_zysk_dzien + v_zysk_minuta) | round(3) }}" }
-            continue_on_error: true
-          - action: input_number.set_value
-            target: { entity_id: input_number.alpha_rce_param_43 }
-            data: { value: "{{ (v_zysk_total + v_zysk_minuta) | round(3) }}" }
-            continue_on_error: true
-          - action: input_number.set_value
-            target: { entity_id: input_number.alpha_rce_param_44 }
-            data: { value: "{{ (v_zysk_miesiac + v_zysk_minuta) | round(3) }}" }
-            continue_on_error: true
-          - action: input_number.set_value
-            target: { entity_id: input_number.alpha_rce_param_45 }
-            data: { value: "{{ (v_zysk_rok + v_zysk_minuta) | round(3) }}" }
-            continue_on_error: true
-            
-      - variables:
-          v_param_42_raw: "{{ states('input_number.alpha_rce_param_42') | float(0) }}"
-      - if:
-          - condition: template
-            value_template: "{{ v_param_42_raw < 0 }}"
-        then:
-          - action: input_number.set_value
-            target: { entity_id: input_number.alpha_rce_param_42 }
-            data: { value: "{{ (v_param_42_raw + 99999) | int(0) }}" }
-            continue_on_error: true
-            
-      - if:
-          - condition: template
-            value_template: "{{ now().strftime('%H:%M') == '23:59' }}"
-        then:
-          - action: input_number.set_value
-            target: { entity_id: input_number.alpha_rce_param_05 }
-            data: { value: 0 }
-            continue_on_error: true
-          - variables:
-              v_max_soc_final_raw: "{{ states('input_number.alpha_rce_param_41') | float(-99999) }}"
-              v_max_soc_final: "{{ 0.0 if v_max_soc_final_raw <= -99999 else v_max_soc_final_raw }}"
-              v_dni_bez_balansu_raw: "{{ states('input_number.alpha_rce_param_42') | float(-99999) }}"
-              v_dni_bez_balansu: "{{ 0 if v_dni_bez_balansu_raw <= -99999 else v_dni_bez_balansu_raw }}"
-              nowy_licznik_balansu: >
-                {% if v_max_soc_final >= 98.0 %}
-                  0
-                {% else %}
-                  {{ v_dni_bez_balansu + 1 }}
-                {% endif %}
-          - action: input_number.set_value
-            target: { entity_id: input_number.alpha_rce_param_42 }
-            data: { value: "{{ nowy_licznik_balansu }}" }
-            continue_on_error: true
-          - action: input_number.set_value
-            target: { entity_id: input_number.alpha_rce_param_41 }
-            data: { value: 0 } 
-            continue_on_error: true
+          - type: markdown
+            title: "🌆 Sektor Wieczorny (13:00-22:00)"
+            content: >
+              - **Poniedziałek:** {{ states('input_number.alpha_rce_param_31') }} kWh
+              - **Wtorek:** {{ states('input_number.alpha_rce_param_32') }} kWh
+              - **Środa:** {{ states('input_number.alpha_rce_param_33') }} kWh
+              - **Czwartek:** {{ states('input_number.alpha_rce_param_34') }} kWh
+              - **Piątek:** {{ states('input_number.alpha_rce_param_35') }} kWh
+              - **Sobota:** {{ states('input_number.alpha_rce_param_36') }} kWh
+              - **Niedziela:** {{ states('input_number.alpha_rce_param_37') }} kWh
 
-  - if:
-      - condition: template
-        value_template: >
-          {% if trigger is undefined or trigger is none %} false
-          {% elif trigger.platform is undefined or trigger.platform is none %} false
-          {% elif trigger.platform is defined and trigger.platform == 'time_pattern' %} true
-          {% else %} false {% endif %}
-    then:
-      - if:
-          - condition: template
-            value_template: "{{ v_r1_on and v_r1_dev | length > 5 }}"
-        then:
-          - choose:
-              - conditions:
-                  - condition: template
-                    value_template: "{{ current_soc >= (v_r1_soc | float) }}"
-                  - condition: template
-                    value_template: "{{ states(v_r1_dev) == 'off' }}"
-                sequence:
-                  - action: homeassistant.turn_on
-                    target: { entity_id: "{{ v_r1_dev }}" }
-                    continue_on_error: true
-              - conditions:
-                  - condition: template
-                    value_template: "{{ current_soc <= ((v_r1_soc | float) - 2) }}"
-                  - condition: template
-                    value_template: "{{ states(v_r1_dev) == 'on' }}"
-                sequence:
-                  - action: homeassistant.turn_off
-                    target: { entity_id: "{{ v_r1_dev }}" }
-                    continue_on_error: true
+          - type: entities
+            title: "⚡ Monitoring Napięcia Fazy"
+            show_header_toggle: false
+            entities:
+              - entity: sensor.deye_inverter_grid_l1_voltage
+                name: "Faza L1"
+              - entity: sensor.deye_inverter_grid_l2_voltage
+                name: "Faza L2"
+              - entity: sensor.deye_inverter_grid_l3_voltage
+                name: "Faza L3"
+              - type: section
+              - entity: input_boolean.alpha_rce_flaga_10
+                name: "🔄 WYMUŚ ALPHA SYNC / SETUP"
+                icon: mdi:tools
 
-      - if:
-          - condition: template
-            value_template: "{{ v_r2_on and v_r2_dev | length > 5 }}"
-        then:
-          - choose:
-              - conditions:
-                  - condition: template
-                    value_template: "{{ current_soc >= (v_r2_soc | float) }}"
-                  - condition: template
-                    value_template: "{{ states(v_r2_dev) == 'off' }}"
-                sequence:
-                  - action: homeassistant.turn_on
-                    target: { entity_id: "{{ v_r2_dev }}" }
-                    continue_on_error: true
-              - conditions:
-                  - condition: template
-                    value_template: "{{ current_soc <= ((v_r2_soc | float) - 2) }}"
-                  - condition: template
-                    value_template: "{{ states(v_r2_dev) == 'on' }}"
-                sequence:
-                  - action: homeassistant.turn_off
-                    target: { entity_id: "{{ v_r2_dev }}" }
-                    continue_on_error: true
+  # =============================================================
+  # ZAKŁADKA 4: 🔄 PRZEPŁYW (Widok uproszczony)
+  # =============================================================
+  - type: panel
+    path: flow-view
+    title: PRZEPŁYW
+    icon: mdi:sync
+    cards:
+      - type: custom:sunsynk-power-flow-card
+        cardstyle: lite
+        wide: false
+        large_font: true
+        show_solar: true
+        show_battery: true
+        show_grid: true
+        center_no_grid: true
+        card_height: '750'
+        card_width: 100%
+        decimal_places: 2
+        decimal_places_energy: 1
+        dynamic_line_width: true
+        max_line_width: 4
+        min_line_width: 1
+        inverter:
+          three_phase: true
+          auto_scale: true
+          modern: true
+          colour: '#217cb5'
+          autarky: power
+        battery:
+          show_daily: true
+          auto_scale: true
+          show_absolute: true
+          colour: '#c01b1b'
+          charge_colour: '#435bd0'
+          dynamic_colour: true
+          linear_gradient: true
+          show_remaining_energy: true
+          energy: 47616
+          shutdown_soc: 6
+        battery2:
+          energy: 0
+          shutdown_soc: 20
+          soc_end_of_charge: 100
+          invert_power: false
+          hide_soc: false
+          colour: '#ffc0cb'
+          show_remaining_energy: true
+          remaining_energy_to_shutdown: false
+          show_absolute: false
+          auto_scale: true
+          dynamic_colour: true
+          linear_gradient: true
+          animate: true
+          path_threshold: 100
+          navigate: ''
+          invert_flow: false
+        solar:
+          show_daily: true
+          mppts: 3
+          pv1_name: S_Edge
+          auto_scale: true
+          colour: '#c9cc05'
+          pv1_max_power: 7400
+          display_mode: 2
+        load:
+          show_daily: true
+          dynamic_icon: true
+          dynamic_colour: true
+          colour: '#2cce6a'
+          show_absolute_aux: true
+          auto_scale: true
+          additional_loads: 1
+          load1_name: Gwarantowane
+          load1_icon: mdi:calendar-text
+          load2_name: Pozostało PV
+          load2_icon: mdi:solar-power-variant
+          essential_name: UPS
+        grid:
+          show_daily_buy: true
+          show_daily_sell: true
+          show_nonessential: true
+          auto_scale: true
+          colour: '#2a95cb'
+          export_colour: '#e0c124'
+        grid_options:
+          columns: full
+          rows: 1
+        entities:
+          remaining_solar: sensor.solcast_pv_forecast_pozostala_prognoza_na_dzis
+          energy_prognoza_106: sensor.solcast_pv_forecast_prognoza_na_dzisiaj
+          day_pv_energy_108: sensor.deye_inverter_daily_pv_production
+          essential_load1: sensor.deye_inverter_load_ups_power
+          essential_load1_extra: sensor.dobowe_zuzycie_ups
+          essential_load2: sensor.smart_plug_2_moc
+          essential_load3: sensor.smart_plug_3_moc
+          use_timer_248: switch.sunsynk_toggle_system_timer
+          priority_load_243: sensor.deye_inverter_load_power
+          inverter_voltage_154: sensor.deye_inverter_output_l1_voltage
+          load_frequency_192: sensor.deye_inverter_load_frequency
+          inverter_current_164: sensor.deye_inverter_output_l1_current
+          inverter_power_175: sensor.sunsynk_inverter_power
+          grid_connected_status_194: binary_sensor.sunsynk_grid_connected_status
+          inverter_status_59: sensor.sunsynk_overall_state
+          day_battery_discharge_71: sensor.deye_inverter_daily_battery_discharge
+          battery_voltage_183: sensor.deye_inverter_battery_bms_voltage
+          battery_power_190: sensor.deye_inverter_battery_power
+          battery_current_191: sensor.deye_inverter_battery_bms_current
+          grid_power_169: sensor.sunsynk_grid_power
+          day_grid_export_77: sensor.deye_inverter_daily_energy_sold
+          grid_ct_power_172: sensor.deye_inverter_grid_l1_power
+          day_load_energy_84: sensor.deye_inverter_daily_load_consumption
+          pv1_power_186: sensor.deye_inverter_pv1_power
+          pv2_power_187: sensor.deye_inverter_pv2_power
+          pv3_power_188: sensor.deye_inverter_generator_power_total
+          day_grid_import_76: sensor.deye_inverter_daily_energy_bought
+          grid_ct_power_total: sensor.deye_inverter_grid_power
+          battery_temp_182: sensor.deye_inverter_battery_temperature
+          day_aux_energy: sensor.solcast_pv_forecast_prognoza_na_dzisiaj
+          essential_power: sensor.deye_inverter_load_power
+          radiator_temp_91: sensor.deye_inverter_ac_temperature
+          dc_transformer_temp_90: sensor.magazyn_pomieszczenie_temperatura
+          solar_sell_247: switch.deye_inverter_solar_sell
+          day_battery_charge_70: sensor.deye_inverter_daily_battery_charge
+          battery_soc_184: sensor.deye_inverter_battery
+          battery_rated_capacity: number.deye_inverter_battery_capacity
+          battery_shutdown_soc: number.deye_inverter_battery_shutdown_soc_low_dc
 
-  - if:
-      - condition: template
-        value_template: >
-          {% set offg = (v_is_offgrid == 'true' or v_is_offgrid == true) %}
-          {% set chce_lad = (v_chce_ladowac | string | lower | trim) == 'true' %}
-          {% set is_charging = states(tou_switch_ent) == 'off' %}
-          {% set podloga = v_swap_min_soc | float(20) %}
-          {% set sufit = docelowy_soc | float(100) %}
-          {{ offg or (chce_lad and (current_soc <= podloga or (not is_charging and current_soc < (sufit - 1)) or (is_charging and current_soc < sufit))) }}
-    then:
-      - if:
-          - condition: template
-            value_template: "{{ states(tou_switch_ent) != 'off' }}"
-        then:
-          - action: switch.turn_off
-            target: { entity_id: "{{ tou_switch_ent }}" }
-            continue_on_error: true
-    else:
-      - if:
-          - condition: template
-            value_template: >
-              {% set offg = (v_is_offgrid == 'true' or v_is_offgrid == true) %}
-              {% set chce_lad = (v_chce_ladowac | string | lower | trim) == 'true' %}
-              {{ not offg and states(tou_switch_ent) != 'on' and (current_soc >= (docelowy_soc | float(100)) or not chce_lad) }}
-        then:
-          - action: switch.turn_on
-            target: { entity_id: "{{ tou_switch_ent }}" }
-            continue_on_error: true
+  # =============================================================
+  # ZAKŁADKA 5: 📊 HISTORIA 24H (Święty Graal HEMS)
+  # =============================================================
+  - type: panel
+    path: historia-36h
+    title: HISTORIA 36H
+    icon: mdi:chart-timeline-variant
+    cards:
+      - type: custom:apexcharts-card
+        graph_span: 36h
+        update_interval: 1min
+        header:
+          show: true
+          title: 'Przebieg dobowy (Moc i Magazyn)'
+          show_states: true
+          colorize_states: true
+        apex_config:
+          chart:
+            height: 600
+          stroke:
+            curve: smooth
+          legend:
+            show: true
+        yaxis:
+          - id: power
+            min: 0
+            decimals: 0
+          - id: soc
+            min: 0
+            max: 100
+            opposite: true
+            decimals: 0
+        series:
+          - entity: sensor.deye_inverter_load_power
+            name: Zużycie Domu
+            type: line
+            color: '#e0e0e0'
+            stroke_width: 2
+            yaxis_id: power
+            group_by:
+              func: avg
+              duration: 5m
+          - entity: sensor.deye_inverter_grid_power
+            name: Zakup z Sieci
+            type: area
+            color: '#e74c3c'
+            opacity: 0.4
+            stroke_width: 1
+            yaxis_id: power
+            show:
+              in_header: false
+            transform: 'return (x !== null && Number(x) > 0) ? Number(x) : 0;'
+            group_by:
+              func: avg
+              duration: 5m
+          - entity: sensor.deye_inverter_grid_power
+            name: Sprzedaż do Sieci
+            type: area
+            color: '#2ecc71'
+            opacity: 0.4
+            stroke_width: 1
+            yaxis_id: power
+            show:
+              in_header: false
+            transform: 'return (x !== null && Number(x) < 0) ? Math.abs(Number(x)) : 0;'
+            group_by:
+              func: avg
+              duration: 5m
+          - entity: sensor.deye_inverter_battery_bms_soc
+            name: SOC Magazynu
+            type: line
+            color: '#3498db'
+            stroke_width: 3
+            yaxis_id: soc
+            group_by:
+              func: avg
+              duration: 5m
+
+  # =============================================================
+  # ZAKŁADKA 6: 🔮 SOC PROGNOZA (Predictive Twin)
+  # =============================================================
+  - type: panel
+    path: soc-prognoza
+    title: SOC PROGNOZA
+    icon: mdi:chart-bell-curve-cumulative
+    cards:
+      - type: custom:apexcharts-card
+        header:
+          show: true
+          title: 🔮 Predictive Twin (Baza vs Symulacja RCE)
+          show_states: true
+        graph_span: 24h
+        span:
+          start: minute
+        apex_config:
+          chart:
+            height: 900
+        all_series_config:
+          stroke_width: 3
+          curve: smooth
+        series:
+          - entity: sensor.alpha_soc_predictive_twin
+            name: SOC Baza (Bez sprzedaży)
+            unit: "%"
+            color: "#00a8ff"
+            type: area
+            opacity: 0.2
+            yaxis_id: percent
+            data_generator: >
+              let d = entity.attributes.simulation; return (typeof d === 'string' ? JSON.parse(d) : d).map(p => [p.timestamp, p.soc]);
+          - entity: sensor.alpha_soc_predictive_twin
+            name: SOC Symulacja RCE
+            unit: "%"
+            color: "#9b59b6"
+            type: line
+            stroke_width: 4
+            yaxis_id: percent
+            data_generator: >
+              let d = entity.attributes.simulation; return (typeof d === 'string' ? JSON.parse(d) : d).map(p => [p.timestamp, p.soc_sell]);
+          - entity: sensor.alpha_soc_predictive_twin
+            name: Krytyczny SOC (Deye Low)
+            unit: "%"
+            color: "#ff4500"
+            type: line
+            stroke_width: 1
+            yaxis_id: percent
+            data_generator: >
+              let d = entity.attributes.simulation; let limit = parseFloat(hass.states['number.deye_inverter_battery_low_soc'].state) || 20; return (typeof d === 'string' ? JSON.parse(d) : d).map(p => [p.timestamp, limit]);
+          - entity: sensor.alpha_soc_predictive_twin
+            name: Uzysk słońca
+            unit: kWh
+            color: "#f1c40f"
+            type: area
+            opacity: 0.3
+            yaxis_id: energy
+            data_generator: >
+              let d = entity.attributes.simulation; return (typeof d === 'string' ? JSON.parse(d) : d).map(p => [p.timestamp, p.pv]);
+          - entity: sensor.alpha_soc_predictive_twin
+            name: Pobór domu
+            unit: kWh
+            color: "#e84118"
+            type: line
+            yaxis_id: energy
+            data_generator: >
+              let d = entity.attributes.simulation; return (typeof d === 'string' ? JSON.parse(d) : d).map(p => [p.timestamp, p.cons]);
+        yaxis:
+          - id: percent
+            min: 0
+            max: 100
+            decimals: 0
+            opposite: false
+          - id: energy
+            min: 0
+            decimals: 2
+            opposite: true
+
+  # =============================================================
+  # ZAKŁADKA 7: ⚙️ USTAWIENIA (Centrum Dowodzenia v1.43)
+  # =============================================================
+  - type: panel
+    path: ustawienia
+    title: USTAWIENIA
+    icon: mdi:cog
+    cards:
+      - type: vertical-stack
+        cards:
+          - type: markdown
+            title: "🛠️ Centrum Dowodzenia ALPHA v1.43"
+            content: "Konfiguracja parametrów pracy systemu bezpośrednio z interfejsu."
+
+          - type: grid
+            columns: 2
+            cards:
+              # --- KOLUMNA 1: FINANSE, TARYFY I GIEŁDA ---
+              - type: entities
+                title: "💰 Handel i Parametry Sieci"
+                show_header_toggle: false
+                entities:
+                  - type: section
+                    label: "Finanse i Giełda"
+                  - entity: input_text.alpha_rce_stan_06
+                    name: "Cena zakupu energii"
+                    icon: mdi:cash-minus
+                  - entity: input_number.alpha_zysk_minimalny
+                    name: "Oczekiwany zysk minimalny"
+                    icon: mdi:chart-line-variant
+                  - entity: input_number.alpha_moc_sprzedazy
+                    name: "Moc sprzedaży RCE"
+                    icon: mdi:transmission-tower-export
+                  - entity: input_boolean.alpha_rce_flaga_01
+                    name: "Rozliczenie: Stare zasady / Net-metering vs Nowe zasady (Net-billing) ->> Właczone = Nowe Zasady "
+                    icon: mdi:scale-balance
+                  - type: section
+                    label: "Taryfy i Tryby Pracy"
+                  - entity: input_select.alpha_tryb_bilansowania
+                    name: "Tryb Spoczynku"
+                    icon: mdi:home-lightning-bolt
+                  - entity: input_select.alpha_osd
+                    name: "Operator OSD"
+                    icon: mdi:factory
+                  - entity: input_select.alpha_taryfa
+                    name: "Taryfa"
+                    icon: mdi:clock-time-eight
+
+              # --- KOLUMNA 2: ZAPASY, SYSTEM I KOMUNIKACJA ---
+              - type: entities
+                title: "🛡️ Bezpieczeństwo i System"
+                show_header_toggle: false
+                entities:
+                  - type: section
+                    label: "Zarządzanie Zapasem"
+                  - entity: input_number.alpha_rezerwa_soc
+                    name: "Rozmiar Bufora Komfortu (%)"
+                    icon: mdi:battery-plus
+                  - entity: input_boolean.alpha_rce_flaga_03
+                    name: "☀️ Wyłącz Bufor w słoneczne dni (>140%)"
+                    icon: mdi:weather-sunny
+                  - entity: input_boolean.alpha_rce_flaga_05
+                    name: "🚀 Agresywny Zrzut Poranny (Włączony = Czasowa Ochrona SOC na 18:00)"
+                    icon: mdi:rocket-launch
+                  - type: section
+                    label: "System i Komunikacja"
+                  - entity: input_boolean.alpha_rce_flaga_02
+                    name: "🛡️ TRYB SYMULACJI (Blokada handlu)"
+                    icon: mdi:shield-lock
+                  - entity: input_boolean.alpha_rce_flaga_04
+                    name: "🔔 Włącz powiadomienia PUSH"
+                    icon: mdi:bell-ring
