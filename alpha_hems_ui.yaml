@@ -1293,13 +1293,7 @@ variables:
     {% else %}
       {{ 'true' if (is_cheap or force_charge or is_balancing) else 'false' }}
     {% endif %}
-# =============================================================
-# === KONIEC CZĘŚCI 2 ===
-# =============================================================
-# =============================================================
-# === POCZĄTEK CZĘŚCI 3 (Wyzwalacze i Akcje Ochronne) ===
-# =============================================================
-triggers:
+    triggers:
   - platform: time_pattern
     minutes: "/1"
   - platform: time
