@@ -1,8 +1,9 @@
 # =============================================================
-# ALPHA HEMS: CENTRALNY INTERFEJS UŻYTKOWNIKA (v1.48)
+# ALPHA HEMS: CENTRALNY INTERFEJS UŻYTKOWNIKA (v1.49)
 # STATUS: PRODUKCYJNY / EKSPORTOWY (Zatwierdzony Układ Własny)
 #
 # HISTORIA WERSJI:
+# - v1.49: (RENTGEN KASKADA FIX) Dodanie dynamicznego mnożnika kaskady do wizualizacji w karcie Rentgen Decyzji (wyświetlanie 12kW).
 # - v1.48: (HAL INTEGRATION) Przebudowa źródeł danych. Dashboard pobiera teraz dane zsumowane z warstwy abstrakcji sprzętu HAL (alpha_kaskada_translator.yaml). Wykresy (Historia 36h) i karta przepływów wskazują całkowity bilans domu niezależnie od ilości inwerterów.
 # - v1.47: (MULTI-SLAVE UI) Rozbudowa Sunsynk Power Flow Card do 4 stringów. Zmiana nazewnictwa i kolejności: GEN, PV1, PV2, PV Slave. 
 # - v1.46: (HOTFIX RCE) Usunięcie martwych rozszerzeń '_2' z encji PSE w Rentgenie i na wykresach giełdowych. UI lampki słońca.
@@ -529,12 +530,14 @@ views:
           - type: markdown
             title: "🧠 Rentgen Decyzji (Autoscale RCE & Logika 140%)"
             content: >
+              {% set kaskada = is_state('input_boolean.alpha_kaskada_aktywna', 'on') %}
+              {% set mnoznik = 2 if kaskada else 1 %}
               {% set sensor_rce = 'sensor.alpha_pse_dzisiaj' %}
               {% set cap_raw = states('number.deye_inverter_battery_capacity') | float(47.0) %}
               {% set fallback_cap = (cap_raw * 51.2 / 1000) | round(1) if cap_raw > 150 else cap_raw | round(1) %}
               {% set poj = states('input_number.alpha_pojemnosc_magazynu') | float(fallback_cap) %}
-              {% set inv_w = states('sensor.deye_inverter_device_rated_power') | float(12000) %}
-              {% set moc_kw = [states('number.deye_inverter_max_sell_power') | float(6000), inv_w] | min / 1000 %}
+              {% set bazowa_moc = states('input_number.alpha_moc_sprzedazy') | float(6000) %}
+              {% set moc_kw = (bazowa_moc * mnoznik) / 1000 %}
 
               {# AUTODETEKCJA ENCJI LOW SOC Z FALOWNIKA ORAZ FLAGI ZIMY #}
               {% set low_soc_ent = (states.number | selectattr('entity_id', 'search', 'battery_low_soc$|shutdown_capacity$') | map(attribute='entity_id') | list | first) | default('number.deye_inverter_battery_low_soc') %}
