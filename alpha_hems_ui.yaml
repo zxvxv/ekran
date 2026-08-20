@@ -1,9 +1,10 @@
 # =============================================================
-# ALPHA HEMS: CENTRALNY INTERFEJS UŻYTKOWNIKA (v1.47)
+# ALPHA HEMS: CENTRALNY INTERFEJS UŻYTKOWNIKA (v1.48)
 # STATUS: PRODUKCYJNY / EKSPORTOWY (Zatwierdzony Układ Własny)
 #
 # HISTORIA WERSJI:
-# - v1.47: (MULTI-SLAVE UI) Rozbudowa Sunsynk Power Flow Card do 4 stringów. Zmiana nazewnictwa i kolejności: GEN, PV1, PV2, PV Slave. Dodanie encji sumującej moc chwilową dla Slave'ów (param_57) i uzyski dzienne (param_58).
+# - v1.48: (HAL INTEGRATION) Przebudowa źródeł danych. Dashboard pobiera teraz dane zsumowane z warstwy abstrakcji sprzętu HAL (alpha_kaskada_translator.yaml). Wykresy (Historia 36h) i karta przepływów wskazują całkowity bilans domu niezależnie od ilości inwerterów.
+# - v1.47: (MULTI-SLAVE UI) Rozbudowa Sunsynk Power Flow Card do 4 stringów. Zmiana nazewnictwa i kolejności: GEN, PV1, PV2, PV Slave. 
 # - v1.46: (HOTFIX RCE) Usunięcie martwych rozszerzeń '_2' z encji PSE w Rentgenie i na wykresach giełdowych. UI lampki słońca.
 # - v1.45: (STABLE) Poprzednia wersja bazowa.
 # - v1.44: (PREDICTIVE DUMP UI) Dodanie przełącznika "Agresywny Zrzut Poranny" 
@@ -136,40 +137,40 @@ views:
             entities:
               remaining_solar: sensor.solcast_pv_forecast_pozostala_prognoza_na_dzis
               energy_prognoza_106: sensor.solcast_pv_forecast_prognoza_na_dzisiaj
-              day_pv_energy_108: input_number.alpha_rce_param_58
+              day_pv_energy_108: sensor.alpha_hems_dobowa_produkcja_pv
               essential_load1: sensor.deye_inverter_load_ups_power
               essential_load1_extra: sensor.dobowe_zuzycie_ups
               essential_load2: sensor.smart_plug_2_moc
               essential_load3: sensor.smart_plug_3_moc
               use_timer_248: switch.sunsynk_toggle_system_timer
-              priority_load_243: sensor.deye_inverter_load_power
+              priority_load_243: sensor.alpha_hems_moc_domu_calkowita
               inverter_voltage_154: sensor.deye_inverter_output_l1_voltage
               load_frequency_192: sensor.deye_inverter_load_frequency
               inverter_current_164: sensor.deye_inverter_output_l1_current
               inverter_power_175: sensor.sunsynk_inverter_power
               grid_connected_status_194: binary_sensor.sunsynk_grid_connected_status
               inverter_status_59: sensor.sunsynk_overall_state
-              day_battery_discharge_71: sensor.deye_inverter_daily_battery_discharge
+              day_battery_discharge_71: sensor.alpha_hems_dobowe_rozladowanie_baterii
               battery_voltage_183: sensor.deye_inverter_battery_bms_voltage
-              battery_power_190: sensor.deye_inverter_battery_power
+              battery_power_190: sensor.alpha_hems_bateria_moc_calkowita
               battery_current_191: sensor.deye_inverter_battery_bms_current
-              grid_power_169: sensor.sunsynk_grid_power
-              day_grid_export_77: sensor.deye_inverter_daily_energy_sold
+              grid_power_169: sensor.alpha_hems_siec_moc_calkowita
+              day_grid_export_77: sensor.alpha_hems_dobowa_sprzedaz_siec
               grid_ct_power_172: sensor.deye_inverter_grid_l1_power
-              day_load_energy_84: sensor.deye_inverter_daily_load_consumption
+              day_load_energy_84: sensor.alpha_hems_dobowe_zuzycie_domu
               pv1_power_186: sensor.deye_inverter_generator_power_total
               pv2_power_187: sensor.deye_inverter_pv1_power
               pv3_power_188: sensor.deye_inverter_pv2_power
-              pv4_power_189: input_number.alpha_rce_param_57
-              day_grid_import_76: sensor.deye_inverter_daily_energy_bought
-              grid_ct_power_total: sensor.deye_inverter_grid_power
+              pv4_power_189: sensor.alpha_hems_slave_moc_pv_chwilowa
+              day_grid_import_76: sensor.alpha_hems_dobowy_zakup_siec
+              grid_ct_power_total: sensor.alpha_hems_siec_moc_calkowita
               battery_temp_182: sensor.deye_inverter_battery_temperature
               day_aux_energy: sensor.solcast_pv_forecast_prognoza_na_dzisiaj
-              essential_power: sensor.deye_inverter_load_power
+              essential_power: sensor.alpha_hems_moc_domu_calkowita
               radiator_temp_91: sensor.deye_inverter_ac_temperature
               dc_transformer_temp_90: sensor.magazyn_pomieszczenie_temperatura
               solar_sell_247: switch.deye_inverter_solar_sell
-              day_battery_charge_70: sensor.deye_inverter_daily_battery_charge
+              day_battery_charge_70: sensor.alpha_hems_dobowe_ladowanie_baterii
               battery_soc_184: sensor.deye_inverter_battery
               battery_rated_capacity: number.deye_inverter_battery_capacity
               battery_shutdown_soc: number.deye_inverter_battery_shutdown_soc_low_dc
@@ -342,7 +343,7 @@ views:
               label: TERAZ
               color: '#e74c3c'
             series:
-              - entity: sensor.deye_inverter_grid_power
+              - entity: sensor.alpha_hems_siec_moc_calkowita
                 name: Moc Sieci
                 unit: ' W'
                 color: '#9b59b6'
@@ -840,40 +841,40 @@ views:
         entities:
           remaining_solar: sensor.solcast_pv_forecast_pozostala_prognoza_na_dzis
           energy_prognoza_106: sensor.solcast_pv_forecast_prognoza_na_dzisiaj
-          day_pv_energy_108: input_number.alpha_rce_param_58
+          day_pv_energy_108: sensor.alpha_hems_dobowa_produkcja_pv
           essential_load1: sensor.deye_inverter_load_ups_power
           essential_load1_extra: sensor.dobowe_zuzycie_ups
           essential_load2: sensor.smart_plug_2_moc
           essential_load3: sensor.smart_plug_3_moc
           use_timer_248: switch.sunsynk_toggle_system_timer
-          priority_load_243: sensor.deye_inverter_load_power
+          priority_load_243: sensor.alpha_hems_moc_domu_calkowita
           inverter_voltage_154: sensor.deye_inverter_output_l1_voltage
           load_frequency_192: sensor.deye_inverter_load_frequency
           inverter_current_164: sensor.deye_inverter_output_l1_current
           inverter_power_175: sensor.sunsynk_inverter_power
           grid_connected_status_194: binary_sensor.sunsynk_grid_connected_status
           inverter_status_59: sensor.sunsynk_overall_state
-          day_battery_discharge_71: sensor.deye_inverter_daily_battery_discharge
+          day_battery_discharge_71: sensor.alpha_hems_dobowe_rozladowanie_baterii
           battery_voltage_183: sensor.deye_inverter_battery_bms_voltage
-          battery_power_190: sensor.deye_inverter_battery_power
+          battery_power_190: sensor.alpha_hems_bateria_moc_calkowita
           battery_current_191: sensor.deye_inverter_battery_bms_current
-          grid_power_169: sensor.sunsynk_grid_power
-          day_grid_export_77: sensor.deye_inverter_daily_energy_sold
+          grid_power_169: sensor.alpha_hems_siec_moc_calkowita
+          day_grid_export_77: sensor.alpha_hems_dobowa_sprzedaz_siec
           grid_ct_power_172: sensor.deye_inverter_grid_l1_power
-          day_load_energy_84: sensor.deye_inverter_daily_load_consumption
+          day_load_energy_84: sensor.alpha_hems_dobowe_zuzycie_domu
           pv1_power_186: sensor.deye_inverter_generator_power_total
           pv2_power_187: sensor.deye_inverter_pv1_power
           pv3_power_188: sensor.deye_inverter_pv2_power
-          pv4_power_189: input_number.alpha_rce_param_57
-          day_grid_import_76: sensor.deye_inverter_daily_energy_bought
-          grid_ct_power_total: sensor.deye_inverter_grid_power
+          pv4_power_189: sensor.alpha_hems_slave_moc_pv_chwilowa
+          day_grid_import_76: sensor.alpha_hems_dobowy_zakup_siec
+          grid_ct_power_total: sensor.alpha_hems_siec_moc_calkowita
           battery_temp_182: sensor.deye_inverter_battery_temperature
           day_aux_energy: sensor.solcast_pv_forecast_prognoza_na_dzisiaj
-          essential_power: sensor.deye_inverter_load_power
+          essential_power: sensor.alpha_hems_moc_domu_calkowita
           radiator_temp_91: sensor.deye_inverter_ac_temperature
           dc_transformer_temp_90: sensor.magazyn_pomieszczenie_temperatura
           solar_sell_247: switch.deye_inverter_solar_sell
-          day_battery_charge_70: sensor.deye_inverter_daily_battery_charge
+          day_battery_charge_70: sensor.alpha_hems_dobowe_ladowanie_baterii
           battery_soc_184: sensor.deye_inverter_battery
           battery_rated_capacity: number.deye_inverter_battery_capacity
           battery_shutdown_soc: number.deye_inverter_battery_shutdown_soc_low_dc
@@ -911,7 +912,7 @@ views:
             opposite: true
             decimals: 0
         series:
-          - entity: sensor.deye_inverter_load_power
+          - entity: sensor.alpha_hems_moc_domu_calkowita
             name: Zużycie Domu
             type: line
             color: '#e0e0e0'
@@ -920,7 +921,7 @@ views:
             group_by:
               func: avg
               duration: 5m
-          - entity: sensor.deye_inverter_grid_power
+          - entity: sensor.alpha_hems_siec_moc_calkowita
             name: Zakup z Sieci
             type: area
             color: '#e74c3c'
@@ -933,7 +934,7 @@ views:
             group_by:
               func: avg
               duration: 5m
-          - entity: sensor.deye_inverter_grid_power
+          - entity: sensor.alpha_hems_siec_moc_calkowita
             name: Sprzedaż do Sieci
             type: area
             color: '#2ecc71'
@@ -1106,3 +1107,8 @@ views:
                   - entity: input_boolean.alpha_rce_flaga_04
                     name: "🔔 Włącz powiadomienia PUSH"
                     icon: mdi:bell-ring
+                  - type: section
+                    label: "Zarządzanie Kaskadą"
+                  - entity: input_boolean.alpha_kaskada_aktywna
+                    name: "🔌 Aktywuj kaskadę (Suma z Master i Slave)"
+                    icon: mdi:server-network
