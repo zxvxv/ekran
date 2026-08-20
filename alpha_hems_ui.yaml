@@ -1,8 +1,9 @@
 # =============================================================
-# ALPHA HEMS: CENTRALNY INTERFEJS UŻYTKOWNIKA (v1.49)
+# ALPHA HEMS: CENTRALNY INTERFEJS UŻYTKOWNIKA (v1.50)
 # STATUS: PRODUKCYJNY / EKSPORTOWY (Zatwierdzony Układ Własny)
 #
 # HISTORIA WERSJI:
+# - v1.50: (RETROFIT PV UI) Podmiana źródła danych dla trzeciego stringu (PV2) na uniwersalny bufor HAL dla zewnętrznych inwerterów. Zmiana nazwy na "PV2 / Retrofit".
 # - v1.49: (RENTGEN KASKADA FIX) Dodanie dynamicznego mnożnika kaskady do wizualizacji w karcie Rentgen Decyzji (wyświetlanie 12kW).
 # - v1.48: (HAL INTEGRATION) Przebudowa źródeł danych. Dashboard pobiera teraz dane zsumowane z warstwy abstrakcji sprzętu HAL (alpha_kaskada_translator.yaml). Wykresy (Historia 36h) i karta przepływów wskazują całkowity bilans domu niezależnie od ilości inwerterów.
 # - v1.47: (MULTI-SLAVE UI) Rozbudowa Sunsynk Power Flow Card do 4 stringów. Zmiana nazewnictwa i kolejności: GEN, PV1, PV2, PV Slave. 
@@ -106,7 +107,7 @@ views:
               mppts: 4
               pv1_name: GEN
               pv2_name: PV1
-              pv3_name: PV2
+              pv3_name: PV2 / Retrofit
               pv4_name: PV Slave
               auto_scale: true
               colour: '#c9cc05'
@@ -161,7 +162,7 @@ views:
               day_load_energy_84: sensor.alpha_hems_dobowe_zuzycie_domu
               pv1_power_186: sensor.deye_inverter_generator_power_total
               pv2_power_187: sensor.deye_inverter_pv1_power
-              pv3_power_188: sensor.deye_inverter_pv2_power
+              pv3_power_188: sensor.alpha_hems_pv2_retrofit_moc
               pv4_power_189: sensor.alpha_hems_slave_moc_pv_chwilowa
               day_grid_import_76: sensor.alpha_hems_dobowy_zakup_siec
               grid_ct_power_total: sensor.alpha_hems_siec_moc_calkowita
@@ -812,7 +813,7 @@ views:
           mppts: 4
           pv1_name: GEN
           pv2_name: PV1
-          pv3_name: PV2
+          pv3_name: PV2 / Retrofit
           pv4_name: PV Slave
           auto_scale: true
           colour: '#c9cc05'
@@ -867,7 +868,7 @@ views:
           day_load_energy_84: sensor.alpha_hems_dobowe_zuzycie_domu
           pv1_power_186: sensor.deye_inverter_generator_power_total
           pv2_power_187: sensor.deye_inverter_pv1_power
-          pv3_power_188: sensor.deye_inverter_pv2_power
+          pv3_power_188: sensor.alpha_hems_pv2_retrofit_moc
           pv4_power_189: sensor.alpha_hems_slave_moc_pv_chwilowa
           day_grid_import_76: sensor.alpha_hems_dobowy_zakup_siec
           grid_ct_power_total: sensor.alpha_hems_siec_moc_calkowita
