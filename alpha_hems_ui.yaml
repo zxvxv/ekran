@@ -105,10 +105,10 @@ views:
             solar:
               show_daily: true
               mppts: 4
-              pv1_name: PV1
-              pv2_name: PV2
-              pv3_name: PV1 Slave
-              pv4_name: PV2 Slave
+              pv1_name: GEN
+              pv2_name: PV1
+              pv3_name: PV2 / Retrofit
+              pv4_name: PV Slave
               auto_scale: true
               colour: '#c9cc05'
               pv1_max_power: 7400
@@ -160,10 +160,10 @@ views:
               day_grid_export_77: sensor.alpha_hems_dobowa_sprzedaz_siec
               grid_ct_power_172: sensor.deye_inverter_grid_l1_power
               day_load_energy_84: sensor.alpha_hems_dobowe_zuzycie_domu
-              pv1_power_186: sensor.deye_inverter_pv1_power
-              pv2_power_187: sensor.deye_inverter_pv2_power
-              pv3_power_188: sensor.deye_slave_1_pv1_power
-              pv4_power_189: sensor.deye_slave_1_pv2_power
+              pv1_power_186: sensor.deye_inverter_generator_power_total
+              pv2_power_187: sensor.deye_inverter_pv1_power
+              pv3_power_188: sensor.alpha_hems_pv2_retrofit_moc
+              pv4_power_189: sensor.alpha_hems_slave_moc_pv_chwilowa
               day_grid_import_76: sensor.alpha_hems_dobowy_zakup_siec
               grid_ct_power_total: sensor.alpha_hems_siec_moc_calkowita
               battery_temp_182: sensor.deye_inverter_battery_temperature
@@ -181,7 +181,7 @@ views:
           - type: vertical-stack
             cards:
               - type: markdown
-                title: 🛡️ Raport Księgowego ALPHA
+                title: 🛡️ Status Systemu ALPHA
                 content: >
                   {% set cap_raw = states('number.deye_inverter_battery_capacity') | float(47.0) %}
                   {% set fallback_cap = (cap_raw * 51.2 / 1000) | round(1) if cap_raw > 150 else cap_raw | round(1) %}
@@ -191,7 +191,6 @@ views:
                   {% set wolny_soc = [soc - plotek, 0] | max %}
                   {% set amunicja = (wolny_soc / 100) * cap %}
                   {% set tou_state = states('switch.deye_inverter_time_of_use') %}
-                  {% set okno_dzienne = states('input_text.alpha_rce_stan_04') %}
 
                   {# --- KALKULACJA POKRYCIA SŁONECZNEGO (UKRYTA) --- #}
                   {% set d = now().weekday() %}
@@ -205,40 +204,34 @@ views:
                   {% set pv_dzis = states('sensor.solcast_pv_forecast_prognoza_na_dzisiaj') | float(0) %}
                   {% set is_sunny_dzis = pv_dzis >= (total_dzis * 1.4) %}
 
-                  ### ⚙️ Status Operacyjny
+                  ### ⚙️ Tryb Pracy
                   {% if tou_state == 'off' %}
-                  **🔴 BYPASS AKTYWNY** (Awaryjne ssanie z sieci)
+                  **🔴 BYPASS AKTYWNY** (Wymuszone ładowanie z sieci)
                   {% else %}
                   **🟢 PRACA NORMALNA** (Sterowanie automatyczne)
                   {% endif %}
                   
-                  * ☀️ Okno Dzień: **{{ okno_dzienne if okno_dzienne not in ['unknown', 'unavailable', ''] else 'Oczekiwanie...' }}**
-                  * 🌙 Okno Noc: **22:05 — 06:00**
-                  * 🌞 Zasilanie ze Słońca: **{{ '🟢 Zabezpieczone' if is_sunny_dzis else '🔴 Brak pokrycia' }}**
-
                   ---
 
-                  ### 🔋 Bilans Przetrwania
-                  * 🎯 CEL (Płotek): **{{ ((plotek / 100) * cap) | round(1) }} kWh** ({{ plotek | int }}%)
-                  * 📦 MAGAZYN: **{{ ((soc / 100) * cap) | round(1) }} kWh** ({{ soc | int }}%)
+                  ### 🌤️ Ocena Sytuacji
+                  {% if is_sunny_dzis %}
+                  * 🌞 **Słońce:** Dom zasilany będzie dziś ze słońca.
+                  {% else %}
+                  * ☁️ **Słońce:** Prognoza produkcji jest niewystarczająca.
+                  {% endif %}
 
                   {% if soc >= plotek %}
-                  > ✅ **Dom zabezpieczony:** Mamy wystarczający zapas energii na bieżący sektor.
+                  * 🔋 **Magazyn:** Mamy wystarczającą ilość energii.
                   {% elif tou_state == 'off' %}
-                  > 🚨 **Ładowanie awaryjne:** Bypass aktywny. System uzupełnia braki z sieci do poziomu Płotka!
+                  * 🔋 **Magazyn:** Trwa uzupełnianie braków energii.
                   {% else %}
-                  > ⏳ **Oczekiwanie:** Zapas poniżej Płotka, ale prąd z sieci jest drogi. Czekam na słońce lub okienko G12.
+                  * 🔋 **Magazyn:** Oczekuję na tańszą energię z sieci lub słońca.
                   {% endif %}
 
                   ---
 
-                  ### 📈 Amunicja Maklera RCE
-                  💰 Wolna energia do handlu: **{{ amunicja | round(1) }} kWh**
-                  
-                  <details>
-                    <summary><i>Pokaż założenia logiki...</i></summary>
-                    <i>System automatycznie dolicza +20% fizycznej rezerwy (kWh) na nagłe obciążenia (np. włączenie piekarnika). Widoczna powyżej energia to bezpieczna nadwyżka, którą Makler może zrzucić na giełdę bez narażania Cię na nocny brak prądu.</i>
-                  </details>
+                  ### 📈 Giełda (RCE)
+                  💰 Nadwyżka energii do sprzedaży: **{{ amunicja | round(1) }} kWh**
 
           - show_name: true
             show_icon: true
@@ -316,10 +309,6 @@ views:
                 icon: mdi:battery-sync
                 vertical: false
                 features_position: bottom
-
-  # =============================================================
-  # ZAKŁADKA 2: 📈 GIEŁDA (RCE IntegraSoft)
-  # =============================================================
   - type: panel
     path: rce_integra
     title: RCE_IntegraSoft
