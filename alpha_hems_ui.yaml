@@ -105,8 +105,8 @@ views:
             solar:
               show_daily: true
               mppts: 4
-              pv1_name: GEN
-              pv2_name: PV1
+              pv1_name: PV1
+              pv2_name: PV2
               pv3_name: PV2 / Retrofit
               pv4_name: PV Slave
               auto_scale: true
@@ -160,8 +160,8 @@ views:
               day_grid_export_77: sensor.alpha_hems_dobowa_sprzedaz_siec
               grid_ct_power_172: sensor.deye_inverter_grid_l1_power
               day_load_energy_84: sensor.alpha_hems_dobowe_zuzycie_domu
-              pv1_power_186: sensor.deye_inverter_generator_power_total
-              pv2_power_187: sensor.deye_inverter_pv1_power
+              pv1_power_186: sensor.deye_inverter_pv1_power
+              pv2_power_187: sensor.deye_inverter_pv2_power
               pv3_power_188: sensor.alpha_hems_pv2_retrofit_moc
               pv4_power_189: sensor.alpha_hems_slave_moc_pv_chwilowa
               day_grid_import_76: sensor.alpha_hems_dobowy_zakup_siec
