@@ -1116,3 +1116,8 @@ views:
                   - entity: input_boolean.alpha_kaskada_aktywna
                     name: "🔌 Aktywuj kaskadę (Suma z Master i Slave)"
                     icon: mdi:server-network
+                  - type: section
+                    label: "Zarządzanie Kryzysowe"
+                  - entity: input_boolean.alpha_rce_flaga_06
+                    name: "🌪️ Kataklizm (Wiatr >75km/h): Ładuj do 100%"
+                    icon: mdi:weather-hurricane
