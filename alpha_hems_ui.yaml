@@ -318,7 +318,7 @@ views:
                 features_position: bottom
 
   # =============================================================
-  # ZAKŁADKA 2: 📈 GIEŁDA (RCE IntegraSoft)
+  # ZAKŁADKA 2: 📈 GIEŁDA (RCE IntegraSoft).
   # =============================================================
   - type: panel
     path: rce_integra
