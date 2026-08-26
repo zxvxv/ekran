@@ -1113,3 +1113,77 @@ views:
                   - entity: input_boolean.alpha_rce_flaga_06
                     name: "🌪️ Kataklizm (Wiatr >75km/h): Ładuj do 100%"
                     icon: mdi:weather-hurricane
+
+  # =============================================================
+  # ZAKŁADKA 8: ⚡ PSTRYK (Centrum Taryf Dynamicznych)
+  # =============================================================
+  - type: panel
+    path: pstryk
+    title: PSTRYK
+    icon: mdi:transmission-tower-export
+    cards:
+      - type: vertical-stack
+        cards:
+          - type: markdown
+            title: "🛠️ Centrum Dowodzenia PSTRYK v1.003"
+            content: "Konfiguracja parametrów pracy systemu taryf dynamicznych (Kalkulator Spreadu & OSD)."
+
+          - type: grid
+            columns: 2
+            cards:
+              # --- KOLUMNA 1: FINANSE I DYSTRYBUCJA ---
+              - type: entities
+                title: "💰 Handel i Parametry Sieci"
+                show_header_toggle: false
+                entities:
+                  - type: section
+                    label: "Ustawienia Pstryka"
+                  - entity: input_number.alpha_zysk_minimalny
+                    name: "Oczekiwany zysk minimalny (netto)"
+                    icon: mdi:chart-line-variant
+                  - entity: input_number.alpha_moc_sprzedazy
+                    name: "Moc sprzedaży RCE"
+                    icon: mdi:transmission-tower-export
+                  - type: section
+                    label: "Dystrybucja i Taryfy"
+                  - entity: input_select.alpha_osd
+                    name: "Operator OSD (Wybór Cennika)"
+                    icon: mdi:factory
+                  - entity: input_select.alpha_taryfa
+                    name: "Taryfa (Strefy Dystrybucji)"
+                    icon: mdi:clock-time-eight
+                  - entity: input_select.alpha_tryb_bilansowania
+                    name: "Tryb Spoczynku"
+                    icon: mdi:home-lightning-bolt
+
+              # --- KOLUMNA 2: BEZPIECZEŃSTWO I SYSTEM ---
+              - type: entities
+                title: "🛡️ Bezpieczeństwo i System"
+                show_header_toggle: false
+                entities:
+                  - type: section
+                    label: "Zarządzanie Zapasem (Płotek)"
+                  - entity: input_number.alpha_rezerwa_soc
+                    name: "Rozmiar Bufora Komfortu (%)"
+                    icon: mdi:battery-plus
+                  - entity: input_boolean.alpha_rce_flaga_03
+                    name: "☀️ Wyłącz Bufor w słoneczne dni"
+                    icon: mdi:weather-sunny
+                  - type: section
+                    label: "System i Komunikacja"
+                  - entity: input_boolean.alpha_rce_flaga_02
+                    name: "🛡️ TRYB SYMULACJI (Blokada handlu)"
+                    icon: mdi:shield-lock
+                  - entity: input_boolean.alpha_rce_flaga_04
+                    name: "🔔 Włącz powiadomienia PUSH"
+                    icon: mdi:bell-ring
+                  - type: section
+                    label: "Zarządzanie Kaskadą"
+                  - entity: input_boolean.alpha_kaskada_aktywna
+                    name: "🔌 Aktywuj kaskadę (Suma z Master i Slave)"
+                    icon: mdi:server-network
+                  - type: section
+                    label: "Zarządzanie Kryzysowe"
+                  - entity: input_boolean.alpha_rce_flaga_06
+                    name: "🌪️ Kataklizm (Wiatr >75km/h): Ładuj do 100%"
+                    icon: mdi:weather-hurricane
