@@ -1,0 +1,117 @@
+{
+  "PGE": {
+    "G11": {
+      "energia": 0.467,
+      "dystrybucja": 0.350,
+      "suma": 0.817
+    },
+    "G12": {
+      "energia_szczyt": 0.467,
+      "energia_pozaszczyt": 0.467,
+      "dystrybucja_szczyt": 0.420,
+      "dystrybucja_pozaszczyt": 0.090,
+      "suma_szczyt": 0.887,
+      "suma_pozaszczyt": 0.557
+    },
+    "G12W": {
+      "energia_szczyt": 0.547,
+      "energia_pozaszczyt": 0.467,
+      "dystrybucja_szczyt": 0.420,
+      "dystrybucja_pozaszczyt": 0.090,
+      "suma_szczyt": 0.967,
+      "suma_pozaszczyt": 0.557
+    }
+  },
+  "TAURON": {
+    "G11": {
+      "energia": 0.460,
+      "dystrybucja": 0.340,
+      "suma": 0.800
+    },
+    "G12": {
+      "energia_szczyt": 0.460,
+      "energia_pozaszczyt": 0.460,
+      "dystrybucja_szczyt": 0.410,
+      "dystrybucja_pozaszczyt": 0.080,
+      "suma_szczyt": 0.870,
+      "suma_pozaszczyt": 0.540
+    },
+    "G12W": {
+      "energia_szczyt": 0.540,
+      "energia_pozaszczyt": 0.460,
+      "dystrybucja_szczyt": 0.410,
+      "dystrybucja_pozaszczyt": 0.080,
+      "suma_szczyt": 0.950,
+      "suma_pozaszczyt": 0.540
+    }
+  },
+  "ENEA": {
+    "G11": {
+      "energia": 0.450,
+      "dystrybucja": 0.330,
+      "suma": 0.780
+    },
+    "G12": {
+      "energia_szczyt": 0.450,
+      "energia_pozaszczyt": 0.450,
+      "dystrybucja_szczyt": 0.400,
+      "dystrybucja_pozaszczyt": 0.080,
+      "suma_szczyt": 0.850,
+      "suma_pozaszczyt": 0.530
+    },
+    "G12W": {
+      "energia_szczyt": 0.530,
+      "energia_pozaszczyt": 0.450,
+      "dystrybucja_szczyt": 0.400,
+      "dystrybucja_pozaszczyt": 0.080,
+      "suma_szczyt": 0.930,
+      "suma_pozaszczyt": 0.530
+    }
+  },
+  "ENERGA": {
+    "G11": {
+      "energia": 0.470,
+      "dystrybucja": 0.380,
+      "suma": 0.850
+    },
+    "G12": {
+      "energia_szczyt": 0.470,
+      "energia_pozaszczyt": 0.470,
+      "dystrybucja_szczyt": 0.460,
+      "dystrybucja_pozaszczyt": 0.100,
+      "suma_szczyt": 0.930,
+      "suma_pozaszczyt": 0.570
+    },
+    "G12W": {
+      "energia_szczyt": 0.550,
+      "energia_pozaszczyt": 0.470,
+      "dystrybucja_szczyt": 0.460,
+      "dystrybucja_pozaszczyt": 0.100,
+      "suma_szczyt": 1.010,
+      "suma_pozaszczyt": 0.570
+    }
+  },
+  "EON": {
+    "G11": {
+      "energia": 0.460,
+      "dystrybucja": 0.340,
+      "suma": 0.800
+    },
+    "G12": {
+      "energia_szczyt": 0.460,
+      "energia_pozaszczyt": 0.460,
+      "dystrybucja_szczyt": 0.410,
+      "dystrybucja_pozaszczyt": 0.080,
+      "suma_szczyt": 0.870,
+      "suma_pozaszczyt": 0.540
+    },
+    "G12W": {
+      "energia_szczyt": 0.540,
+      "energia_pozaszczyt": 0.460,
+      "dystrybucja_szczyt": 0.410,
+      "dystrybucja_pozaszczyt": 0.080,
+      "suma_szczyt": 0.950,
+      "suma_pozaszczyt": 0.540
+    }
+  }
+}
