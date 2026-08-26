@@ -1125,7 +1125,7 @@ views:
       - type: vertical-stack
         cards:
           - type: markdown
-            title: "🛠️ Centrum Dowodzenia PSTRYK v1.003"
+            title: "🛠️ Centrum Dowodzenia PSTRYK - W Alpa  Hems ta zakładka nie działa"
             content: "Konfiguracja parametrów pracy systemu taryf dynamicznych (Kalkulator Spreadu & OSD)."
 
           - type: grid
