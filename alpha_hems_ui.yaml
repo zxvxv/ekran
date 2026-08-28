@@ -952,7 +952,16 @@ views:
             group_by:
               func: avg
               duration: 5m
-
+          - entity: input_number.alpha_rce_param_20
+            name: Cel SOC (Płotek)
+            type: line
+            color: '#ff9800'
+            stroke_width: 1
+            dashArray: 4
+            yaxis_id: soc
+            group_by:
+              func: avg
+              duration: 5m
   # =============================================================
   # ZAKŁADKA 6: 🔮 SOC PROGNOZA (Predictive Twin)
   # =============================================================
