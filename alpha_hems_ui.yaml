@@ -745,7 +745,7 @@ views:
                 icon: mdi:tools
 
   # =============================================================
-  # ZAKŁADKA 4: 🔄 PRZEPŁYW (Widok uproszczony)
+  # ZAKŁADKA 4: 🔄 PRZEPŁYW (Widok uproszczony).
   # =============================================================
   - type: panel
     path: flow-view
