@@ -1,8 +1,9 @@
 # =============================================================
-# ALPHA HEMS: CENTRALNY INTERFEJS UŻYTKOWNIKA (v1.51)
+# ALPHA HEMS: CENTRALNY INTERFEJS UŻYTKOWNIKA (v1.52)
 # STATUS: PRODUKCYJNY / EKSPORTOWY (Zatwierdzony Układ Własny)
 #
 # HISTORIA WERSJI:
+# - v1.52: (DASHBOARD FIX) Dodanie przerywanej linii z dynamicznym płotkiem (Cel SOC) do wykresu w zakładce HISTORIA 36H.
 # - v1.51: (CLEAN PV) Uporządkowanie encji solarnych w karcie przepływów (ZAKŁADKA 1 i 4). Usunięcie generatorów i retrofitów. Mapowanie twardych encji PV1/PV2 dla Mastera i Slave'a.
 # - v1.50: (RETROFIT PV UI) Podmiana źródła danych dla trzeciego stringu (PV2) na uniwersalny bufor HAL dla zewnętrznych inwerterów. Zmiana nazwy na "PV2 / Retrofit".
 # - v1.49: (RENTGEN KASKADA FIX) Dodanie dynamicznego mnożnika kaskady do wizualizacji w karcie Rentgen Decyzji (wyświetlanie 12kW).
@@ -745,7 +746,7 @@ views:
                 icon: mdi:tools
 
   # =============================================================
-  # ZAKŁADKA 4: 🔄 PRZEPŁYW (Widok uproszczony).
+  # ZAKŁADKA 4: 🔄 PRZEPŁYW (Widok uproszczony)
   # =============================================================
   - type: panel
     path: flow-view
@@ -962,6 +963,7 @@ views:
             group_by:
               func: avg
               duration: 5m
+
   # =============================================================
   # ZAKŁADKA 6: 🔮 SOC PROGNOZA (Predictive Twin)
   # =============================================================
