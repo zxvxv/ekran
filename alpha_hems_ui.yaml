@@ -958,7 +958,6 @@ views:
             type: line
             color: '#ff9800'
             stroke_width: 1
-            dashArray: 4
             yaxis_id: soc
             group_by:
               func: avg
