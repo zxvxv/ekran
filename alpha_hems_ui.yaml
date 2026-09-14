@@ -574,7 +574,7 @@ views:
               {% set total_jutro = n_jutro + p_jutro + w_jutro %}
               {% set wymog_140_jutro = total_jutro * 1.4 %}
               {% set is_sunny_jutro = pv_jutro >= wymog_140_jutro %}
-              {% set mnoznik_p = 0.2 if is_sunny_jutro else 1.2 %}
+              {% set mnoznik_p = 0.2 if is_sunny_jutro else 1.0 %}
 
               ### 📦 Fizyka Magazynu i Rejestry
               * Obecny Magazyn: **{{ ((states('sensor.deye_inverter_battery_bms_soc') | float(0) / 100) * poj) | round(1) }} kWh** | Cel (Płotek): **{{ ((status_plotek / 100) * poj) | round(1) }} kWh**
@@ -609,7 +609,7 @@ views:
               {% if is_sunny_jutro %}
               > **☀️ SMART MORNING AKTYWNY (Prognoza > 140%):** Słońce JUTRO przejmuje obciążenie. Zapas poranny ścięty do 20% (tylko na rozruch do 7:00).
               {% else %}
-              > **☁️ STANDARD (Prognoza < 140%):** Ładuję w nocy pełne zapotrzebowanie poranka + 20% bufora bezpieczeństwa na JUTRO.
+              > **☁️ STANDARD (Prognoza < 140%):** Ładuję w nocy pełne zapotrzebowanie poranka.
               {% endif %}
 
               👉 **Kalkulacja dla okresu porannego (Zabezpieczenie Poranka):**
@@ -619,8 +619,8 @@ views:
               ➔ 🛡️ Twardy docisk (Clamp): **Ostateczny wynik: {{ [calc_poranek_kwh, bezpieczna_podloga_kwh] | max | round(1) }} kWh**
 
               👉 **Kalkulacja dla okresu wieczornego (Zabezpieczenie Wieczoru):**
-              {% set calc_wieczor_kwh = (w_dzis * 1.2) + hardware_low_soc_kwh + aktywny_bufor_kwh + jeden_procent_kwh %}
-              {{ w_dzis }} kWh × 1.2 = **{{ (w_dzis * 1.2) | round(2) }} kWh**
+              {% set calc_wieczor_kwh = (w_dzis * 1.0) + hardware_low_soc_kwh + aktywny_bufor_kwh + jeden_procent_kwh %}
+              {{ w_dzis }} kWh × 1.0 = **{{ (w_dzis * 1.0) | round(2) }} kWh**
               + Low SOC ({{ hardware_low_soc_kwh | round(1) }} kWh) + Bufor ({{ aktywny_bufor_kwh | round(1) }} kWh) + 1% ({{ jeden_procent_kwh | round(1) }} kWh) = Wynik tymczasowy: {{ calc_wieczor_kwh | round(2) }} kWh
               ➔ 🛡️ Twardy docisk (Clamp): **Ostateczny wynik: {{ [calc_wieczor_kwh, bezpieczna_podloga_kwh] | max | round(1) }} kWh**
 
