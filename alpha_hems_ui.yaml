@@ -734,3 +734,455 @@ views:
               - entity: input_boolean.alpha_rce_flaga_10
                 name: "🔄 WYMUŚ ALPHA SYNC / SETUP"
                 icon: mdi:tools
+  # =============================================================
+  # ZAKŁADKA 4: 🔄 PRZEPŁYW (Widok uproszczony)
+  # =============================================================
+  - type: panel
+    path: flow-view
+    title: PRZEPŁYW
+    icon: mdi:sync
+    cards:
+      - type: custom:sunsynk-power-flow-card
+        cardstyle: lite
+        wide: false
+        large_font: true
+        show_solar: true
+        show_battery: true
+        show_grid: true
+        center_no_grid: true
+        card_height: '750'
+        card_width: 100%
+        decimal_places: 2
+        decimal_places_energy: 1
+        dynamic_line_width: true
+        max_line_width: 4
+        min_line_width: 1
+        inverter:
+          three_phase: true
+          auto_scale: true
+          modern: true
+          colour: '#217cb5'
+          autarky: power
+        battery:
+          show_daily: true
+          auto_scale: true
+          show_absolute: true
+          colour: '#c01b1b'
+          charge_colour: '#435bd0'
+          dynamic_colour: true
+          linear_gradient: true
+          show_remaining_energy: true
+          energy: 47616
+          shutdown_soc: 6
+        battery2:
+          energy: 0
+          shutdown_soc: 20
+          soc_end_of_charge: 100
+          invert_power: false
+          hide_soc: false
+          colour: '#ffc0cb'
+          show_remaining_energy: true
+          remaining_energy_to_shutdown: false
+          show_absolute: false
+          auto_scale: true
+          dynamic_colour: true
+          linear_gradient: true
+          animate: true
+          path_threshold: 100
+          navigate: ''
+          invert_flow: false
+        solar:
+          show_daily: true
+          mppts: 4
+          pv1_name: PV1
+          pv2_name: PV2
+          pv3_name: PV1 Slave
+          pv4_name: PV2 Slave
+          auto_scale: true
+          colour: '#c9cc05'
+          display_mode: 2
+        load:
+          show_daily: true
+          dynamic_icon: true
+          dynamic_colour: true
+          colour: '#2cce6a'
+          show_absolute_aux: true
+          auto_scale: true
+          additional_loads: 1
+          load1_name: Gwarantowane
+          load1_icon: mdi:calendar-text
+          load2_name: Pozostało PV
+          load2_icon: mdi:solar-power-variant
+          essential_name: UPS
+        grid:
+          show_daily_buy: true
+          show_daily_sell: true
+          show_nonessential: true
+          auto_scale: true
+          colour: '#2a95cb'
+          export_colour: '#e0c124'
+        grid_options:
+          columns: full
+          rows: 1
+        entities:
+          remaining_solar: sensor.solcast_pv_forecast_pozostala_prognoza_na_dzis
+          energy_prognoza_106: sensor.solcast_pv_forecast_prognoza_na_dzisiaj
+          day_pv_energy_108: sensor.alpha_hems_dobowa_produkcja_pv
+          essential_load1: sensor.deye_inverter_load_ups_power
+          essential_load1_extra: sensor.dobowe_zuzycie_ups
+          essential_load2: sensor.smart_plug_2_moc
+          essential_load3: sensor.smart_plug_3_moc
+          use_timer_248: switch.sunsynk_toggle_system_timer
+          priority_load_243: sensor.alpha_hems_moc_domu_calkowita
+          inverter_voltage_154: sensor.deye_inverter_output_l1_voltage
+          load_frequency_192: sensor.deye_inverter_load_frequency
+          inverter_current_164: sensor.deye_inverter_output_l1_current
+          inverter_power_175: sensor.sunsynk_inverter_power
+          grid_connected_status_194: binary_sensor.sunsynk_grid_connected_status
+          inverter_status_59: sensor.sunsynk_overall_state
+          day_battery_discharge_71: sensor.alpha_hems_dobowe_rozladowanie_baterii
+          battery_voltage_183: sensor.deye_inverter_battery_bms_voltage
+          battery_power_190: sensor.alpha_hems_bateria_moc_calkowita
+          battery_current_191: sensor.deye_inverter_battery_bms_current
+          grid_power_169: sensor.alpha_hems_siec_moc_calkowita
+          day_grid_export_77: sensor.alpha_hems_dobowa_sprzedaz_siec
+          grid_ct_power_172: sensor.deye_inverter_grid_l1_power
+          day_load_energy_84: sensor.alpha_hems_dobowe_zuzycie_domu
+          pv1_power_186: sensor.deye_inverter_pv1_power
+          pv2_power_187: sensor.deye_inverter_pv2_power
+          pv3_power_188: sensor.deye_slave_1_pv1_power
+          pv4_power_189: sensor.deye_slave_1_pv2_power
+          day_grid_import_76: sensor.alpha_hems_dobowy_zakup_siec
+          grid_ct_power_total: sensor.alpha_hems_siec_moc_calkowita
+          battery_temp_182: sensor.deye_inverter_battery_temperature
+          day_aux_energy: sensor.solcast_pv_forecast_prognoza_na_dzisiaj
+          essential_power: sensor.alpha_hems_moc_domu_calkowita
+          radiator_temp_91: sensor.deye_inverter_ac_temperature
+          dc_transformer_temp_90: sensor.magazyn_pomieszczenie_temperatura
+          solar_sell_247: switch.deye_inverter_solar_sell
+          day_battery_charge_70: sensor.alpha_hems_dobowe_ladowanie_baterii
+          battery_soc_184: sensor.deye_inverter_battery
+          battery_rated_capacity: number.deye_inverter_battery_capacity
+          battery_shutdown_soc: number.deye_inverter_battery_shutdown_soc_low_dc
+
+  # =============================================================
+  # ZAKŁADKA 5: 📊 HISTORIA 24H (Święty Graal HEMS)
+  # =============================================================
+  - type: panel
+    path: historia-36h
+    title: HISTORIA 36H
+    icon: mdi:chart-timeline-variant
+    cards:
+      - type: custom:apexcharts-card
+        graph_span: 36h
+        update_interval: 1min
+        header:
+          show: true
+          title: 'Przebieg dobowy (Moc i Magazyn)'
+          show_states: true
+          colorize_states: true
+        apex_config:
+          chart:
+            height: 600
+          stroke:
+            curve: smooth
+          legend:
+            show: true
+        yaxis:
+          - id: power
+            min: 0
+            decimals: 0
+          - id: soc
+            min: 0
+            max: 100
+            opposite: true
+            decimals: 0
+        series:
+          - entity: sensor.alpha_hems_moc_domu_calkowita
+            name: Zużycie Domu
+            type: line
+            color: '#e0e0e0'
+            stroke_width: 2
+            yaxis_id: power
+            group_by:
+              func: avg
+              duration: 5m
+          - entity: sensor.alpha_hems_siec_moc_calkowita
+            name: Zakup z Sieci
+            type: area
+            color: '#e74c3c'
+            opacity: 0.4
+            stroke_width: 1
+            yaxis_id: power
+            show:
+              in_header: false
+            transform: 'return (x !== null && Number(x) > 0) ? Number(x) : 0;'
+            group_by:
+              func: avg
+              duration: 5m
+          - entity: sensor.alpha_hems_siec_moc_calkowita
+            name: Sprzedaż do Sieci
+            type: area
+            color: '#2ecc71'
+            opacity: 0.4
+            stroke_width: 1
+            yaxis_id: power
+            show:
+              in_header: false
+            transform: 'return (x !== null && Number(x) < 0) ? Math.abs(Number(x)) : 0;'
+            group_by:
+              func: avg
+              duration: 5m
+          - entity: sensor.deye_inverter_battery_bms_soc
+            name: SOC Magazynu
+            type: line
+            color: '#3498db'
+            stroke_width: 3
+            yaxis_id: soc
+            group_by:
+              func: avg
+              duration: 5m
+          - entity: input_number.alpha_rce_param_20
+            name: Cel SOC (Płotek)
+            type: line
+            color: '#ff9800'
+            stroke_width: 1
+            yaxis_id: soc
+            group_by:
+              func: avg
+              duration: 5m
+
+  # =============================================================
+  # ZAKŁADKA 6: 🔮 SOC PROGNOZA (Predictive Twin)
+  # =============================================================
+  - type: panel
+    path: soc-prognoza
+    title: SOC PROGNOZA
+    icon: mdi:chart-bell-curve-cumulative
+    cards:
+      - type: custom:apexcharts-card
+        header:
+          show: true
+          title: 🔮 Predictive Twin (Baza vs Symulacja RCE)
+          show_states: true
+        graph_span: 24h
+        span:
+          start: minute
+        apex_config:
+          chart:
+            height: 900
+        all_series_config:
+          stroke_width: 3
+          curve: smooth
+        series:
+          - entity: sensor.alpha_soc_predictive_twin
+            name: SOC Baza (Bez sprzedaży)
+            unit: "%"
+            color: "#00a8ff"
+            type: area
+            opacity: 0.2
+            yaxis_id: percent
+            data_generator: >
+              let d = entity.attributes.simulation; return (typeof d === 'string' ? JSON.parse(d) : d).map(p => [p.timestamp, p.soc]);
+          - entity: sensor.alpha_soc_predictive_twin
+            name: SOC Symulacja RCE
+            unit: "%"
+            color: "#9b59b6"
+            type: line
+            stroke_width: 4
+            yaxis_id: percent
+            data_generator: >
+              let d = entity.attributes.simulation; return (typeof d === 'string' ? JSON.parse(d) : d).map(p => [p.timestamp, p.soc_sell]);
+          - entity: sensor.alpha_soc_predictive_twin
+            name: Krytyczny SOC (Deye Low)
+            unit: "%"
+            color: "#ff4500"
+            type: line
+            stroke_width: 1
+            yaxis_id: percent
+            data_generator: >
+              let d = entity.attributes.simulation; let limit = parseFloat(hass.states['number.deye_inverter_battery_low_soc'].state) || 20; return (typeof d === 'string' ? JSON.parse(d) : d).map(p => [p.timestamp, limit]);
+          - entity: sensor.alpha_soc_predictive_twin
+            name: Uzysk słońca
+            unit: kWh
+            color: "#f1c40f"
+            type: area
+            opacity: 0.3
+            yaxis_id: energy
+            data_generator: >
+              let d = entity.attributes.simulation; return (typeof d === 'string' ? JSON.parse(d) : d).map(p => [p.timestamp, p.pv]);
+          - entity: sensor.alpha_soc_predictive_twin
+            name: Pobór domu
+            unit: kWh
+            color: "#e84118"
+            type: line
+            yaxis_id: energy
+            data_generator: >
+              let d = entity.attributes.simulation; return (typeof d === 'string' ? JSON.parse(d) : d).map(p => [p.timestamp, p.cons]);
+        yaxis:
+          - id: percent
+            min: 0
+            max: 100
+            decimals: 0
+            opposite: false
+          - id: energy
+            min: 0
+            decimals: 2
+            opposite: true
+
+  # =============================================================
+  # ZAKŁADKA 7: ⚙️ USTAWIENIA (Centrum Dowodzenia v1.43)
+  # =============================================================
+  - type: panel
+    path: ustawienia
+    title: USTAWIENIA
+    icon: mdi:cog
+    cards:
+      - type: vertical-stack
+        cards:
+          - type: markdown
+            title: "🛠️ Centrum Dowodzenia ALPHA v1.43"
+            content: "Konfiguracja parametrów pracy systemu bezpośrednio z interfejsu."
+
+          - type: grid
+            columns: 2
+            cards:
+              # --- KOLUMNA 1: FINANSE, TARYFY I GIEŁDA ---
+              - type: entities
+                title: "💰 Handel i Parametry Sieci"
+                show_header_toggle: false
+                entities:
+                  - type: section
+                    label: "Finanse i Giełda"
+                  - entity: input_text.alpha_rce_stan_06
+                    name: "Cena zakupu energii"
+                    icon: mdi:cash-minus
+                  - entity: input_number.alpha_zysk_minimalny
+                    name: "Oczekiwany zysk minimalny"
+                    icon: mdi:chart-line-variant
+                  - entity: input_number.alpha_moc_sprzedazy
+                    name: "Moc sprzedaży RCE"
+                    icon: mdi:transmission-tower-export
+                  - entity: input_boolean.alpha_rce_flaga_01
+                    name: "Rozliczenie: Stare zasady / Net-metering vs Nowe zasady (Net-billing) ->> Właczone = Nowe Zasady "
+                    icon: mdi:scale-balance
+                  - type: section
+                    label: "Taryfy i Tryby Pracy"
+                  - entity: input_select.alpha_tryb_bilansowania
+                    name: "Tryb Spoczynku"
+                    icon: mdi:home-lightning-bolt
+                  - entity: input_select.alpha_osd
+                    name: "Operator OSD"
+                    icon: mdi:factory
+                  - entity: input_select.alpha_taryfa
+                    name: "Taryfa"
+                    icon: mdi:clock-time-eight
+
+              # --- KOLUMNA 2: ZAPASY, SYSTEM I KOMUNIKACJA ---
+              - type: entities
+                title: "🛡️ Bezpieczeństwo i System"
+                show_header_toggle: false
+                entities:
+                  - type: section
+                    label: "Zarządzanie Zapasem"
+                  - entity: input_number.alpha_rezerwa_soc
+                    name: "Rozmiar Bufora Komfortu (%)"
+                    icon: mdi:battery-plus
+                  - entity: input_boolean.alpha_rce_flaga_03
+                    name: "☀️ Wyłącz Bufor w słoneczne dni (>140%)"
+                    icon: mdi:weather-sunny
+                  - entity: input_boolean.alpha_rce_flaga_05
+                    name: "🚀 Agresywny Zrzut Poranny (Włączony = Czasowa Ochrona SOC na 18:00)"
+                    icon: mdi:rocket-launch
+                  - type: section
+                    label: "System i Komunikacja"
+                  - entity: input_boolean.alpha_rce_flaga_02
+                    name: "🛡️ TRYB SYMULACJI (Blokada handlu)"
+                    icon: mdi:shield-lock
+                  - entity: input_boolean.alpha_rce_flaga_04
+                    name: "🔔 Włącz powiadomienia PUSH"
+                    icon: mdi:bell-ring
+                  - type: section
+                    label: "Zarządzanie Kaskadą"
+                  - entity: input_boolean.alpha_kaskada_aktywna
+                    name: "🔌 Aktywuj kaskadę (Suma z Master i Slave)"
+                    icon: mdi:server-network
+                  - type: section
+                    label: "Zarządzanie Kryzysowe"
+                  - entity: input_boolean.alpha_rce_flaga_06
+                    name: "🌪️ Kataklizm (Wiatr >75km/h): Ładuj do 100%"
+                    icon: mdi:weather-hurricane
+
+  # =============================================================
+  # ZAKŁADKA 8: ⚡ PSTRYK (Centrum Taryf Dynamicznych)
+  # =============================================================
+  - type: panel
+    path: pstryk
+    title: PSTRYK
+    icon: mdi:transmission-tower-export
+    cards:
+      - type: vertical-stack
+        cards:
+          - type: markdown
+            title: "🛠️ Centrum Dowodzenia PSTRYK - W Alpa  Hems ta zakładka nie działa"
+            content: "Konfiguracja parametrów pracy systemu taryf dynamicznych (Kalkulator Spreadu & OSD)."
+
+          - type: grid
+            columns: 2
+            cards:
+              # --- KOLUMNA 1: FINANSE I DYSTRYBUCJA ---
+              - type: entities
+                title: "💰 Handel i Parametry Sieci"
+                show_header_toggle: false
+                entities:
+                  - type: section
+                    label: "Ustawienia Pstryka"
+                  - entity: input_number.alpha_zysk_minimalny
+                    name: "Oczekiwany zysk minimalny (netto)"
+                    icon: mdi:chart-line-variant
+                  - entity: input_number.alpha_moc_sprzedazy
+                    name: "Moc sprzedaży RCE"
+                    icon: mdi:transmission-tower-export
+                  - type: section
+                    label: "Dystrybucja i Taryfy"
+                  - entity: input_select.alpha_osd
+                    name: "Operator OSD (Wybór Cennika)"
+                    icon: mdi:factory
+                  - entity: input_select.alpha_taryfa
+                    name: "Taryfa (Strefy Dystrybucji)"
+                    icon: mdi:clock-time-eight
+                  - entity: input_select.alpha_tryb_bilansowania
+                    name: "Tryb Spoczynku"
+                    icon: mdi:home-lightning-bolt
+
+              # --- KOLUMNA 2: BEZPIECZEŃSTWO I SYSTEM ---
+              - type: entities
+                title: "🛡️ Bezpieczeństwo i System"
+                show_header_toggle: false
+                entities:
+                  - type: section
+                    label: "Zarządzanie Zapasem (Płotek)"
+                  - entity: input_number.alpha_rezerwa_soc
+                    name: "Rozmiar Bufora Komfortu (%)"
+                    icon: mdi:battery-plus
+                  - entity: input_boolean.alpha_rce_flaga_03
+                    name: "☀️ Wyłącz Bufor w słoneczne dni"
+                    icon: mdi:weather-sunny
+                  - type: section
+                    label: "System i Komunikacja"
+                  - entity: input_boolean.alpha_rce_flaga_02
+                    name: "🛡️ TRYB SYMULACJI (Blokada handlu)"
+                    icon: mdi:shield-lock
+                  - entity: input_boolean.alpha_rce_flaga_04
+                    name: "🔔 Włącz powiadomienia PUSH"
+                    icon: mdi:bell-ring
+                  - type: section
+                    label: "Zarządzanie Kaskadą"
+                  - entity: input_boolean.alpha_kaskada_aktywna
+                    name: "🔌 Aktywuj kaskadę (Suma z Master i Slave)"
+                    icon: mdi:server-network
+                  - type: section
+                    label: "Zarządzanie Kryzysowe"
+                  - entity: input_boolean.alpha_rce_flaga_06
+                    name: "🌪️ Kataklizm (Wiatr >75km/h): Ładuj do 100%"
+                    icon: mdi:weather-hurricane
