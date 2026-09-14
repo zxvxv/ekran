@@ -734,6 +734,7 @@ views:
               - entity: input_boolean.alpha_rce_flaga_10
                 name: "🔄 WYMUŚ ALPHA SYNC / SETUP"
                 icon: mdi:tools
+
   # =============================================================
   # ZAKŁADKA 4: 🔄 PRZEPŁYW (Widok uproszczony)
   # =============================================================
