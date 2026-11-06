@@ -2,12 +2,12 @@
   "2508083052": {
     "status": "PRO",
     "klient": "Paweł L - Centrala",
-    "waznosc": "2030-12-31"
+    "waznosc": "2033-12-31"
   },
   "2505072365": {
     "status": "PRO",
     "klient": "Lukasz",
-    "waznosc": "2030-01-01"
+    "waznosc": "2033-01-01"
   },
   "1122334455": {
     "status": "BASIC",
@@ -32,7 +32,7 @@
   "2511193836": {
     "status": "PRO",
     "klient": "Mateusz Witkowski",
-    "waznosc": "2027-06-30"
+    "waznosc": "2029-06-30"
   },
   "2408060130": {
     "status": "PRO",
@@ -42,11 +42,11 @@
   "2505055691": {
     "status": "PRO",
     "klient": "plitkowski",
-    "waznosc": "2027-01-01"
+    "waznosc": "2033-01-01"
   },
   "2310080405": {
     "status": "PRO",
     "klient": "Maciej Boguszewski",
-    "waznosc": "2030-01-01"
+    "waznosc": "2033-01-01"
   }
 }
